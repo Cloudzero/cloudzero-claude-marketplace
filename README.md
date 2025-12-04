@@ -1,85 +1,114 @@
-# CloudZero Open Source Template
+# Claude Cost Analyst
 
-This repo contains sample files to be used in CloudZero open source software repositories. These files are guidelines 
-that can be used in a CloudZero or any open source project to ensure that the project is described properly, the 
-contribution process is clear, and additional tools like CI, coverage monitors, and quality checkers are 
-configured properly. 
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE-OF-CONDUCT.md)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-This template is based largely on Auth0's [open-source-template](https://github.com/auth0/open-source-template),
-thank you Auth0, we :heart: you all, and not just because you have a zero in your company name! :hugs:
+Claude Cost Analyst is a ready-to-use repository that helps CloudZero customers get started with Claude Code and the CloudZero MCP (Model Context Protocol) server. This repository provides everything you need to analyze and optimize your cloud costs using AI-powered assistance through Claude.
+
+**Key Features:**
+- Pre-configured CloudZero MCP server integration
+- Custom Claude Code skills for cost analysis
+- Specialized agents for common cost optimization tasks
+- Quick setup - just clone, authenticate, and start analyzing
+
+**What's Included:**
+- MCP server configuration for CloudZero
+- Claude Code skills tailored for cloud cost analysis
+- Pre-built agents for cost optimization workflows
+- Documentation and examples
 
 ## Table of Contents
 
+- [Documentation](#documentation)
+- [Installation](#installation)
 - [Getting Started](#getting-started)
-- [Contribution](#contribution)
-- [Thank You](#thank-you)
+- [Usage](#usage)
+- [Contributing](#contributing)
+- [Support + Feedback](#support--feedback)
+- [Vulnerability Reporting](#vulnerability-reporting)
+- [What is CloudZero?](#what-is-cloudzero)
 - [License](#license)
+
+## Documentation
+
+For more information about the tools and services used in this project:
+
+- [Anthropic Claude](https://www.anthropic.com)
+- [CloudZero Platform Docs](https://docs.cloudzero.com/)
+- [CloudZero Blog](https://www.cloudzero.com/blog/)
+
+## Installation
+
+### Prerequisites
+
+- Claude Code installed on your system
+- A CloudZero account with API access
+- Git installed
+
+### Setup
+
+1. Clone this repository:
+
+```bash
+git clone https://github.com/cloudzero/cloudzero-claude-cost-analyst.git
+cd cloudzero-claude-cost-analyst
+```
+
+2. Start Claude Code from this directory:
+
+```bash
+claude
+```
+
+3. Follow the authentication prompts to connect to CloudZero
 
 ## Getting Started
 
-This repo can be cloned, modified, then re-purposed for new open source projects. It can also be used piecemeal to improve
-existing repos.
+Once you've completed the installation steps above, you're ready to start analyzing your cloud costs with Claude!
 
-### Copy README-template.md to README.md
+The repository comes pre-configured with:
+- CloudZero MCP server connection
+- Custom skills for cost analysis
+- Specialized agents for common workflows
 
-The core of open source repo quality is the `README.md` file that's displayed on the repo's homepage in Github.
-The `README-template.md` included here was collaboratively created by CloudZero's engineering team and community
-engineering team based on samples of high-quality README files around the web.
+## Usage
 
-Most sections within this file should be considered required, even if that section contains a link to a more relevant
-page. Certain sections will contain repo-specific information and should be modified as needed:
+*Detailed usage instructions will be provided here, including:*
+- *How to authenticate with CloudZero*
+- *Available skills and how to use them*
+- *Common cost analysis workflows*
+- *Example queries and commands*
+- *Tips for getting the most out of Claude Cost Analyst*
 
-- Description (below the title)
-- Badges
-- Documentation
-- Installation
-- Getting Started
-- Thank you
-- License
+## Contributing
 
-Other sections should be used as-is with minimal changes:
-
-- Table of Contents
-- Contribution
-- Support + Feedback
-- Vulnerability Reporting
-- What is CloudZero?
-
-### Modify templates in `.github`
-
-The issue and PR templates contained in this repo are general guidelines for what to include. What is being asked for is entirely up to the repo maintainer but a template of some kind should be included.
-
-### Update LICENSE
-
-See `README-template.md` for guidelines.
-
-### Modify .gitignore
-
-This file contains files that will be excluded from git. Modify as needed based on the technology being used.
-
-### Modify/remove platform-specific files
-
-Additional template files have been included here for the specific technology that we work with. These should be considered as guidelines and not enforced in any way.
-
-## Contribution
-
-We appreciate feedback and contribution to this template! Before you get started, please see the following:
+We appreciate feedback and contribution to this repo! Before you get started, please see the following:
 
 - [CloudZero's general contribution guidelines](GENERAL-CONTRIBUTING.md)
 - [CloudZero's code of conduct guidelines](CODE-OF-CONDUCT.md)
+- [This repo's contribution guide](CONTRIBUTING.md)
 
-## Thank You!
+## Support + Feedback
 
-A big thank you to all of our sources of inspiration!
+- Use [GitHub Issues](https://github.com/cloudzero/cloudzero-claude-cost-analyst/issues) for code-level support and bug reports
+- Contact [support@cloudzero.com](mailto:support@cloudzero.com) for CloudZero platform questions and account-specific issues
 
-- [First Contributions by @Roshanjossey](https://github.com/Roshanjossey/first-contributions)
-- [First Timers Only](https://www.firsttimersonly.com/)
-- [Sane Github Labels](https://medium.com/@dave_lunny/sane-github-labels-c5d2e6004b63)
-- [Awesome README by @matiassingers](https://github.com/matiassingers/awesome-readme)
-- [Auth0](https://github.com/auth0/open-source-template) for pulling all this together!
+## Vulnerability Reporting
 
-... and many more!
+Please do not report security vulnerabilities on the public GitHub issue tracker. Email [security@cloudzero.com](mailto:security@cloudzero.com) instead.
+
+## What is CloudZero?
+
+CloudZero is the only cloud cost intelligence platform that puts engineering in control by connecting technical decisions to business results:
+
+- [Cost Allocation And Tagging](https://www.cloudzero.com/tour/allocation) - Organize and allocate cloud spend in new ways, increase tagging coverage, or work on showback.
+- [Kubernetes Cost Visibility](https://www.cloudzero.com/tour/kubernetes) - Understand your Kubernetes spend alongside total spend across containerized and non-containerized environments.
+- [FinOps And Financial Reporting](https://www.cloudzero.com/tour/finops) - Operationalize reporting on metrics such as cost per customer, COGS, gross margin. Forecast spend, reconcile invoices and easily investigate variance.
+- [Engineering Accountability](https://www.cloudzero.com/tour/engineering) - Foster a cost-conscious culture, where engineers understand spend, proactively consider cost, and get immediate feedback with fewer interruptions and faster and more efficient innovation.
+- [Optimization And Reducing Waste](https://www.cloudzero.com/tour/optimization) - Focus on immediately reducing spend by understanding where we have waste, inefficiencies, and discounting opportunities.
+
+Learn more about [CloudZero](https://www.cloudzero.com/) on our website [www.cloudzero.com](https://www.cloudzero.com/)
 
 ## License
 
-This repo is covered under the [Apache 2.0](LICENSE).
+This project is licensed under the Apache 2.0 [LICENSE](LICENSE).
