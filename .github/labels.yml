@@ -1,0 +1,108 @@
+# GitHub Labels Configuration
+# Use github-label-sync or similar tools to apply these labels
+
+# Type labels
+- name: "type: bug"
+  color: "d73a4a"
+  description: "Something isn't working"
+
+- name: "type: feature"
+  color: "0e8a16"
+  description: "New feature or request"
+
+- name: "type: documentation"
+  color: "0075ca"
+  description: "Improvements or additions to documentation"
+
+- name: "type: maintenance"
+  color: "fbca04"
+  description: "Maintenance and chores"
+
+# Priority labels
+- name: "priority: critical"
+  color: "b60205"
+  description: "Critical priority"
+
+- name: "priority: high"
+  color: "d93f0b"
+  description: "High priority"
+
+- name: "priority: medium"
+  color: "fbca04"
+  description: "Medium priority"
+
+- name: "priority: low"
+  color: "0e8a16"
+  description: "Low priority"
+
+# Status labels
+- name: "status: needs-triage"
+  color: "d4c5f9"
+  description: "Needs initial triage and prioritization"
+
+- name: "status: in-progress"
+  color: "1d76db"
+  description: "Work in progress"
+
+- name: "status: blocked"
+  color: "b60205"
+  description: "Blocked by another issue or external factor"
+
+- name: "status: ready-for-review"
+  color: "0e8a16"
+  description: "Ready for code review"
+
+# Resolution labels
+- name: "wontfix"
+  color: "ffffff"
+  description: "This will not be worked on"
+
+- name: "duplicate"
+  color: "cfd3d7"
+  description: "This issue or pull request already exists"
+
+- name: "invalid"
+  color: "e4e669"
+  description: "This doesn't seem right"
+
+# Special labels
+- name: "good first issue"
+  color: "7057ff"
+  description: "Good for newcomers"
+
+- name: "help wanted"
+  color: "008672"
+  description: "Extra attention is needed"
+
+- name: "security"
+  color: "b60205"
+  description: "Security-related issue"
+
+- name: "breaking-change"
+  color: "d93f0b"
+  description: "Introduces breaking changes"
+
+- name: "dependencies"
+  color: "0366d6"
+  description: "Dependency updates"
+
+- name: "auto-approve"
+  color: "0e8a16"
+  description: "Automatically approved for merge"
+
+# Component labels (customize for your project)
+- name: "component: api"
+  color: "c2e0c6"
+  description: "Related to API"
+
+- name: "component: ui"
+  color: "c5def5"
+  description: "Related to user interface"
+
+- name: "component: ci-cd"
+  color: "bfd4f2"
+  description: "Related to CI/CD pipelines"
+
+- name: "component: docs"
+  color: "0075ca"
+  description: "Related to documentation"

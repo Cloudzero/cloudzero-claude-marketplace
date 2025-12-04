@@ -1,0 +1,30 @@
+name: Dependabot Auto-Merge
+
+on:
+  pull_request:
+    branches: [ main, master ]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+
+    steps:
+    - name: Check if auto-approve label exists
+      id: check-label
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const labels = context.payload.pull_request.labels.map(l => l.name);
+          return labels.includes('auto-approve');
+
+    - name: Enable auto-merge for Dependabot PRs
+      if: steps.check-label.outputs.result == 'true'
+      run: gh pr merge --auto --squash "$PR_URL"
+      env:
+        PR_URL: ${{ github.event.pull_request.html_url }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: CloudZero Support
+    url: mailto:support@cloudzero.com
+    about: For usage questions and general support
+  - name: CloudZero Documentation
+    url: https://docs.cloudzero.com/
+    about: Check our documentation for guides and references

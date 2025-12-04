@@ -1,0 +1,106 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+title: "[Bug]: "
+labels: ["type: bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Please do not report security vulnerabilities here.**
+        Email [security@cloudzero.com](mailto:security@cloudzero.com) instead.
+
+        Thank you for helping us improve this project! Please fill out the following information.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of the bug
+      placeholder: What happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Detailed steps to reproduce the behavior
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: Describe what should have happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: Describe what actually happened
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: What version of the project are you using?
+      placeholder: "e.g., 1.2.3"
+    validations:
+      required: true
+
+  - type: input
+    id: platform
+    attributes:
+      label: Platform/Framework Version
+      description: What platform or framework version are you using?
+      placeholder: "e.g., Python 3.11, Node.js 20"
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      description: What operating system are you using?
+      placeholder: "e.g., Ubuntu 22.04, macOS 14, Windows 11"
+
+  - type: input
+    id: cloud
+    attributes:
+      label: Cloud Provider
+      description: What cloud provider and services are you using?
+      placeholder: "e.g., AWS EKS, GCP, Azure"
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and Error Messages
+      description: Please provide relevant log output (redact sensitive information)
+      render: shell
+      placeholder: Paste logs here
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context, screenshots, or information about the problem
+      placeholder: Any additional information that might help
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/cloudzero/template-cloudzero-open-source/blob/master/CODE-OF-CONDUCT.md)
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true
