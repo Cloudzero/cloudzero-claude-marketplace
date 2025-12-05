@@ -19,23 +19,24 @@ This skill analyzes how cloud costs change over time, identifying patterns, grow
 - Understanding spending velocity
 - Keywords: trend, growth, trajectory, pattern, forecast, over time, month over month, increasing, decreasing
 
+## Prerequisites
+
+This skill builds on the **understand-cloudzero-organization** skill.
+
+Before applying this procedure:
+- If you haven't already in this session, load the understand-cloudzero-organization skill and follow its instructions
+- Reference the cached organization context (don't reload unnecessarily)
+
 ## How This Skill Works
 
-### Step 1: MANDATORY - Get Organization Context
-**ALWAYS start by calling `get_organization_context`** - This provides:
-- Organization-specific dimensions and their meanings
-- Preferred time periods for analysis
-- Business context affecting cost patterns
-- Important seasonal factors
-
-### Step 2: Determine Analysis Period
+### Step 1: Determine Analysis Period
 Clarify the time range and granularity:
 - **Short-term trends (1-3 months):** Use daily granularity
 - **Medium-term trends (3-6 months):** Use weekly granularity
 - **Long-term trends (6+ months):** Use monthly granularity
 - Default: Last 90 days with daily granularity if not specified
 
-### Step 3: Query Overall Trend
+### Step 2: Query Overall Trend
 Get total costs over time:
 
 ```
@@ -52,7 +53,7 @@ From this data:
 - Calculate growth rate
 - Identify any obvious spikes or dips
 
-### Step 4: Calculate Growth Metrics
+### Step 3: Calculate Growth Metrics
 
 **Week-over-Week (WoW) Growth:**
 - Compare most recent week to previous week
@@ -79,7 +80,7 @@ Total Growth = ((300000 - 250000) / 250000) * 100 = 20%
 Monthly Growth Rate = (1 + 0.20)^(1/3) - 1 ≈ 6.3% per month
 ```
 
-### Step 5: Trend by Key Dimensions
+### Step 4: Trend by Key Dimensions
 Understand which dimensions are driving trends:
 
 **Trend by Service:**
@@ -116,7 +117,7 @@ get_cost_data(
 )
 ```
 
-### Step 6: Identify Pattern Types
+### Step 5: Identify Pattern Types
 
 **Growth Pattern:**
 - Consistent upward trend
@@ -148,7 +149,7 @@ get_cost_data(
 - New project launch or resource decommission
 - Identify the inflection point date
 
-### Step 7: Decompose the Trend
+### Step 6: Decompose the Trend
 Break down overall trend into components:
 
 1. **Growing services** - Services with positive growth contributing to increase
@@ -158,7 +159,7 @@ Break down overall trend into components:
 
 Calculate each category's contribution to overall trend.
 
-### Step 8: Forecast Future Costs
+### Step 7: Forecast Future Costs
 Based on identified trends, project forward:
 
 **Simple Linear Projection:**
@@ -179,7 +180,7 @@ Next quarter = Current month * (1.06)^3
 - Expected: Based on current trend
 - High: Assuming trend accelerates
 
-### Step 9: Identify Trend Drivers
+### Step 8: Identify Trend Drivers
 For each significant trend, identify what's causing it:
 
 **For increasing costs:**
@@ -302,16 +303,17 @@ Describe the cost curve over time:
 3. [Optimization opportunity]
 4. [Budget adjustment if needed]
 
-## Best Practices
+## Skill-Specific Best Practices
 
-1. **Always start with `get_organization_context`** - Critical first step
-2. **Choose appropriate granularity** - Match to analysis period
-3. **Calculate multiple growth metrics** - WoW, MoM, QoQ for complete picture
-4. **Look beyond overall trend** - Decompose by dimensions
-5. **Provide forecast ranges** - Not single point estimates
-6. **Compare to business metrics** - Is cost growth aligned with business growth?
-7. **Identify inflection points** - When did trend direction change?
-8. **Consider external factors** - Seasonal business patterns, new projects, etc.
+1. **Choose appropriate granularity** - Match to analysis period
+2. **Calculate multiple growth metrics** - WoW, MoM, QoQ for complete picture
+3. **Look beyond overall trend** - Decompose by dimensions
+4. **Provide forecast ranges** - Not single point estimates
+5. **Compare to business metrics** - Is cost growth aligned with business growth?
+6. **Identify inflection points** - When did trend direction change?
+7. **Consider external factors** - Seasonal business patterns, new projects, etc.
+
+For general cost analysis best practices, see `${CLAUDE_PLUGIN_ROOT}/references/best-practices.md`
 
 ## Advanced Techniques
 
@@ -390,17 +392,19 @@ Services with <-5% growth
 - **Causes:** Optimization efforts, resource cleanup, migration to cheaper services
 - **Action:** Document what worked for replication
 
-## Error Handling
-
-- If date range too short, suggest longer period for meaningful trend
-- If too volatile to identify trend, recommend filtering by dimension
-- If no clear pattern, state so and focus on volatility analysis
-- If data gaps exist, note them and work around
-
 ## Tips for Effective Analysis
 
 1. **Context matters:** A 20% increase might be great or terrible depending on business growth
 2. **Look for correlations:** Does cost trend match user growth, revenue, or usage?
-3. **Don't over-forecast:** Trends change, provide ranges and caveatS
+3. **Don't over-forecast:** Trends change, provide ranges and caveats
 4. **Identify drivers:** Don't just report the trend, explain what causes it
 5. **Be actionable:** Every trend analysis should suggest next steps
+
+## See Also
+
+- **understand-cloudzero-organization** skill - Load organization context first
+- `${CLAUDE_PLUGIN_ROOT}/references/best-practices.md` - Universal cost analysis best practices
+- `${CLAUDE_PLUGIN_ROOT}/references/cloudzero-tools-reference.md` - Complete tool documentation
+- `${CLAUDE_PLUGIN_ROOT}/references/error-handling.md` - Troubleshooting and common errors
+- `${CLAUDE_PLUGIN_ROOT}/references/dimensions-reference.md` - Dimension types and FQDIDs
+- `${CLAUDE_PLUGIN_ROOT}/references/cost-types-reference.md` - When to use each cost type

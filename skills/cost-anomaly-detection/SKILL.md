@@ -21,16 +21,18 @@ This skill proactively identifies unusual cost patterns, unexpected spikes, irre
 - Before presenting cost reports
 - Keywords: anomaly, unusual, abnormal, irregular, unexpected, odd, suspicious, detect issues
 
+## Prerequisites
+
+This skill builds on the **understand-cloudzero-organization** skill.
+
+Before applying this procedure:
+- If you haven't already in this session, load the understand-cloudzero-organization skill and follow its instructions
+- Reference the cached organization context (don't reload unnecessarily)
+- Organization context is critical for distinguishing legitimate changes from true anomalies
+
 ## How This Skill Works
 
-### Step 1: MANDATORY - Get Organization Context
-**ALWAYS start by calling `get_organization_context`** - This provides:
-- Known patterns and expected cost behaviors
-- Seasonal factors or planned changes
-- Business events that may affect costs
-- Context to distinguish legitimate changes from anomalies
-
-### Step 2: Establish Baseline
+### Step 1: Establish Baseline
 Query historical data to establish normal patterns:
 
 ```
@@ -56,7 +58,7 @@ Calculate baseline statistics:
 - Typical day-of-week patterns
 - Expected growth rate
 
-### Step 3: Total Cost Anomaly Detection
+### Step 2: Total Cost Anomaly Detection
 Identify days with unusual total spending:
 
 **Detect Outliers:**
@@ -75,7 +77,7 @@ For each day in recent period:
 - Weekend vs. weekday anomalies
 - Unexpected patterns
 
-### Step 4: Service-Level Anomaly Detection
+### Step 3: Service-Level Anomaly Detection
 Check each service for unusual behavior:
 
 ```
@@ -104,7 +106,7 @@ For each major service:
 5. **New Appearance:** Service that didn't exist before
 6. **Disappearance:** Service that stopped
 
-### Step 5: Account-Level Anomaly Detection
+### Step 4: Account-Level Anomaly Detection
 Identify accounts with unusual spending:
 
 ```
@@ -121,7 +123,7 @@ For each account:
 - Identify new accounts with unexpected high costs
 - Detect accounts with no activity (potential issue)
 
-### Step 6: Resource-Level Anomaly Detection
+### Step 5: Resource-Level Anomaly Detection
 Identify specific resources with unusual costs:
 
 ```
@@ -145,7 +147,7 @@ Look for:
 - Resources that appeared recently
 - Expensive resources without proper tags
 
-### Step 7: Regional Anomaly Detection
+### Step 6: Regional Anomaly Detection
 Check for unusual regional spending patterns:
 
 ```
@@ -162,7 +164,7 @@ Anomalies might indicate:
 - Failover events
 - Misconfigured deployments
 
-### Step 8: Usage Pattern Anomalies
+### Step 7: Usage Pattern Anomalies
 Detect unusual usage patterns:
 
 **Hourly Pattern Analysis (if examining recent days):**
@@ -184,7 +186,7 @@ Look for:
 - Compare recent weeks to baseline weeks
 - Flag unusual weekday/weekend ratios
 
-### Step 9: Multi-Dimensional Anomaly Detection
+### Step 8: Multi-Dimensional Anomaly Detection
 Cross-reference anomalies across dimensions:
 
 ```
@@ -199,7 +201,7 @@ Find:
 - Regional anomalies for specific services
 - Account+Service combinations that are unusual
 
-### Step 10: Rate-of-Change Anomalies
+### Step 9: Rate-of-Change Anomalies
 Detect unusual growth rates:
 
 ```
@@ -211,7 +213,7 @@ Calculate for each dimension value:
     Flag as accelerating growth anomaly
 ```
 
-### Step 11: Security and Waste Indicators
+### Step 10: Security and Waste Indicators
 Look for specific patterns indicating issues:
 
 **Potential Security Issues:**
@@ -234,7 +236,7 @@ Look for specific patterns indicating issues:
 - Logging to expensive destinations
 - Unoptimized data transfer routes
 
-### Step 12: Tag-Based Anomaly Detection
+### Step 11: Tag-Based Anomaly Detection
 Check for anomalies in tagged resources:
 
 ```
@@ -453,16 +455,17 @@ Current level: $X,XXX (within/outside normal range)
    - Could be legitimate or anomalous
    - Recommendation: Verify with [team/person]
 
-## Best Practices
+## Skill-Specific Best Practices
 
-1. **Always start with `get_organization_context`** - Essential for distinguishing anomalies from expected changes
-2. **Establish proper baselines** - Need sufficient historical data
-3. **Use statistical methods** - Not just absolute thresholds
-4. **Consider day-of-week patterns** - Compare apples to apples
-5. **Cross-reference dimensions** - Anomalies often span multiple dimensions
-6. **Prioritize by impact** - Focus on highest-cost anomalies first
-7. **Check for false positives** - Validate against known changes
-8. **Provide context** - Explain why something is anomalous
+1. **Establish proper baselines** - Need sufficient historical data
+2. **Use statistical methods** - Not just absolute thresholds
+3. **Consider day-of-week patterns** - Compare apples to apples
+4. **Cross-reference dimensions** - Anomalies often span multiple dimensions
+5. **Prioritize by impact** - Focus on highest-cost anomalies first
+6. **Check for false positives** - Validate against known changes
+7. **Provide context** - Explain why something is anomalous
+
+For general cost analysis best practices, see `${CLAUDE_PLUGIN_ROOT}/references/best-practices.md`
 
 ## Anomaly Detection Techniques
 
@@ -582,13 +585,6 @@ Find related anomalies:
 - EC2 spike + data transfer spike might be same event
 - Multiple services in same account might share root cause
 
-## Error Handling
-
-- If insufficient historical data, note limited baseline and use shorter periods
-- If high natural variability, use wider anomaly thresholds
-- If known planned changes, exclude from anomaly detection
-- If can't determine cause, provide investigation steps instead
-
 ## Tips for Effective Anomaly Detection
 
 1. **Run regularly** - Daily or weekly, not just when problems noticed
@@ -599,3 +595,12 @@ Find related anomalies:
 6. **Document patterns** - Build knowledge base of anomaly types
 7. **Close the loop** - Report back on resolution to improve detection
 8. **Balance sensitivity** - Too sensitive = alert fatigue, too loose = miss issues
+
+## See Also
+
+- **understand-cloudzero-organization** skill - Load organization context first
+- `${CLAUDE_PLUGIN_ROOT}/references/best-practices.md` - Universal cost analysis best practices
+- `${CLAUDE_PLUGIN_ROOT}/references/cloudzero-tools-reference.md` - Complete tool documentation
+- `${CLAUDE_PLUGIN_ROOT}/references/error-handling.md` - Troubleshooting and common errors
+- `${CLAUDE_PLUGIN_ROOT}/references/dimensions-reference.md` - Dimension types and FQDIDs
+- `${CLAUDE_PLUGIN_ROOT}/references/cost-types-reference.md` - When to use each cost type

@@ -18,22 +18,23 @@ This skill identifies and ranks the highest cloud cost contributors across vario
 - Identifying optimization priorities
 - Keywords: top, biggest, largest, highest, most expensive, cost drivers, where is money going
 
+## Prerequisites
+
+This skill builds on the **understand-cloudzero-organization** skill.
+
+Before applying this procedure:
+- If you haven't already in this session, load the understand-cloudzero-organization skill and follow its instructions
+- Reference the cached organization context (don't reload unnecessarily)
+
 ## How This Skill Works
 
-### Step 1: MANDATORY - Get Organization Context
-**ALWAYS start by calling `get_organization_context`** - This provides:
-- Organization-specific dimensions and their business meanings
-- Preferred analysis patterns and workflows
-- Custom dimension definitions (teams, products, etc.)
-- Important context for accurate analysis
-
-### Step 2: Understand the Request
+### Step 1: Understand the Request
 Clarify what dimensions the user wants to analyze:
 - Services? Accounts? Teams? Regions?
 - Specific time period? (default: last 30 days)
 - Any filters to apply? (e.g., specific cloud provider, environment)
 
-### Step 3: Query Top Costs by Primary Dimension
+### Step 2: Query Top Costs by Primary Dimension
 
 **Top Services:**
 ```
@@ -71,7 +72,7 @@ get_cost_data(
 )
 ```
 
-### Step 4: Multi-Dimensional Breakdown
+### Step 3: Multi-Dimensional Breakdown
 Break down top costs by multiple dimensions for deeper insights:
 
 **Services within each Cloud Provider:**
@@ -101,7 +102,7 @@ get_cost_data(
 )
 ```
 
-### Step 5: Custom Dimension Analysis
+### Step 4: Custom Dimension Analysis
 Leverage organization-specific dimensions:
 
 ```
@@ -123,7 +124,7 @@ get_cost_data(
 )
 ```
 
-### Step 6: Tag-Based Analysis
+### Step 5: Tag-Based Analysis
 Analyze costs by resource tags:
 
 ```
@@ -145,14 +146,14 @@ get_cost_data(
 )
 ```
 
-### Step 7: Calculate Contribution Percentages
+### Step 6: Calculate Contribution Percentages
 For each result:
 1. Calculate total spend across all items
 2. Calculate each item's percentage of total
 3. Calculate cumulative percentage (to identify 80/20 rule)
 4. Identify items that together represent 80% of spend
 
-### Step 8: Trend Context (Optional)
+### Step 7: Trend Context (Optional)
 Show how top cost drivers are trending:
 
 ```
@@ -224,16 +225,16 @@ Based on top cost drivers, suggest:
 - Month-over-month or week-over-week changes
 - Acceleration or deceleration patterns
 
-## Best Practices
+## Skill-Specific Best Practices
 
-1. **Always start with `get_organization_context`** - Critical for understanding available dimensions
-2. **Calculate percentages** - Raw numbers need context
-3. **Show cumulative percentages** - Helps identify concentration
-4. **Use multiple dimensions** - Single-dimension analysis is often insufficient
-5. **Leverage custom dimensions** - Use org-specific groupings when available
-6. **Default to real_cost** - Most useful for engineering discussions
-7. **Adjust limits appropriately** - More items for detailed analysis, fewer for summaries
-8. **Look for the 80/20 rule** - Usually small number of items drive most cost
+1. **Calculate percentages** - Raw numbers need context
+2. **Show cumulative percentages** - Helps identify concentration
+3. **Use multiple dimensions** - Single-dimension analysis is often insufficient
+4. **Leverage custom dimensions** - Use org-specific groupings when available
+5. **Adjust limits appropriately** - More items for detailed analysis, fewer for summaries
+6. **Look for the 80/20 rule** - Usually small number of items drive most cost
+
+For general cost analysis best practices, see `${CLAUDE_PLUGIN_ROOT}/references/best-practices.md`
 
 ## Common Analysis Patterns
 
@@ -303,13 +304,6 @@ get_cost_data(
 )
 ```
 
-## Error Handling
-
-- If no data returned, check date range and try default (last 30 days)
-- If dimension doesn't exist, use `get_available_dimensions` to discover alternatives
-- If too many results, increase limit or add filters
-- If unclear which dimension to use, start with services (most universal)
-
 ## Tips for Effective Analysis
 
 1. **Start broad, then narrow:** Begin with single dimension, add more as needed
@@ -318,3 +312,12 @@ get_cost_data(
 4. **Be specific:** Use exact dimension FQDIDs and values
 5. **Explain distribution:** Is spend concentrated or distributed?
 6. **Suggest next steps:** What should user investigate further?
+
+## See Also
+
+- **understand-cloudzero-organization** skill - Load organization context first
+- `${CLAUDE_PLUGIN_ROOT}/references/best-practices.md` - Universal cost analysis best practices
+- `${CLAUDE_PLUGIN_ROOT}/references/cloudzero-tools-reference.md` - Complete tool documentation
+- `${CLAUDE_PLUGIN_ROOT}/references/error-handling.md` - Troubleshooting and common errors
+- `${CLAUDE_PLUGIN_ROOT}/references/dimensions-reference.md` - Dimension types and FQDIDs
+- `${CLAUDE_PLUGIN_ROOT}/references/cost-types-reference.md` - When to use each cost type

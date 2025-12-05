@@ -16,20 +16,22 @@ This skill helps identify and explain sudden increases in cloud costs by compari
 - Investigating budget overruns
 - Keywords: spike, increase, jump, surge, anomaly, unexpected, sudden change
 
+## Prerequisites
+
+This skill builds on the **understand-cloudzero-organization** skill.
+
+Before applying this procedure:
+- If you haven't already in this session, load the understand-cloudzero-organization skill and follow its instructions
+- Reference the cached organization context (don't reload unnecessarily)
+
 ## How This Skill Works
 
-### Step 1: MANDATORY - Get Organization Context
-**ALWAYS start by calling `get_organization_context`** - This is critical to understand:
-- Organization-specific dimensions and their meanings
-- Custom workflows and analysis patterns
-- Important context about the user's environment
-
-### Step 2: Understand the Spike Period
+### Step 1: Understand the Spike Period
 - Clarify when the spike occurred (specific date, week, month)
 - Define baseline period for comparison (e.g., previous month, same period last year)
 - Default to comparing last 7 days vs. previous 7 days if not specified
 
-### Step 3: Identify Top-Level Changes
+### Step 2: Identify Top-Level Changes
 Query total costs for both periods:
 ```
 # Recent period (where spike occurred)
@@ -52,7 +54,7 @@ Calculate:
 - Percentage increase
 - Cost per day in each period
 
-### Step 4: Drill Down by Key Dimensions
+### Step 3: Drill Down by Key Dimensions
 Systematically check common cost drivers to identify where the spike originated:
 
 **Check by Cloud Provider:**
@@ -87,7 +89,7 @@ Compare results from spike period vs. baseline period to identify:
 - Services with largest percentage increases
 - New services that appeared during spike period
 
-### Step 5: Multi-Dimensional Analysis
+### Step 4: Multi-Dimensional Analysis
 Once you identify the primary dimension responsible, drill deeper:
 
 ```
@@ -100,7 +102,7 @@ get_cost_data(
 )
 ```
 
-### Step 6: Time-Series Analysis
+### Step 5: Time-Series Analysis
 Show how costs evolved during the spike period:
 
 ```
@@ -117,7 +119,7 @@ This reveals:
 - Whether it's sustained or temporary
 - If it's still ongoing
 
-### Step 7: Check for New Resources
+### Step 6: Check for New Resources
 Identify if new resources were provisioned:
 
 ```
@@ -133,7 +135,7 @@ get_dimension_values(
 )
 ```
 
-### Step 8: Investigate Tags and Custom Dimensions
+### Step 7: Investigate Tags and Custom Dimensions
 Use organization-specific dimensions to attribute costs:
 
 ```
@@ -191,16 +193,16 @@ Provide a clear, structured investigation report:
 - Potential optimization opportunities
 - Monitoring recommendations to prevent future surprises
 
-## Best Practices
+## Skill-Specific Best Practices
 
-1. **Always start with `get_organization_context`** - No exceptions
-2. **Compare apples to apples** - Use same date range lengths for baseline and spike periods
-3. **Use real_cost by default** - Unless user specifically needs invoice reconciliation
-4. **Check multiple dimensions** - Don't stop at just service-level analysis
-5. **Look for new resources** - Spikes often come from new provisioning
-6. **Consider seasonality** - Compare to same period last year if relevant
-7. **Show your work** - Explain which queries you ran and why
-8. **Be specific** - Provide exact numbers, dimension values, and time periods
+1. **Compare apples to apples** - Use same date range lengths for baseline and spike periods
+2. **Check multiple dimensions** - Don't stop at just service-level analysis
+3. **Look for new resources** - Spikes often come from new provisioning
+4. **Consider seasonality** - Compare to same period last year if relevant
+5. **Show your work** - Explain which queries you ran and why
+6. **Be specific** - Provide exact numbers, dimension values, and time periods
+
+For general cost analysis best practices, see `${CLAUDE_PLUGIN_ROOT}/references/best-practices.md`
 
 ## Common Spike Patterns
 
@@ -211,9 +213,11 @@ Provide a clear, structured investigation report:
 - **Development/testing:** Teams spinning up test environments
 - **Crypto mining/security incidents:** Unauthorized resource usage
 
-## Error Handling
+## See Also
 
-- If date ranges don't have data, adjust and try different periods
-- If dimension doesn't exist, use `get_available_dimensions` to find alternatives
-- If queries are slow, reduce limit or narrow filters
-- If results are unclear, try different dimensional breakdowns
+- **understand-cloudzero-organization** skill - Load organization context first
+- `${CLAUDE_PLUGIN_ROOT}/references/best-practices.md` - Universal cost analysis best practices
+- `${CLAUDE_PLUGIN_ROOT}/references/cloudzero-tools-reference.md` - Complete tool documentation
+- `${CLAUDE_PLUGIN_ROOT}/references/error-handling.md` - Troubleshooting and common errors
+- `${CLAUDE_PLUGIN_ROOT}/references/dimensions-reference.md` - Dimension types and FQDIDs
+- `${CLAUDE_PLUGIN_ROOT}/references/cost-types-reference.md` - When to use each cost type

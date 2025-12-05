@@ -19,16 +19,17 @@ This skill provides comprehensive, detailed analysis of a specific cloud service
 - Understanding service usage patterns
 - Keywords: deep dive, analyze, breakdown, detailed, specific service, EC2, RDS, S3, Lambda, etc.
 
+## Prerequisites
+
+This skill builds on the **understand-cloudzero-organization** skill.
+
+Before applying this procedure:
+- If you haven't already in this session, load the understand-cloudzero-organization skill and follow its instructions
+- Reference the cached organization context (don't reload unnecessarily)
+
 ## How This Skill Works
 
-### Step 1: MANDATORY - Get Organization Context
-**ALWAYS start by calling `get_organization_context`** - This provides:
-- Organization-specific dimensions and configurations
-- Known usage patterns for the service
-- Business context for resource allocation
-- Custom dimensions for attribution
-
-### Step 2: Identify the Service
+### Step 1: Identify the Service
 Determine which service to analyze:
 
 ```
@@ -39,7 +40,7 @@ get_available_dimensions(filter="Service")
 get_dimension_values(dimension="CZ:Service", match="[user's service name]")
 ```
 
-### Step 3: Overall Service Cost Analysis
+### Step 2: Overall Service Cost Analysis
 Get high-level view of the service:
 
 **Total Service Cost:**
@@ -65,7 +66,7 @@ Calculate:
 - Trend direction (growing/declining/stable)
 - Percentage of total cloud spend
 
-### Step 4: Multi-Dimensional Breakdown
+### Step 3: Multi-Dimensional Breakdown
 Break down service costs by all relevant dimensions:
 
 **By Account:**
@@ -121,7 +122,7 @@ get_cost_data(
 )
 ```
 
-### Step 5: Tag-Based Analysis
+### Step 4: Tag-Based Analysis
 Understand how service is used across environments and teams:
 
 **By Environment:**
@@ -151,7 +152,7 @@ get_cost_data(
 )
 ```
 
-### Step 6: Custom Dimension Attribution
+### Step 5: Custom Dimension Attribution
 Use organization-specific dimensions:
 
 ```
@@ -166,7 +167,7 @@ get_cost_data(
 )
 ```
 
-### Step 7: Untagged Resource Analysis
+### Step 6: Untagged Resource Analysis
 Identify resources without proper tagging:
 
 ```
@@ -181,7 +182,7 @@ get_cost_data(
 )
 ```
 
-### Step 8: Time-Based Pattern Analysis
+### Step 7: Time-Based Pattern Analysis
 Understand usage patterns:
 
 **Hourly patterns (if looking at short period):**
@@ -208,7 +209,7 @@ Identify:
 - Idle periods
 - Unusual spikes
 
-### Step 9: Service-Specific Optimization Analysis
+### Step 8: Service-Specific Optimization Analysis
 
 **For Compute Services (EC2, ECS, EKS, Lambda):**
 - Instance type distribution
@@ -243,7 +244,7 @@ Identify:
 - Cold start impact
 - Duration optimization opportunities
 
-### Step 10: Cost Type Comparison
+### Step 9: Cost Type Comparison
 Compare different cost perspectives:
 
 ```
@@ -434,16 +435,17 @@ Provide comprehensive service analysis:
 - Rightsizing implementation: [Score]
 - Overall maturity: [Score]
 
-## Best Practices
+## Skill-Specific Best Practices
 
-1. **Always start with `get_organization_context`** - Essential first step
-2. **Use all available dimensions** - Don't stop at basic account/region
-3. **Leverage service-specific knowledge** - Different services need different analysis
-4. **Calculate savings potential** - Quantify all recommendations
-5. **Prioritize by impact** - Focus on highest-value optimizations
-6. **Consider business context** - Some "inefficiencies" may be intentional
-7. **Compare cost types** - Use on_demand_cost to calculate savings
-8. **Look for untagged resources** - Often indicates governance gaps
+1. **Use all available dimensions** - Don't stop at basic account/region
+2. **Leverage service-specific knowledge** - Different services need different analysis
+3. **Calculate savings potential** - Quantify all recommendations
+4. **Prioritize by impact** - Focus on highest-value optimizations
+5. **Consider business context** - Some "inefficiencies" may be intentional
+6. **Compare cost types** - Use on_demand_cost to calculate savings
+7. **Look for untagged resources** - Often indicates governance gaps
+
+For general cost analysis best practices, see `${CLAUDE_PLUGIN_ROOT}/references/best-practices.md`
 
 ## Service-Specific Analysis Guides
 
@@ -529,13 +531,6 @@ Compare service usage across:
 - Different regions (why is us-east-1 more expensive?)
 - Different teams (what do efficient teams do differently?)
 
-## Error Handling
-
-- If service name doesn't match exactly, use `get_dimension_values` to find correct name
-- If specific dimensions (like UsageType) don't exist, use available dimensions
-- If no data for service, check spelling and date range
-- If service is very small (<1% of spend), note limited data may affect insights
-
 ## Tips for Effective Analysis
 
 1. **Be service-specific:** EC2 analysis differs from S3 analysis
@@ -544,3 +539,12 @@ Compare service usage across:
 4. **Think holistically:** Optimization in one area may increase costs in another
 5. **Provide implementation guidance:** Don't just identify issues, suggest how to fix them
 6. **Follow up:** Recommend ongoing monitoring after optimization
+
+## See Also
+
+- **understand-cloudzero-organization** skill - Load organization context first
+- `${CLAUDE_PLUGIN_ROOT}/references/best-practices.md` - Universal cost analysis best practices
+- `${CLAUDE_PLUGIN_ROOT}/references/cloudzero-tools-reference.md` - Complete tool documentation
+- `${CLAUDE_PLUGIN_ROOT}/references/error-handling.md` - Troubleshooting and common errors
+- `${CLAUDE_PLUGIN_ROOT}/references/dimensions-reference.md` - Dimension types and FQDIDs
+- `${CLAUDE_PLUGIN_ROOT}/references/cost-types-reference.md` - When to use each cost type

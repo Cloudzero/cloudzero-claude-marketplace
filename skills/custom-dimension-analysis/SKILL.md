@@ -20,17 +20,18 @@ This skill analyzes cloud costs through the lens of organization-specific custom
 - Team budget tracking
 - Keywords: team, product, feature, business unit, application, custom, showback, chargeback, by [custom dimension name]
 
+## Prerequisites
+
+This skill builds on the **understand-cloudzero-organization** skill.
+
+Before applying this procedure:
+- If you haven't already in this session, load the understand-cloudzero-organization skill and follow its instructions
+- Reference the cached organization context (don't reload unnecessarily)
+- This is especially critical for custom dimension analysis as org context defines what custom dimensions exist and their business meanings
+
 ## How This Skill Works
 
-### Step 1: MANDATORY - Get Organization Context
-**ALWAYS start by calling `get_organization_context`** - This is CRITICAL for custom dimension analysis because:
-- Defines what custom dimensions exist and their business meanings
-- Explains how dimensions map to organizational structure
-- Provides context for interpreting dimension values
-- Details any allocation rules or special considerations
-- Without this context, custom dimension analysis is incomplete
-
-### Step 2: Discover Custom Dimensions
+### Step 1: Discover Custom Dimensions
 Identify all custom dimensions available:
 
 ```
@@ -47,7 +48,7 @@ This returns organization-specific dimensions like:
 - User:Defined:Application
 - [Others specific to organization]
 
-### Step 3: Identify Relevant Dimension
+### Step 2: Identify Relevant Dimension
 Based on user request and org context, select the appropriate dimension:
 
 ```
@@ -63,7 +64,7 @@ Review values to understand:
 - How many distinct values
 - Naming conventions used
 
-### Step 4: High-Level Cost Breakdown
+### Step 3: High-Level Cost Breakdown
 Query costs by the primary custom dimension:
 
 ```
@@ -80,7 +81,7 @@ From this:
 - Identify top and bottom spenders
 - Calculate distribution statistics
 
-### Step 5: Trend Analysis by Custom Dimension
+### Step 4: Trend Analysis by Custom Dimension
 Understand how each dimension value's costs trend over time:
 
 ```
@@ -98,7 +99,7 @@ For each dimension value:
 - Spot anomalies or spikes
 - Compare trends across values
 
-### Step 6: Cloud Service Breakdown
+### Step 5: Cloud Service Breakdown
 For each custom dimension value, understand what services they use:
 
 ```
@@ -115,7 +116,7 @@ This reveals:
 - Services contributing most to each dimension value's cost
 - Optimization opportunities specific to dimension values
 
-### Step 7: Infrastructure Distribution
+### Step 6: Infrastructure Distribution
 Understand how dimension values map to infrastructure:
 
 **By Account:**
@@ -142,7 +143,7 @@ get_cost_data(
 )
 ```
 
-### Step 8: Multi-Dimensional Custom Analysis
+### Step 7: Multi-Dimensional Custom Analysis
 Combine multiple custom dimensions for deeper insights:
 
 ```
@@ -156,7 +157,7 @@ This shows hierarchical cost relationships:
 - Business Unit → Products → Teams
 - Or other organizational structures
 
-### Step 9: Unallocated Cost Analysis
+### Step 8: Unallocated Cost Analysis
 Identify costs not assigned to custom dimensions:
 
 ```
@@ -183,7 +184,7 @@ get_cost_data(
 )
 ```
 
-### Step 10: Comparative Analysis
+### Step 9: Comparative Analysis
 Compare dimension values against each other:
 
 **Efficiency Comparison:**
@@ -433,16 +434,17 @@ For each dimension value, provide a detailed breakdown suitable for showback:
 2. [Add missing dimension values]
 3. [Improve coverage for Y]
 
-## Best Practices
+## Skill-Specific Best Practices
 
-1. **ALWAYS start with `get_organization_context`** - Critical for understanding custom dimensions
-2. **Understand business context** - Custom dimensions have business meaning
-3. **Calculate allocation coverage** - Know what % of costs are attributed
-4. **Compare dimension values** - Look for efficiency patterns
-5. **Provide showback-ready output** - Format suitable for finance/business teams
-6. **Explain service mix** - Help business users understand technical costs
-7. **Normalize when possible** - Per-user, per-transaction costs
-8. **Track trends** - Growth/decline patterns matter for planning
+1. **Understand business context** - Custom dimensions have business meaning
+2. **Calculate allocation coverage** - Know what % of costs are attributed
+3. **Compare dimension values** - Look for efficiency patterns
+4. **Provide showback-ready output** - Format suitable for finance/business teams
+5. **Explain service mix** - Help business users understand technical costs
+6. **Normalize when possible** - Per-user, per-transaction costs
+7. **Track trends** - Growth/decline patterns matter for planning
+
+For general cost analysis best practices, see `${CLAUDE_PLUGIN_ROOT}/references/best-practices.md`
 
 ## Common Custom Dimension Patterns
 
@@ -538,13 +540,6 @@ Optimization Score = (
 
 Rank dimension values by optimization maturity.
 
-## Error Handling
-
-- If custom dimension doesn't exist, check with `get_available_dimensions`
-- If low allocation coverage, focus recommendations on improving coverage
-- If dimension values unclear, refer to org context for explanation
-- If no org context available, note limitations in analysis
-
 ## Tips for Effective Analysis
 
 1. **Speak business language** - Translate technical costs to business terms
@@ -555,3 +550,12 @@ Rank dimension values by optimization maturity.
 6. **Tell a story** - Don't just list numbers, explain what they mean
 7. **Enable accountability** - Clear attribution enables cost ownership
 8. **Link to outcomes** - Connect costs to business metrics when possible
+
+## See Also
+
+- **understand-cloudzero-organization** skill - Load organization context first
+- `${CLAUDE_PLUGIN_ROOT}/references/best-practices.md` - Universal cost analysis best practices
+- `${CLAUDE_PLUGIN_ROOT}/references/cloudzero-tools-reference.md` - Complete tool documentation
+- `${CLAUDE_PLUGIN_ROOT}/references/error-handling.md` - Troubleshooting and common errors
+- `${CLAUDE_PLUGIN_ROOT}/references/dimensions-reference.md` - Dimension types and FQDIDs
+- `${CLAUDE_PLUGIN_ROOT}/references/cost-types-reference.md` - When to use each cost type

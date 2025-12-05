@@ -20,16 +20,17 @@ This skill evaluates the quality and completeness of cloud resource tagging to i
 - Identifying unattributed costs
 - Keywords: tag, tagging, untagged, coverage, attribution, showback, chargeback, governance
 
+## Prerequisites
+
+This skill builds on the **understand-cloudzero-organization** skill.
+
+Before applying this procedure:
+- If you haven't already in this session, load the understand-cloudzero-organization skill and follow its instructions
+- Reference the cached organization context (don't reload unnecessarily)
+
 ## How This Skill Works
 
-### Step 1: MANDATORY - Get Organization Context
-**ALWAYS start by calling `get_organization_context`** - This provides:
-- Organization's required tags and tagging standards
-- Critical tags for cost allocation (Team, Environment, CostCenter, etc.)
-- Custom tagging policies
-- Business context for tag importance
-
-### Step 2: Discover Available Tags
+### Step 1: Discover Available Tags
 Identify what tags exist in the organization:
 
 ```
@@ -44,7 +45,7 @@ This returns all tags in use. Common tags include:
 - CZ:Tag:CostCenter
 - CZ:Tag:Project
 
-### Step 3: Calculate Overall Tag Coverage
+### Step 2: Calculate Overall Tag Coverage
 For each critical tag, calculate coverage:
 
 ```
@@ -67,7 +68,7 @@ Untagged Cost = Total Cost - Cost of Tagged Resources
 Untagged % = (Untagged Cost / Total Cost) * 100
 ```
 
-### Step 4: Analyze Each Critical Tag
+### Step 3: Analyze Each Critical Tag
 
 For each important tag (Environment, Team, Application, etc.):
 
@@ -95,7 +96,7 @@ get_cost_data(
 # Then identify which services have low tag coverage
 ```
 
-### Step 5: Multi-Tag Analysis
+### Step 4: Multi-Tag Analysis
 Analyze coverage across multiple tags simultaneously:
 
 ```
@@ -110,7 +111,7 @@ Identify resources that have:
 - Some critical tags (partial)
 - No critical tags (bad)
 
-### Step 6: Account-Level Tag Coverage
+### Step 5: Account-Level Tag Coverage
 Identify which accounts have tagging issues:
 
 ```
@@ -126,7 +127,7 @@ Calculate coverage % per account and rank accounts by:
 - Highest untagged cost amounts
 - Most critical accounts with tagging issues
 
-### Step 7: Service-Level Tag Coverage
+### Step 6: Service-Level Tag Coverage
 Identify which services are commonly untagged:
 
 ```
@@ -141,7 +142,7 @@ Some services may be harder to tag (e.g., data transfer, some AWS service fees).
 - Which services have poor tag coverage
 - Which services are untaggable (inherently)
 
-### Step 8: Time-Based Coverage Trends
+### Step 7: Time-Based Coverage Trends
 Analyze if tagging is improving or degrading:
 
 ```
@@ -166,7 +167,7 @@ get_cost_data(
 
 Calculate coverage % for each period and identify trend.
 
-### Step 9: Tag Value Quality Analysis
+### Step 8: Tag Value Quality Analysis
 Beyond just having tags, analyze tag value quality:
 
 **Identify problematic patterns:**
@@ -185,7 +186,7 @@ Review all values and flag:
 - Unclear or uninformative values
 - Values that should be consolidated
 
-### Step 10: Highest-Value Untagged Resources
+### Step 9: Highest-Value Untagged Resources
 Prioritize tagging efforts by identifying expensive untagged resources:
 
 ```
@@ -415,16 +416,17 @@ For each account with poor tagging:
    - Alert on new untagged resources above $X threshold
    - Weekly summaries of tagging violations
 
-## Best Practices
+## Skill-Specific Best Practices
 
-1. **Always start with `get_organization_context`** - Understand tagging standards
-2. **Focus on financial impact** - Prioritize by cost, not just resource count
-3. **Be specific** - Identify exact accounts, services, resources to tag
-4. **Calculate coverage properly** - Some costs may be inherently untaggable
-5. **Track trends** - Is it getting better or worse?
-6. **Provide actionable steps** - Not just "tag your resources," but specific items
-7. **Consider tag value quality** - Having a tag with bad data isn't much better than no tag
-8. **Differentiate untaggable costs** - Some AWS fees can't be tagged, exclude from coverage calculations
+1. **Focus on financial impact** - Prioritize by cost, not just resource count
+2. **Be specific** - Identify exact accounts, services, resources to tag
+3. **Calculate coverage properly** - Some costs may be inherently untaggable
+4. **Track trends** - Is it getting better or worse?
+5. **Provide actionable steps** - Not just "tag your resources," but specific items
+6. **Consider tag value quality** - Having a tag with bad data isn't much better than no tag
+7. **Differentiate untaggable costs** - Some AWS fees can't be tagged, exclude from coverage calculations
+
+For general cost analysis best practices, see `${CLAUDE_PLUGIN_ROOT}/references/best-practices.md`
 
 ## Common Tagging Challenges
 
@@ -491,13 +493,6 @@ Calculate how much cost cannot be attributed:
 Attribution Gap = (Untagged Cost + Partial Tag Cost) / Total Cost
 ```
 
-## Error Handling
-
-- If no tags exist, recommend starting with most critical tags first
-- If can't determine untagged costs directly, calculate as difference from totals
-- If tag dimension doesn't exist, check with `get_available_dimensions`
-- If organization context doesn't specify required tags, use common standard tags
-
 ## Tips for Effective Analysis
 
 1. **Quantify impact** - Show dollar amounts, not just percentages
@@ -507,3 +502,12 @@ Attribution Gap = (Untagged Cost + Partial Tag Cost) / Total Cost
 5. **Compare accounts** - Highlight good and bad performers
 6. **Provide templates** - Suggest specific tag policies and automation
 7. **Connect to business goals** - Link tagging to showback/chargeback needs
+
+## See Also
+
+- **understand-cloudzero-organization** skill - Load organization context first
+- `${CLAUDE_PLUGIN_ROOT}/references/best-practices.md` - Universal cost analysis best practices
+- `${CLAUDE_PLUGIN_ROOT}/references/cloudzero-tools-reference.md` - Complete tool documentation
+- `${CLAUDE_PLUGIN_ROOT}/references/error-handling.md` - Troubleshooting and common errors
+- `${CLAUDE_PLUGIN_ROOT}/references/dimensions-reference.md` - Dimension types and FQDIDs
+- `${CLAUDE_PLUGIN_ROOT}/references/cost-types-reference.md` - When to use each cost type

@@ -19,16 +19,17 @@ This skill performs side-by-side comparisons of cloud costs across different dim
 - Identifying inefficiencies
 - Keywords: compare, comparison, versus, vs, difference, between, benchmark, relative
 
+## Prerequisites
+
+This skill builds on the **understand-cloudzero-organization** skill.
+
+Before applying this procedure:
+- If you haven't already in this session, load the understand-cloudzero-organization skill and follow its instructions
+- Reference the cached organization context (don't reload unnecessarily)
+
 ## How This Skill Works
 
-### Step 1: MANDATORY - Get Organization Context
-**ALWAYS start by calling `get_organization_context`** - This provides:
-- Organization-specific dimensions available for comparison
-- Business context for interpreting differences
-- Known factors affecting cost variations
-- Custom dimensions for team/product comparisons
-
-### Step 2: Identify Comparison Type
+### Step 1: Identify Comparison Type
 Determine what kind of comparison is needed:
 
 **Time-Based Comparisons:**
@@ -48,7 +49,7 @@ Determine what kind of comparison is needed:
 - Same team across different services
 - Multiple dimensions combined
 
-### Step 3: Query Data for Each Comparison Group
+### Step 2: Query Data for Each Comparison Group
 
 **Example: Time Period Comparison**
 ```
@@ -107,7 +108,7 @@ get_cost_data(
 )
 ```
 
-### Step 4: Calculate Comparison Metrics
+### Step 3: Calculate Comparison Metrics
 For each comparable item:
 
 **Absolute Difference:**
@@ -130,7 +131,7 @@ Ratio = Cost_A / Cost_B
 Cost per user, Cost per transaction, Cost per GB, etc.
 ```
 
-### Step 5: Identify Key Differences
+### Step 4: Identify Key Differences
 Categorize differences:
 
 **Major Differences:**
@@ -150,7 +151,7 @@ Categorize differences:
 - Items with minimal difference
 - Consistent across comparison groups
 
-### Step 6: Drill Down on Significant Differences
+### Step 5: Drill Down on Significant Differences
 For each major difference, investigate further:
 
 **If Service A costs more in Environment 1 than Environment 2:**
@@ -169,7 +170,7 @@ get_cost_data(
 )
 ```
 
-### Step 7: Normalize Comparisons (When Appropriate)
+### Step 6: Normalize Comparisons (When Appropriate)
 Make fair comparisons by normalizing for scale:
 
 **Workload-adjusted:**
@@ -187,7 +188,7 @@ Make fair comparisons by normalizing for scale:
 - Cost per CPU
 - Cost per GB storage
 
-### Step 8: Identify Patterns and Insights
+### Step 7: Identify Patterns and Insights
 Look for:
 
 **Efficiency Patterns:**
@@ -320,16 +321,17 @@ Day/Week/Month | Group A | Group B | Difference
 2. [Policy changes]
 3. [Architecture recommendations]
 
-## Best Practices
+## Skill-Specific Best Practices
 
-1. **Always start with `get_organization_context`** - Essential for context
-2. **Use consistent time periods** - Compare equal-length periods
-3. **Normalize when appropriate** - Account for scale differences
-4. **Look for root causes** - Don't just report differences, explain them
-5. **Consider business context** - Some differences may be justified
-6. **Focus on actionable differences** - Highlight what can be optimized
-7. **Use multiple dimensions** - Don't stop at top-level comparison
-8. **Calculate both absolute and percentage differences** - Both matter
+1. **Use consistent time periods** - Compare equal-length periods
+2. **Normalize when appropriate** - Account for scale differences
+3. **Look for root causes** - Don't just report differences, explain them
+4. **Consider business context** - Some differences may be justified
+5. **Focus on actionable differences** - Highlight what can be optimized
+6. **Use multiple dimensions** - Don't stop at top-level comparison
+7. **Calculate both absolute and percentage differences** - Both matter
+
+For general cost analysis best practices, see `${CLAUDE_PLUGIN_ROOT}/references/best-practices.md`
 
 ## Common Comparison Scenarios
 
@@ -421,13 +423,6 @@ Team B: $15,000 / 2000 users = $7.50/user
 
 Team B is more efficient despite higher absolute cost.
 
-## Error Handling
-
-- If comparison groups have no data, check date ranges and filters
-- If groups are too different to compare, note limitations
-- If normalizing factors unavailable, make clear comparisons are not normalized
-- If data incomplete, state which groups have incomplete data
-
 ## Tips for Effective Comparison
 
 1. **Set clear baseline:** Choose appropriate comparison baseline
@@ -436,3 +431,12 @@ Team B is more efficient despite higher absolute cost.
 4. **Focus on learnings:** What can each group learn from the other?
 5. **Track over time:** Set up ongoing comparisons to monitor trends
 6. **Combine with other skills:** Use spike investigation or trend analysis for deeper insights
+
+## See Also
+
+- **understand-cloudzero-organization** skill - Load organization context first
+- `${CLAUDE_PLUGIN_ROOT}/references/best-practices.md` - Universal cost analysis best practices
+- `${CLAUDE_PLUGIN_ROOT}/references/cloudzero-tools-reference.md` - Complete tool documentation
+- `${CLAUDE_PLUGIN_ROOT}/references/error-handling.md` - Troubleshooting and common errors
+- `${CLAUDE_PLUGIN_ROOT}/references/dimensions-reference.md` - Dimension types and FQDIDs
+- `${CLAUDE_PLUGIN_ROOT}/references/cost-types-reference.md` - When to use each cost type
