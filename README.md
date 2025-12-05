@@ -24,15 +24,27 @@ CloudZero Cost Analyst is an AI-powered Claude Code plugin that provides compreh
 
 ## Table of Contents
 
+- [Plugin Marketplace](#plugin-marketplace)
 - [Documentation](#documentation)
 - [Installation](#installation)
 - [Getting Started](#getting-started)
+- [Available Skills](#available-skills)
 - [Usage](#usage)
 - [Contributing](#contributing)
 - [Support + Feedback](#support--feedback)
 - [Vulnerability Reporting](#vulnerability-reporting)
 - [What is CloudZero?](#what-is-cloudzero)
 - [License](#license)
+
+## Plugin Marketplace
+
+This repository serves as both a **Claude Code plugin** and a **plugin marketplace**. By adding this repository as a marketplace, you and your team get easy access to the Cost Analyst plugin and any future CloudZero plugins we release.
+
+**Quick Start:**
+```bash
+/plugin marketplace add cloudzero/cloudzero-claude-cost-analyst
+/plugin install cost-analyst@cloudzero
+```
 
 ## Documentation
 
@@ -50,22 +62,21 @@ For more information about the tools and services used in this project:
 - A CloudZero account with MCP server access
 - Git installed (for git-based installation methods)
 
-### Method 1: Install as Claude Code Plugin (Recommended)
+### Method 1: Install from Plugin Marketplace (Recommended)
 
-Install the plugin directly from GitHub:
-
-```bash
-/plugin install git+https://github.com/cloudzero/cloudzero-claude-cost-analyst.git
-```
-
-Or add to your team's marketplace:
+Add the CloudZero plugin marketplace:
 
 ```bash
 /plugin marketplace add cloudzero/cloudzero-claude-cost-analyst
-/plugin install cloudzero-cost-analyst@cloudzero
 ```
 
-**For Teams:** Add to `.claude/settings.json` for automatic installation:
+Then install the Cost Analyst plugin:
+
+```bash
+/plugin install cost-analyst@cloudzero
+```
+
+**For Teams:** Add to `.claude/settings.json` for automatic marketplace availability:
 
 ```json
 {
@@ -73,6 +84,14 @@ Or add to your team's marketplace:
     "cloudzero/cloudzero-claude-cost-analyst"
   ]
 }
+```
+
+**Alternative - Direct Git Installation:**
+
+You can also install directly without adding the marketplace:
+
+```bash
+/plugin install git+https://github.com/cloudzero/cloudzero-claude-cost-analyst.git
 ```
 
 ### Method 2: Clone and Run Locally

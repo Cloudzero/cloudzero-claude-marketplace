@@ -11,9 +11,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Core Plugin Infrastructure
 - Initial release of CloudZero Cost Analyst Plugin for Claude Code
+- Plugin name: `cost-analyst` in marketplace: `cloudzero` (install as `cost-analyst@cloudzero`)
 - Plugin packaging with `.claude-plugin/plugin.json` manifest
+- **Plugin marketplace support** with `.claude-plugin/marketplace.json` for simplified installation
 - Dual installation support: as plugin or cloned repository
 - Pre-configured CloudZero MCP server integration via `.mcp.json`
+- Shared reference files at plugin root (`references/`) using `${CLAUDE_PLUGIN_ROOT}` paths
+- Symlinked `.claude/skills/` to root `skills/` directory for dual-mode operation
+
+#### Foundational Skill
+
+**Understand CloudZero Organization** (NEW)
+- Retrieves and caches organization-specific context
+- Loads custom dimensions, workflows, and business context
+- Required prerequisite for all other cost analysis skills
+- Prevents redundant API calls by caching context per conversation
 
 #### Cost Analysis Skills (8 Total)
 
@@ -65,14 +77,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    - Security and waste indicators
    - Prioritized anomaly reporting
 
+#### Shared Reference Files
+
+- **best-practices.md** (218 lines) - Universal cost analysis best practices
+- **cloudzero-tools-reference.md** (460 lines) - Complete CloudZero MCP tool documentation and examples
+- **cost-types-reference.md** (292 lines) - All cost types with quick selection guide
+- **dimensions-reference.md** (267 lines) - Dimension types, FQDIDs, and discovery patterns
+- **error-handling.md** (410 lines) - Common errors, troubleshooting, and solutions
+
 #### Features
 
-- **Dynamic Dimension Discovery**: All skills automatically discover and use organization-specific dimensions via `get_organization_context`
+- **Plugin Marketplace**: Repository configured as Claude Code plugin marketplace for simplified installation
+- **Dynamic Dimension Discovery**: All skills automatically discover and use organization-specific dimensions
 - **CloudZero MCP Integration**: Full integration with CloudZero's Model Context Protocol server
 - **Multi-Cloud Support**: Analysis capabilities for AWS, GCP, and Azure costs
 - **Natural Language Interface**: Skills automatically invoked based on conversational requests
 - **Comprehensive Documentation**: Detailed SKILL.md files with workflows, examples, and best practices
-- **Organization Context Awareness**: All skills prioritize reading organization-specific context for accurate analysis
+- **Organization Context Awareness**: Foundational skill loads context once, all other skills reference cached data
+- **DRY Architecture**: 1,647 lines of shared content eliminates duplication across skills
+- **Plugin-Portable References**: All references use `${CLAUDE_PLUGIN_ROOT}` for portability
 
 #### Documentation
 
@@ -88,13 +111,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Each skill includes YAML frontmatter with name and description
 - Skills designed for autonomous activation by Claude based on user intent
 - All skills follow consistent workflow patterns and output formats
+- Skills reference foundational **understand-cloudzero-organization** skill for context
+- Skills reference shared content in `references/` directory using `${CLAUDE_PLUGIN_ROOT}` paths
+- Skills reference each other by name only (not by path)
 
 ### Installation Methods
 
+- **Plugin marketplace** (recommended): `/plugin marketplace add cloudzero/cloudzero-claude-cost-analyst` then `/plugin install cost-analyst@cloudzero`
 - Direct git URL installation: `/plugin install git+https://github.com/cloudzero/cloudzero-claude-cost-analyst.git`
-- Marketplace installation: `/plugin marketplace add cloudzero/cloudzero-claude-cost-analyst`
-- Team automation via settings.json configuration
+- Team automation via `settings.json` with `extraKnownMarketplaces`
 - Local clone and run from repository root
+
+### Best Practices Applied
+
+- Skills structured following Anthropic's guidelines
+- Eliminated duplicate content across skills (1,647 lines extracted to shared references)
+- Foundational skill pattern for organization context loading
+- Plugin-portable paths using `${CLAUDE_PLUGIN_ROOT}`
+- Skills under or near 500-line recommended limit
+- Clear separation between skill-specific and shared content
 
 ---
 

@@ -1,0 +1,17 @@
+{
+  "name": "cloudzero",
+  "owner": {
+    "name": "CloudZero",
+    "email": "support@cloudzero.com"
+  },
+  "metadata": {
+    "description": "CloudZero Plugin Marketplace - AI-powered cloud cost analysis tools",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "cost-analyst",
+      "source": "./"
+    }
+  ]
+}
