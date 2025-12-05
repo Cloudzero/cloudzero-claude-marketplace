@@ -210,7 +210,7 @@ Proactively scans for cost anomalies, unusual patterns, and irregularities that 
 
 ### Authentication
 
-The CloudZero MCP server handles authentication automatically. Ensure your CloudZero account has MCP server access enabled.
+The CloudZero MCP server handles authentication automatically.
 
 ### Example Workflows
 
