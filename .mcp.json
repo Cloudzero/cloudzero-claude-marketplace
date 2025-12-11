@@ -2,7 +2,7 @@
   "mcpServers": {
     "cloudzero": {
       "type": "http",
-      "url": "https://mcp-server.discovery.cloudzero.com/mcp"
+      "url": "https://czca-server.discovery.cloudzero.com/mcp"
     }
   }
 }
