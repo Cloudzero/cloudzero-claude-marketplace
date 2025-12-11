@@ -86,14 +86,6 @@ Then install the Cost Analyst plugin:
 }
 ```
 
-**Alternative - Direct Git Installation:**
-
-You can also install directly without adding the marketplace:
-
-```bash
-/plugin install git+https://github.com/cloudzero/cloudzero-claude-cost-analyst.git
-```
-
 ### Method 2: Clone and Run Locally
 
 Use this method if you want to modify the skills or work directly from the repository:
@@ -112,23 +104,6 @@ claude
 ```
 
 The skills will be automatically discovered from the `.claude/skills/` directory (symlinked to `skills/`).
-
-### MCP Server Configuration
-
-After installation, configure the CloudZero MCP server by creating a `.mcp.json` file in your project:
-
-```json
-{
-  "mcpServers": {
-    "cloudzero": {
-      "type": "http",
-      "url": "https://mcp-server.discovery.cloudzero.com/mcp"
-    }
-  }
-}
-```
-
-This repository includes a pre-configured `.mcp.json` file pointing to the CloudZero production MCP server.
 
 ## Getting Started
 
