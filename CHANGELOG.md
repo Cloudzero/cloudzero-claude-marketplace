@@ -135,6 +135,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+**Repository Structure Refactoring**
+- Restructured repository to support multiple plugins
+- Created `plugins/` directory as the container for all plugins
+- Moved cost-analyst plugin to `plugins/cost-analyst/` directory
+- Moved marketplace configuration to root `.claude-plugin/marketplace.json`
+- Updated marketplace.json to reference `plugins/cost-analyst/` as the plugin source
+- Updated README to reflect new multi-plugin marketplace structure
+- Each plugin is now self-contained with its own configuration, skills, and dependencies
+
 ### Planned
 
 - Additional specialized skills for Reserved Instance analysis
