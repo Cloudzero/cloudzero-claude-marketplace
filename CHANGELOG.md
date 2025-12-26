@@ -117,8 +117,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Installation Methods
 
-- **Plugin marketplace** (recommended): `/plugin marketplace add cloudzero/cloudzero-claude-cost-analyst` then `/plugin install cost-analyst@cloudzero`
-- Direct git URL installation: `/plugin install git+https://github.com/cloudzero/cloudzero-claude-cost-analyst.git`
+- **Plugin marketplace** (recommended): `/plugin marketplace add cloudzero/cloudzero-claude-marketplace` then `/plugin install cost-analyst@cloudzero`
+- Direct git URL installation: `/plugin install git+https://github.com/cloudzero/cloudzero-claude-marketplace.git`
 - Team automation via `settings.json` with `extraKnownMarketplaces`
 - Local clone and run from repository root
 
@@ -146,5 +146,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/cloudzero/cloudzero-claude-cost-analyst/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/cloudzero/cloudzero-claude-cost-analyst/releases/tag/v1.0.0
+[Unreleased]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/cloudzero/cloudzero-claude-marketplace/releases/tag/v1.0.0

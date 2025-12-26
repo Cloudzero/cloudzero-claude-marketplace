@@ -42,7 +42,7 @@ This repository serves as both a **Claude Code plugin** and a **plugin marketpla
 
 **Quick Start:**
 ```bash
-/plugin marketplace add cloudzero/cloudzero-claude-cost-analyst
+/plugin marketplace add cloudzero/cloudzero-claude-marketplace
 /plugin install cost-analyst@cloudzero
 ```
 
@@ -67,7 +67,7 @@ For more information about the tools and services used in this project:
 Add the CloudZero plugin marketplace:
 
 ```bash
-/plugin marketplace add cloudzero/cloudzero-claude-cost-analyst
+/plugin marketplace add cloudzero/cloudzero-claude-marketplace
 ```
 
 Then install the Cost Analyst plugin:
@@ -81,7 +81,7 @@ Then install the Cost Analyst plugin:
 ```json
 {
   "extraKnownMarketplaces": [
-    "cloudzero/cloudzero-claude-cost-analyst"
+    "cloudzero/cloudzero-claude-marketplace"
   ]
 }
 ```
@@ -93,8 +93,8 @@ Use this method if you want to modify the skills or work directly from the repos
 1. Clone this repository:
 
 ```bash
-git clone https://github.com/cloudzero/cloudzero-claude-cost-analyst.git
-cd cloudzero-claude-cost-analyst
+git clone https://github.com/cloudzero/cloudzero-claude-marketplace.git
+cd cloudzero-claude-marketplace
 ```
 
 2. Start Claude Code from this directory:
@@ -267,7 +267,7 @@ We appreciate feedback and contribution to this repo! Before you get started, pl
 
 ## Support + Feedback
 
-- Use [GitHub Issues](https://github.com/cloudzero/cloudzero-claude-cost-analyst/issues) for code-level support and bug reports
+- Use [GitHub Issues](https://github.com/cloudzero/cloudzero-claude-marketplace/issues) for code-level support and bug reports
 - Contact [support@cloudzero.com](mailto:support@cloudzero.com) for CloudZero platform questions and account-specific issues
 
 ## Vulnerability Reporting
