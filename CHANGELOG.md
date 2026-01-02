@@ -117,8 +117,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Installation Methods
 
-- **Plugin marketplace** (recommended): `/plugin marketplace add cloudzero/cloudzero-claude-cost-analyst` then `/plugin install cost-analyst@cloudzero`
-- Direct git URL installation: `/plugin install git+https://github.com/cloudzero/cloudzero-claude-cost-analyst.git`
+- **Plugin marketplace** (recommended): `/plugin marketplace add cloudzero/cloudzero-claude-marketplace` then `/plugin install cost-analyst@cloudzero`
+- Direct git URL installation: `/plugin install git+https://github.com/cloudzero/cloudzero-claude-marketplace.git`
 - Team automation via `settings.json` with `extraKnownMarketplaces`
 - Local clone and run from repository root
 
@@ -135,6 +135,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+**Repository Structure Refactoring**
+- Restructured repository to support multiple plugins
+- Created `plugins/` directory as the container for all plugins
+- Moved cost-analyst plugin to `plugins/cost-analyst/` directory
+- Moved marketplace configuration to root `.claude-plugin/marketplace.json`
+- Updated marketplace.json to reference `plugins/cost-analyst/` as the plugin source
+- Updated README to reflect new multi-plugin marketplace structure
+- Each plugin is now self-contained with its own configuration, skills, and dependencies
+
 ### Planned
 
 - Additional specialized skills for Reserved Instance analysis
@@ -146,5 +157,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/cloudzero/cloudzero-claude-cost-analyst/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/cloudzero/cloudzero-claude-cost-analyst/releases/tag/v1.0.0
+[Unreleased]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/cloudzero/cloudzero-claude-marketplace/releases/tag/v1.0.0

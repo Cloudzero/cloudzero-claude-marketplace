@@ -1,9 +1,9 @@
-# CloudZero Cost Analyst Plugin
+# CloudZero Plugin Marketplace
 
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE-OF-CONDUCT.md)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-CloudZero Cost Analyst is an AI-powered Claude Code plugin that provides comprehensive cloud cost analysis skills using CloudZero's MCP (Model Context Protocol) server. This plugin enables you to investigate cost spikes, analyze trends, compare spending, optimize services, and track cloud infrastructure costs—all through natural conversation with Claude.
+Welcome to the CloudZero Plugin Marketplace for Claude Code! This repository hosts AI-powered plugins that provide comprehensive cloud cost analysis capabilities using CloudZero's MCP (Model Context Protocol) server. Install plugins to investigate cost spikes, analyze trends, compare spending, optimize services, and track cloud infrastructure costs—all through natural conversation with Claude.
 
 **Key Features:**
 - 🔍 **Cost Spike Investigation** - Identify and explain sudden cost increases
@@ -15,7 +15,10 @@ CloudZero Cost Analyst is an AI-powered Claude Code plugin that provides compreh
 - 🚨 **Anomaly Detection** - Proactively identify unusual spending patterns
 - 💰 **Top Cost Drivers** - Identify and prioritize optimization opportunities
 
-**What's Included:**
+## Available Plugins
+
+### Cost Analyst Plugin
+The flagship plugin providing comprehensive cost analysis capabilities:
 - 8 specialized cost analysis skills powered by AI
 - Pre-configured CloudZero MCP server integration
 - Support for AWS, GCP, and Azure cost analysis
@@ -24,7 +27,9 @@ CloudZero Cost Analyst is an AI-powered Claude Code plugin that provides compreh
 
 ## Table of Contents
 
-- [Plugin Marketplace](#plugin-marketplace)
+- [Available Plugins](#available-plugins)
+- [Repository Structure](#repository-structure)
+- [Quick Start](#quick-start)
 - [Documentation](#documentation)
 - [Installation](#installation)
 - [Getting Started](#getting-started)
@@ -36,13 +41,33 @@ CloudZero Cost Analyst is an AI-powered Claude Code plugin that provides compreh
 - [What is CloudZero?](#what-is-cloudzero)
 - [License](#license)
 
-## Plugin Marketplace
+## Repository Structure
 
-This repository serves as both a **Claude Code plugin** and a **plugin marketplace**. By adding this repository as a marketplace, you and your team get easy access to the Cost Analyst plugin and any future CloudZero plugins we release.
+This repository is organized to support multiple plugins:
 
-**Quick Start:**
+```
+cloudzero-claude-marketplace/
+├── .claude-plugin/
+│   └── marketplace.json          # Marketplace configuration
+├── plugins/
+│   └── cost-analyst/             # Cost Analyst plugin
+│       ├── .claude-plugin/
+│       │   └── plugin.json       # Plugin manifest
+│       ├── .mcp.json             # MCP server configuration
+│       ├── skills/               # Cost analysis skills
+│       └── references/           # Shared reference documentation
+├── README.md
+└── ...
+```
+
+Each plugin in the `plugins/` directory is self-contained with its own configuration, skills, and dependencies.
+
+## Quick Start
+
+Add this repository as a marketplace and install the Cost Analyst plugin:
+
 ```bash
-/plugin marketplace add cloudzero/cloudzero-claude-cost-analyst
+/plugin marketplace add cloudzero/cloudzero-claude-marketplace
 /plugin install cost-analyst@cloudzero
 ```
 
@@ -67,7 +92,7 @@ For more information about the tools and services used in this project:
 Add the CloudZero plugin marketplace:
 
 ```bash
-/plugin marketplace add cloudzero/cloudzero-claude-cost-analyst
+/plugin marketplace add cloudzero/cloudzero-claude-marketplace
 ```
 
 Then install the Cost Analyst plugin:
@@ -81,29 +106,32 @@ Then install the Cost Analyst plugin:
 ```json
 {
   "extraKnownMarketplaces": [
-    "cloudzero/cloudzero-claude-cost-analyst"
+    "cloudzero/cloudzero-claude-marketplace"
   ]
 }
 ```
 
 ### Method 2: Clone and Run Locally
 
-Use this method if you want to modify the skills or work directly from the repository:
+Use this method if you want to modify the skills or work directly from a plugin:
 
 1. Clone this repository:
 
 ```bash
-git clone https://github.com/cloudzero/cloudzero-claude-cost-analyst.git
-cd cloudzero-claude-cost-analyst
+git clone https://github.com/cloudzero/cloudzero-claude-marketplace.git
+cd cloudzero-claude-marketplace
 ```
 
-2. Start Claude Code from this directory:
+2. Navigate to the plugin directory and start Claude Code:
 
 ```bash
+cd plugins/cost-analyst
 claude
 ```
 
 The skills will be automatically discovered from the `.claude/skills/` directory (symlinked to `skills/`).
+
+**Note:** Each plugin in the `plugins/` directory is self-contained. Always start Claude Code from within the specific plugin directory you want to use.
 
 ## Getting Started
 
@@ -267,7 +295,7 @@ We appreciate feedback and contribution to this repo! Before you get started, pl
 
 ## Support + Feedback
 
-- Use [GitHub Issues](https://github.com/cloudzero/cloudzero-claude-cost-analyst/issues) for code-level support and bug reports
+- Use [GitHub Issues](https://github.com/cloudzero/cloudzero-claude-marketplace/issues) for code-level support and bug reports
 - Contact [support@cloudzero.com](mailto:support@cloudzero.com) for CloudZero platform questions and account-specific issues
 
 ## Vulnerability Reporting
