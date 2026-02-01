@@ -18,7 +18,7 @@ This foundational skill retrieves organization-specific context from CloudZero t
 
 ## What Organization Context Provides
 
-Organization context from `get_organization_context` includes:
+Organization context from `get_org_context` includes:
 
 ### 1. Custom Dimension Definitions
 - **User:Defined:** dimensions specific to this organization
@@ -54,7 +54,7 @@ Organization context from `get_organization_context` includes:
 
 ### Step 1: Check if Context Already Retrieved
 Before calling the MCP tool, check the conversation history:
-- Has `get_organization_context` been called already in this conversation?
+- Has `get_org_context` been called already in this conversation?
 - If YES: Reference the previously retrieved context
 - If NO: Proceed to Step 2
 
@@ -62,7 +62,7 @@ Before calling the MCP tool, check the conversation history:
 Call the CloudZero MCP server tool:
 
 ```
-get_organization_context()
+get_org_context()
 ```
 
 This returns comprehensive organization-specific information.
@@ -124,7 +124,7 @@ If organization context was already retrieved, reference that information.
 
 ## Efficiency Note
 
-**Avoid redundant calls**: Once `get_organization_context` is called in a conversation,
+**Avoid redundant calls**: Once `get_org_context` is called in a conversation,
 DO NOT call it again. Other skills should reference the previously retrieved context
 rather than making duplicate API calls.
 
@@ -136,7 +136,7 @@ rather than making duplicate API calls.
 ```
 I'll start by understanding your CloudZero organization context, then analyze your costs.
 
-[Calls get_organization_context]
+[Calls get_org_context]
 
 I can see your organization uses custom dimensions for Teams and Products.
 You have 8 engineering teams and 3 main products. Your cost allocation

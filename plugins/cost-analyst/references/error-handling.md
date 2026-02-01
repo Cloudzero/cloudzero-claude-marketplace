@@ -294,7 +294,7 @@ get_cost_data(
 
 **Check organization context first**:
 ```
-get_organization_context()
+get_org_context()
 ```
 
 **Discover custom dimensions**:
@@ -399,7 +399,7 @@ Contact CloudZero support if:
 | Stale dimensions | Use `force_refresh=True` |
 | Filter not working | Check syntax, verify prefix usage |
 | Too many results | Increase limit or add filters |
-| Custom dimension missing | Check `get_organization_context()` |
+| Custom dimension missing | Check `get_org_context()` |
 
 ---
 

@@ -63,7 +63,7 @@ Custom dimensions created by your organization via CloudZero's CostFormation.
 - `User:Defined:BusinessUnit` - Business unit groupings
 - `User:Defined:Environment` - Custom environment definitions
 
-**Note**: Exact custom dimensions vary by organization. Use `get_organization_context` to discover what exists.
+**Note**: Exact custom dimensions vary by organization. Use `get_org_context` to discover what exists.
 
 ## FQDID Format Rules
 
@@ -257,7 +257,7 @@ group_by=["User:Defined:Team", "CZ:Tag:Environment", "CZ:Service"]
 
 ### Custom Dimension Values
 - Format: Defined by organization
-- Check `get_organization_context` for meanings
+- Check `get_org_context` for meanings
 - Use `get_dimension_values` to see all values
 
 ## See Also
