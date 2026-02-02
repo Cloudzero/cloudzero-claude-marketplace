@@ -11,7 +11,7 @@ These best practices apply to all CloudZero cost analysis skills.
 - Business context
 - Cost allocation policies
 
-**Efficiency**: Call `get_organization_context` once per conversation, then reference the cached information.
+**Efficiency**: Call `get_org_context` once per conversation, then reference the cached information.
 
 ### 2. Use Appropriate Cost Types
 - **Default**: Use `real_cost` for engineering and optimization discussions

@@ -6,15 +6,15 @@ Complete reference for all CloudZero Model Context Protocol (MCP) server tools.
 
 | Tool | Purpose | When to Use |
 |------|---------|-------------|
-| `get_organization_context` | Retrieve org-specific context | **First call** in any analysis |
+| `get_org_context` | Retrieve org-specific context | **First call** in any analysis |
 | `get_available_dimensions` | Discover available dimensions | Finding what dimensions exist |
 | `get_dimension_values` | Get values for a dimension | Understanding dimension contents |
 | `get_cost_data` | Query actual cost data | All cost analysis queries |
-| `get_reference_information` | Get detailed reference docs | When you need in-depth guidance |
+| `get_reference_info` | Get detailed reference docs | When you need in-depth guidance |
 
 ---
 
-## get_organization_context
+## get_org_context
 
 **Purpose**: Retrieve organization-specific context including custom dimensions, workflows, and business information.
 
@@ -29,7 +29,7 @@ Complete reference for all CloudZero Model Context Protocol (MCP) server tools.
 
 **Usage**:
 ```
-get_organization_context()
+get_org_context()
 ```
 
 **Best Practice**: Call **once** per conversation at the beginning, then reference the cached results.
@@ -344,7 +344,7 @@ get_cost_data(
 
 ---
 
-## get_reference_information
+## get_reference_info
 
 **Purpose**: Retrieve detailed reference documentation on specific topics.
 
@@ -363,13 +363,13 @@ get_cost_data(
 
 ```
 # Learn about cost types
-get_reference_information(reference_type="cost_types")
+get_reference_info(reference_type="cost_types")
 
 # Understand dimensions
-get_reference_information(reference_type="dimensions")
+get_reference_info(reference_type="dimensions")
 
 # Get analysis workflow guidance
-get_reference_information(reference_type="cost_analysis_workflow")
+get_reference_info(reference_type="cost_analysis_workflow")
 ```
 
 **When to Use**:
