@@ -157,5 +157,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.0.0...HEAD
+## [1.0.1] - 2026-02-02
+
+### Changed
+
+**MCP Tool Naming Updates**
+- Updated all references to renamed CloudZero MCP server tools:
+  - `get_reference_information` → `get_reference_info`
+  - `get_organization_context` → `get_org_context`
+  - `get_optimize_recommendations` → `get_optimize_recs`
+  - `set_organization_context` → `set_org_context`
+  - `get_organization_context_versions` → `get_org_context_versions`
+- Updated 5 documentation files with new tool names:
+  - `plugins/cost-analyst/references/cloudzero-tools-reference.md`
+  - `plugins/cost-analyst/skills/understand-cloudzero-organization/SKILL.md`
+  - `plugins/cost-analyst/references/error-handling.md`
+  - `plugins/cost-analyst/references/dimensions-reference.md`
+  - `plugins/cost-analyst/references/best-practices.md`
+- Total of 13 references updated across documentation
+
+---
+
+[Unreleased]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/cloudzero/cloudzero-claude-marketplace/releases/tag/v1.0.0
