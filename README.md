@@ -18,7 +18,6 @@ Welcome to the CloudZero Plugin Marketplace for Claude Code! This repository hos
 The flagship plugin providing comprehensive cost analysis capabilities:
 - 8 specialized cost analysis skills powered by AI
 - Pre-configured CloudZero MCP server integration
-- Support for AWS, GCP, and Azure cost analysis
 - Dynamic dimension discovery for your organization
 - Showback/chargeback reporting capabilities
 
