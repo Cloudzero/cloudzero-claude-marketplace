@@ -1,8 +1,5 @@
 # CloudZero Plugin Marketplace
 
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE-OF-CONDUCT.md)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-
 Welcome to the CloudZero Plugin Marketplace for Claude Code! This repository hosts AI-powered plugins that provide comprehensive cloud cost analysis capabilities using CloudZero's MCP (Model Context Protocol) server. Install plugins to investigate cost spikes, analyze trends, compare spending, optimize services, and track cloud infrastructure costs—all through natural conversation with Claude.
 
 **Key Features:**
@@ -21,25 +18,19 @@ Welcome to the CloudZero Plugin Marketplace for Claude Code! This repository hos
 The flagship plugin providing comprehensive cost analysis capabilities:
 - 8 specialized cost analysis skills powered by AI
 - Pre-configured CloudZero MCP server integration
-- Support for AWS, GCP, and Azure cost analysis
 - Dynamic dimension discovery for your organization
 - Showback/chargeback reporting capabilities
 
 ## Table of Contents
 
-- [Available Plugins](#available-plugins)
 - [Repository Structure](#repository-structure)
-- [Quick Start](#quick-start)
 - [Documentation](#documentation)
 - [Installation](#installation)
-- [Getting Started](#getting-started)
 - [Available Skills](#available-skills)
 - [Usage](#usage)
-- [Contributing](#contributing)
 - [Support + Feedback](#support--feedback)
 - [Vulnerability Reporting](#vulnerability-reporting)
 - [What is CloudZero?](#what-is-cloudzero)
-- [License](#license)
 
 ## Repository Structure
 
@@ -62,15 +53,6 @@ cloudzero-claude-marketplace/
 
 Each plugin in the `plugins/` directory is self-contained with its own configuration, skills, and dependencies.
 
-## Quick Start
-
-Add this repository as a marketplace and install the Cost Analyst plugin:
-
-```bash
-/plugin marketplace add cloudzero/cloudzero-claude-marketplace
-/plugin install cost-analyst@cloudzero
-```
-
 ## Documentation
 
 For more information about the tools and services used in this project:
@@ -81,68 +63,7 @@ For more information about the tools and services used in this project:
 
 ## Installation
 
-### Prerequisites
-
-- Claude Code v1.0 or later installed on your system
-- A CloudZero account with MCP server access
-- Git installed (for git-based installation methods)
-
-### Method 1: Install from Plugin Marketplace (Recommended)
-
-Add the CloudZero plugin marketplace:
-
-```bash
-/plugin marketplace add cloudzero/cloudzero-claude-marketplace
-```
-
-Then install the Cost Analyst plugin:
-
-```bash
-/plugin install cost-analyst@cloudzero
-```
-
-**For Teams:** Add to `.claude/settings.json` for automatic marketplace availability:
-
-```json
-{
-  "extraKnownMarketplaces": [
-    "cloudzero/cloudzero-claude-marketplace"
-  ]
-}
-```
-
-### Method 2: Clone and Run Locally
-
-Use this method if you want to modify the skills or work directly from a plugin:
-
-1. Clone this repository:
-
-```bash
-git clone https://github.com/cloudzero/cloudzero-claude-marketplace.git
-cd cloudzero-claude-marketplace
-```
-
-2. Navigate to the plugin directory and start Claude Code:
-
-```bash
-cd plugins/cost-analyst
-claude
-```
-
-The skills will be automatically discovered from the `.claude/skills/` directory (symlinked to `skills/`).
-
-**Note:** Each plugin in the `plugins/` directory is self-contained. Always start Claude Code from within the specific plugin directory you want to use.
-
-## Getting Started
-
-Once you've completed the installation steps above, you're ready to start analyzing your cloud costs with Claude!
-
-The plugin comes pre-configured with:
-- CloudZero MCP server connection
-- 8 specialized cost analysis skills
-- Dynamic dimension discovery for your organization
-
-Simply start a conversation with Claude and ask cost-related questions. The appropriate skill will be automatically invoked based on your request.
+See the [CloudZero AI Hub](https://docs.cloudzero.com/docs/getting-started-1) for installation instructions.
 
 ## Available Skills
 
@@ -230,10 +151,6 @@ Proactively scans for cost anomalies, unusual patterns, and irregularities that 
 
 ## Usage
 
-### Authentication
-
-The CloudZero MCP server handles authentication automatically.
-
 ### Example Workflows
 
 **Monthly Cost Review:**
@@ -285,18 +202,9 @@ All skills follow these best practices:
 - Provide actionable recommendations with dollar impacts
 - Support both technical and business-aligned reporting
 
-## Contributing
-
-We appreciate feedback and contribution to this repo! Before you get started, please see the following:
-
-- [CloudZero's general contribution guidelines](GENERAL-CONTRIBUTING.md)
-- [CloudZero's code of conduct guidelines](CODE-OF-CONDUCT.md)
-- [This repo's contribution guide](CONTRIBUTING.md)
-
 ## Support + Feedback
 
-- Use [GitHub Issues](https://github.com/cloudzero/cloudzero-claude-marketplace/issues) for code-level support and bug reports
-- Contact [support@cloudzero.com](mailto:support@cloudzero.com) for CloudZero platform questions and account-specific issues
+Contact [support@cloudzero.com](mailto:support@cloudzero.com) for CloudZero platform questions and account-specific issues
 
 ## Vulnerability Reporting
 
@@ -313,7 +221,3 @@ CloudZero is the only cloud cost intelligence platform that puts engineering in 
 - [Optimization And Reducing Waste](https://www.cloudzero.com/tour/optimization) - Focus on immediately reducing spend by understanding where we have waste, inefficiencies, and discounting opportunities.
 
 Learn more about [CloudZero](https://www.cloudzero.com/) on our website [www.cloudzero.com](https://www.cloudzero.com/)
-
-## License
-
-This project is licensed under the Apache 2.0 [LICENSE](LICENSE).
