@@ -63,7 +63,7 @@ For more information about the tools and services used in this project:
 
 ## Installation
 
-See the [CloudZero AI Hub](https://docs.cloudzero.com/docs/getting-started-1) for installation instructions.
+See the [CloudZero AI Hub](https://docs.cloudzero.com/docs/ai-getting-started) for installation instructions.
 
 ## Available Skills
 
