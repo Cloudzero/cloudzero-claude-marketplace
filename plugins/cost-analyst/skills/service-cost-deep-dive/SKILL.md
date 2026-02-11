@@ -1,6 +1,9 @@
 ---
 name: service-cost-deep-dive
 description: Performs detailed analysis of specific cloud service costs, breaking down by usage types, resources, regions, accounts, and identifying service-specific optimization opportunities like rightsizing, Reserved Instances, or configuration changes
+author: CloudZero <support@cloudzero.com>
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # Service Cost Deep Dive

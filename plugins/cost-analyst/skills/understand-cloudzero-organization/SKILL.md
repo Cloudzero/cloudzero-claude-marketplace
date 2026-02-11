@@ -1,6 +1,9 @@
 ---
 name: understand-cloudzero-organization
 description: Foundational skill that retrieves and understands organization-specific CloudZero context including custom dimensions, workflows, team structures, and cost allocation policies - must be used before any cost analysis
+author: CloudZero <support@cloudzero.com>
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # Understand CloudZero Organization

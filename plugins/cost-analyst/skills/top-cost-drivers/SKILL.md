@@ -1,6 +1,9 @@
 ---
 name: top-cost-drivers
 description: Identifies and ranks the biggest contributors to cloud spending across services, accounts, teams, regions, or custom dimensions to help prioritize cost optimization efforts and understand spending distribution
+author: CloudZero <support@cloudzero.com>
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # Top Cost Drivers

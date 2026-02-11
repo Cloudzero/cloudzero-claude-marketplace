@@ -100,7 +100,7 @@ body:
     id: terms
     attributes:
       label: Code of Conduct
-      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/cloudzero/template-cloudzero-open-source/blob/master/CODE-OF-CONDUCT.md)
+      description: By submitting this issue, you agree to follow our [Code of Conduct](../CODE-OF-CONDUCT.md)
       options:
         - label: I agree to follow this project's Code of Conduct
           required: true
