@@ -1,6 +1,9 @@
 ---
 name: cost-spike-investigation
 description: Investigates sudden cost increases, spikes, or anomalies by comparing recent spending to baseline periods and identifying which services, accounts, or resources are responsible for unexpected changes in cloud spending
+author: CloudZero <support@cloudzero.com>
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # Cost Spike Investigation

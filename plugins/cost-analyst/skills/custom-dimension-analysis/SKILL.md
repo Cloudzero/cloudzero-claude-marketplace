@@ -1,6 +1,9 @@
 ---
 name: custom-dimension-analysis
 description: Analyzes costs using organization-specific custom dimensions like teams, products, features, business units, or applications defined in CloudZero CostFormation to enable business-aligned cost visibility and showback/chargeback reporting
+author: CloudZero <support@cloudzero.com>
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # Custom Dimension Analysis

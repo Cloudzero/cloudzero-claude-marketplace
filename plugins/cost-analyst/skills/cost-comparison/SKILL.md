@@ -1,6 +1,9 @@
 ---
 name: cost-comparison
 description: Compares cloud costs across different time periods, environments, accounts, regions, teams, or other dimensions to understand spending variations, identify inefficiencies, and benchmark performance
+author: CloudZero <support@cloudzero.com>
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # Cost Comparison

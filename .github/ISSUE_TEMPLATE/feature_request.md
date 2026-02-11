@@ -10,7 +10,7 @@ assignees: ''
 
 **Thank you in advance for helping us to improve this project!** Please read through the template below and answer all relevant questions. Your additional work here is greatly appreciated and will help us respond as quickly as possible. For general support or usage questions, use [CloudZero Support](mailto:support@cloudzero.com). Finally, to avoid duplicates, please search existing Issues before submitting one here.
 
-By submitting an Issue to this repository, you agree to the terms within the [CloudZero Code of Conduct](https://github.com/cloudzero/template-cloudzero-open-source/blob/master/CODE-OF-CONDUCT.md).
+By submitting an Issue to this repository, you agree to the terms within the [CloudZero Code of Conduct](../CODE-OF-CONDUCT.md).
 
 ### Describe the problem you'd like to have solved
 

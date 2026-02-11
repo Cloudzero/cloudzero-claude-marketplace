@@ -1,6 +1,9 @@
 ---
 name: cost-anomaly-detection
 description: Proactively scans for cost anomalies, unusual spending patterns, unexpected changes, or irregularities that may indicate waste, misconfiguration, security issues, or optimization opportunities across all dimensions
+author: CloudZero <support@cloudzero.com>
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # Cost Anomaly Detection

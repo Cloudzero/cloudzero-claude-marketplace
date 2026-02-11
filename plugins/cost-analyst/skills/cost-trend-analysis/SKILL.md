@@ -1,6 +1,9 @@
 ---
 name: cost-trend-analysis
 description: Analyzes cloud cost trends over time to identify spending patterns, growth rates, seasonality, acceleration or deceleration, and forecast future spending trajectories for budget planning
+author: CloudZero <support@cloudzero.com>
+version: 1.0.0
+license: Apache-2.0
 ---
 
 # Cost Trend Analysis
