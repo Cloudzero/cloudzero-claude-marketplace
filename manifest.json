@@ -1,0 +1,79 @@
+{
+  "manifest_version": "0.3",
+  "name": "cloudzero-cost-analyst",
+  "display_name": "CloudZero Cost Analyst",
+  "version": "1.0.1",
+  "description": "AI-powered cloud cost analysis plugin providing comprehensive FinOps capabilities including cost spike investigation, trend analysis, anomaly detection, and optimization recommendations.",
+  "long_description": "The CloudZero Cost Analyst plugin enables intelligent cloud cost analysis through natural language conversations. It connects to CloudZero's platform to provide deep insights into your cloud spending across AWS, GCP, and Azure.\n\n## Features\n\n- **Cost Spike Investigation** — Identify and explain sudden cost increases\n- **Trend Analysis** — Analyze spending patterns and forecast future costs\n- **Cost Comparison** — Benchmark costs across time periods, teams, and environments\n- **Service Deep Dives** — Detailed analysis of specific cloud services\n- **Tag Coverage Analysis** — Evaluate tagging quality and governance\n- **Custom Dimension Analysis** — Business-aligned cost visibility\n- **Anomaly Detection** — Proactively find unusual spending patterns\n- **Top Cost Drivers** — Identify highest-impact optimization opportunities",
+  "author": {
+    "name": "CloudZero",
+    "email": "support@cloudzero.com",
+    "url": "https://www.cloudzero.com"
+  },
+  "license": "Apache-2.0",
+  "homepage": "https://www.cloudzero.com",
+  "repository": "https://github.com/Cloudzero/cloudzero-claude-marketplace",
+  "documentation": "https://docs.cloudzero.com",
+  "support": "https://support.cloudzero.com",
+  "server": {
+    "type": "http",
+    "mcp_config": {
+      "url": "https://czca-server.discovery.cloudzero.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${user_config.api_key}"
+      }
+    }
+  },
+  "user_config": {
+    "api_key": {
+      "type": "string",
+      "title": "CloudZero API Key",
+      "description": "Your CloudZero API key for authenticating with the cost analysis service. You can find this in your CloudZero account settings.",
+      "required": true,
+      "sensitive": true
+    }
+  },
+  "tools": [
+    {
+      "name": "get_org_context",
+      "description": "Retrieve organization-specific context including custom dimensions, workflows, and business information"
+    },
+    {
+      "name": "get_available_dimensions",
+      "description": "Discover what dimensions are available for cost analysis in this organization"
+    },
+    {
+      "name": "get_dimension_values",
+      "description": "Get distinct values for a specific cost dimension"
+    },
+    {
+      "name": "get_cost_data",
+      "description": "Query actual cost data grouped and filtered by dimensions"
+    },
+    {
+      "name": "get_reference_info",
+      "description": "Retrieve detailed reference documentation for CloudZero concepts"
+    }
+  ],
+  "keywords": [
+    "cloudzero",
+    "cost-analysis",
+    "cloud-costs",
+    "finops",
+    "aws",
+    "gcp",
+    "azure",
+    "kubernetes",
+    "cost-optimization",
+    "anomaly-detection",
+    "showback",
+    "chargeback",
+    "enterprise"
+  ],
+  "compatibility": {
+    "clients": {
+      "claude-desktop": ">=1.0.0",
+      "claude-code": ">=1.0.0"
+    }
+  }
+}
