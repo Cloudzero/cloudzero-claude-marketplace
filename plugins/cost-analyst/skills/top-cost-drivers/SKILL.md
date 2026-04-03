@@ -1,6 +1,6 @@
 ---
 name: top-cost-drivers
-description: Use when identifying where cloud spend is concentrated — which services, accounts, teams, or regions are driving the most cost — to prioritize optimization efforts
+description: "Use when identifying where cloud spend is concentrated — which services, accounts, teams, or regions are driving the most cost — to prioritize optimization efforts"
 author: CloudZero <support@cloudzero.com>
 version: 1.0.0
 license: Apache-2.0

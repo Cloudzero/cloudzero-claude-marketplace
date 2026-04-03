@@ -1,6 +1,6 @@
 ---
 name: custom-dimension-analysis
-description: Use when analyzing costs by organization-specific dimensions like teams, products, business units, or applications for showback, chargeback, or business-aligned cost reporting
+description: "Use when analyzing costs by organization-specific dimensions like teams, products, business units, or applications for showback, chargeback, or business-aligned cost reporting"
 author: CloudZero <support@cloudzero.com>
 version: 1.0.0
 license: Apache-2.0

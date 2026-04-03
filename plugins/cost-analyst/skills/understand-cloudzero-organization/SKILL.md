@@ -1,6 +1,6 @@
 ---
 name: understand-cloudzero-organization
-description: Use at the start of any CloudZero cost analysis session to load organization-specific context — custom dimensions, team structures, cost allocation policies, and workflows
+description: "Use at the start of any CloudZero cost analysis session to load organization-specific context — custom dimensions, team structures, cost allocation policies, and workflows"
 author: CloudZero <support@cloudzero.com>
 version: 1.0.0
 license: Apache-2.0

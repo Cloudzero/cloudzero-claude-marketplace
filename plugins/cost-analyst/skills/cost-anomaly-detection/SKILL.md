@@ -1,6 +1,6 @@
 ---
 name: cost-anomaly-detection
-description: Use when proactively scanning for cost anomalies, unusual spending, unexpected charges, or irregular patterns — during weekly reviews, after incidents, or when something looks off
+description: "Use when proactively scanning for cost anomalies, unusual spending, unexpected charges, or irregular patterns — during weekly reviews, after incidents, or when something looks off"
 author: CloudZero <support@cloudzero.com>
 version: 1.0.0
 license: Apache-2.0

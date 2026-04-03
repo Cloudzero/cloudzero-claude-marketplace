@@ -1,6 +1,6 @@
 ---
 name: cost-comparison
-description: Use when comparing costs between time periods, environments, accounts, regions, or teams to understand spending differences and identify inefficiencies
+description: "Use when comparing costs between time periods, environments, accounts, regions, or teams to understand spending differences and identify inefficiencies"
 author: CloudZero <support@cloudzero.com>
 version: 1.0.0
 license: Apache-2.0

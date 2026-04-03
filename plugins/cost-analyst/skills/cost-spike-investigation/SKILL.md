@@ -1,6 +1,6 @@
 ---
 name: cost-spike-investigation
-description: Use when a cost spike or unexpected increase has already been identified and you need to find which service, account, or resource is responsible
+description: "Use when a cost spike or unexpected increase has already been identified and you need to find which service, account, or resource is responsible"
 author: CloudZero <support@cloudzero.com>
 version: 1.0.0
 license: Apache-2.0

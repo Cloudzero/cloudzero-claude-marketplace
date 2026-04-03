@@ -1,6 +1,6 @@
 ---
 name: cost-trend-analysis
-description: Use when analyzing whether costs are growing, declining, or stable over time — for forecasting, budget planning, or understanding spending velocity
+description: "Use when analyzing whether costs are growing, declining, or stable over time — for forecasting, budget planning, or understanding spending velocity"
 author: CloudZero <support@cloudzero.com>
 version: 1.0.0
 license: Apache-2.0
