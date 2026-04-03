@@ -1,6 +1,6 @@
 ---
 name: tag-coverage-analysis
-description: Evaluates cloud resource tagging quality and coverage to identify untagged or poorly tagged resources, calculate tag coverage percentages, and improve cost allocation accuracy for showback and chargeback
+description: Use when evaluating how well cloud resources are tagged for cost allocation — to find untagged costs, improve showback accuracy, or prepare for chargeback reporting
 author: CloudZero <support@cloudzero.com>
 version: 1.0.0
 license: Apache-2.0
@@ -290,7 +290,7 @@ For each critical tag, show value distribution:
 
 **Resources with Partial Tagging:**
 | Environment | Team | Application | Cost | Missing Tags |
-|-------------|------|-------------|------|--------------|
+|-------------|------|-------------|------|---------------|
 | production | (untagged) | App X | $X,XXX | Team |
 | (untagged) | Team A | App Y | $X,XXX | Environment |
 
@@ -322,7 +322,7 @@ For each critical tag, show value distribution:
 **Historical Coverage:**
 
 | Month | Environment Tag | Team Tag | Overall |
-|-------|----------------|----------|---------|
+|-------|----------------|----------|----------|
 | 3 months ago | XX% | XX% | XX% |
 | 2 months ago | XX% | XX% | XX% |
 | Last month | XX% | XX% | XX% |
