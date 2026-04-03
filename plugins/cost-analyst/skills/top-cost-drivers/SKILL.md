@@ -170,6 +170,38 @@ get_cost_data(
 
 This shows whether top drivers are growing, stable, or declining.
 
+### Step 8: Check for Related Tickets and Documentation
+Search for existing optimization work and context docs:
+
+**Jira — existing optimization tickets for top drivers:**
+```
+searchJiraIssuesUsingJql(
+    jql="text ~ '[top service or account]' AND (text ~ 'cost' OR text ~ 'optimization') AND status != Done",
+    limit=10
+)
+```
+
+**DevRev:**
+```
+hybrid_search(
+    query="[top service or account] cost optimization",
+    namespace="ticket"
+)
+```
+
+**Confluence — architecture and optimization docs:**
+```
+searchConfluenceUsingCql(
+    cql="text ~ '[customer name]' AND (text ~ 'cost' OR text ~ 'optimization') AND type = 'page'",
+    limit=5
+)
+```
+
+Use this to:
+- Note which top cost drivers already have optimization tickets in progress
+- Reference architecture docs that explain why certain services are top drivers
+- Avoid recommending optimizations that are already underway
+
 ## Output Format
 
 Provide a clear, actionable analysis:
@@ -216,12 +248,27 @@ If organization has custom dimensions (teams, products, features):
 - Services used by each team/product
 - Potential allocation or chargeback insights
 
-### 6. Optimization Priorities
+### 6. Related Tickets & Documentation
+- **Existing optimization tickets:** [Jira/DevRev tickets for top cost drivers]
+- **In-progress work:** [Any active optimization efforts]
+- **Architecture docs:** [Confluence pages explaining top drivers]
+
+### 7. Optimization Priorities
 Based on top cost drivers, suggest:
 1. **Quick wins:** High-cost items with obvious optimization opportunities
 2. **Deep dives:** Complex services needing detailed analysis
 3. **Monitoring:** Items to watch for growth
 4. **Tags:** Untagged high-cost resources to label
+
+For high-priority optimization opportunities not already tracked, create a ticket:
+```
+createJiraIssue(
+    projectKey="<project>",
+    summary="Cost optimization: [top driver] — potential $X/mo savings",
+    description="<findings and prioritized recommendations>",
+    issueType="Task"
+)
+```
 
 ### 7. Trend Context (if included)
 - Which top drivers are growing vs. stable vs. declining

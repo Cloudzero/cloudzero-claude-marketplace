@@ -204,6 +204,49 @@ For each significant trend, identify what's causing it:
 - Lack of auto-scaling policies?
 - Data transfer variability?
 
+### Step 9: Enrich with Ticket and Documentation Context
+Search for context that explains or relates to observed trends:
+
+**Confluence — budget and forecast docs:**
+```
+searchConfluenceUsingCql(
+    cql="text ~ '[customer name]' AND (text ~ 'budget' OR text ~ 'forecast' OR text ~ 'trend') AND type = 'page'",
+    limit=5
+)
+```
+
+**Jira/DevRev — tickets that may explain trend changes:**
+```
+searchJiraIssuesUsingJql(
+    jql="text ~ '[customer name]' AND (text ~ 'migration' OR text ~ 'scaling' OR text ~ 'optimization') AND updated >= -90d",
+    limit=10
+)
+```
+
+```
+hybrid_search(
+    query="[customer name] cost trend migration scaling",
+    namespace="ticket"
+)
+```
+
+Use this to:
+- Correlate trend inflection points with known events (migrations, launches, optimizations)
+- Reference budget/forecast documentation in the analysis
+- Identify if concerning trends already have tickets tracking them
+
+If the trend warrants action and isn't already tracked, create a ticket:
+
+**Jira:**
+```
+createJiraIssue(
+    projectKey="<project>",
+    summary="Cost trend alert: [direction] at [rate] — [primary driver]",
+    description="<trend analysis summary and recommended actions>",
+    issueType="Task"
+)
+```
+
 ## Output Format
 
 Provide comprehensive trend analysis:
@@ -300,7 +343,13 @@ Describe the cost curve over time:
 - Are there hidden inefficiencies that could be addressed?
 - Good baseline for detecting future anomalies
 
-### 8. Action Items
+### 8. Related Context
+- **Existing tickets:** [Jira/DevRev tickets that correlate with trend changes]
+- **Budget/forecast docs:** [Relevant Confluence pages]
+- **Known events:** [Migrations, launches, or optimizations that explain inflection points]
+- **New ticket created:** [Link if a ticket was created for this trend]
+
+### 9. Action Items
 1. [Specific action based on trend analysis]
 2. [Monitoring recommendation]
 3. [Optimization opportunity]

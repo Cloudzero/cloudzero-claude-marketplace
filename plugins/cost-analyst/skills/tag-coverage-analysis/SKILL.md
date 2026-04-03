@@ -212,6 +212,58 @@ Focus on:
 - Easy-to-tag resources (quick wins)
 - Services critical for showback/chargeback
 
+### Step 10: Cross-Reference with Tickets and Documentation
+Check for existing tagging remediation efforts and policies:
+
+**Jira — existing tag remediation tickets:**
+```
+searchJiraIssuesUsingJql(
+    jql="text ~ 'tag' AND (text ~ 'coverage' OR text ~ 'remediation' OR text ~ 'tagging') AND status != Done",
+    limit=10
+)
+```
+
+**DevRev:**
+```
+hybrid_search(
+    query="tagging coverage remediation",
+    namespace="ticket"
+)
+```
+
+**Confluence — tagging policies and standards:**
+```
+searchConfluenceUsingCql(
+    cql="text ~ 'tagging' AND (text ~ 'policy' OR text ~ 'standard' OR text ~ 'governance') AND type = 'page'",
+    limit=5
+)
+```
+
+Use this to:
+- Reference existing tagging policies in recommendations
+- Avoid creating duplicate remediation tickets
+- Link findings to existing governance initiatives
+
+If tag coverage is below threshold and no remediation ticket exists, create one:
+
+**Jira:**
+```
+createJiraIssue(
+    projectKey="<project>",
+    summary="Tag remediation: [tag name] coverage at [XX]% — $X unattributed",
+    description="<coverage findings, worst offenders, and recommended actions>",
+    issueType="Task"
+)
+```
+
+**DevRev:**
+```
+create_ticket(
+    title="Tag remediation: [tag name] coverage at [XX]% — $X unattributed",
+    description="<coverage findings, worst offenders, and recommended actions>"
+)
+```
+
 ## Output Format
 
 Provide comprehensive tagging analysis:

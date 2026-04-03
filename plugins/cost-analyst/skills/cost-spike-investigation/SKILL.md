@@ -164,6 +164,61 @@ get_cost_data(
 )
 ```
 
+### Step 8: Check for Related Tickets
+Before reporting findings, check if this spike is already tracked:
+
+**Jira:**
+```
+searchJiraIssuesUsingJql(
+    jql="text ~ '[service or account from spike]' AND text ~ 'cost' AND status != Done",
+    limit=5
+)
+```
+
+**DevRev:**
+```
+hybrid_search(
+    query="cost spike [service or account from spike]",
+    namespace="ticket"
+)
+```
+
+**Confluence — check for runbooks:**
+```
+searchConfluenceUsingCql(
+    cql="text ~ '[service]' AND text ~ 'runbook' AND type = 'page'",
+    limit=5
+)
+```
+
+If related tickets exist, reference them in the report. If runbooks exist, follow their guidance.
+
+### Step 9: Create or Update Ticket (When Appropriate)
+If the spike warrants action and no existing ticket covers it:
+
+**Jira:**
+```
+createJiraIssue(
+    projectKey="<project>",
+    summary="Cost spike: [service] +$X (+Y%) — [date range]",
+    description="<investigation findings summary>",
+    issueType="Task"
+)
+```
+
+**DevRev:**
+```
+create_ticket(
+    title="Cost spike: [service] +$X (+Y%) — [date range]",
+    description="<investigation findings summary>"
+)
+```
+
+Only create tickets for spikes that are:
+- Significant (>20% increase or >$X threshold per org context)
+- Not already tracked
+- Actionable (not explained by known planned changes)
+
 ## Output Format
 
 Provide a clear, structured investigation report:
@@ -190,7 +245,12 @@ Provide a clear, structured investigation report:
 - Time-series visualization (describe the pattern)
 - Multi-dimensional attribution (e.g., which team, which account)
 
-### 5. Recommendations
+### 5. Related Tickets & Documentation
+- **Existing tickets:** [Any related Jira/DevRev tickets found, with links]
+- **Runbooks:** [Any relevant Confluence runbooks found]
+- **New ticket created:** [Link to ticket if one was created]
+
+### 6. Recommendations
 - Is this spike expected/legitimate or potentially wasteful?
 - Immediate actions to investigate further
 - Potential optimization opportunities

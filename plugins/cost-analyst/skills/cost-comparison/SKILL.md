@@ -208,6 +208,27 @@ Look for:
 - Different regional deployments?
 - Different optimization levels?
 
+### Step 8: Enrich with Documentation and Ticket Context
+Search for context that explains observed differences:
+
+**Confluence — architecture or configuration docs:**
+```
+searchConfluenceUsingCql(
+    cql="text ~ '[customer name]' AND (text ~ '[comparison subject]') AND type = 'page'",
+    limit=5
+)
+```
+
+**Jira/DevRev — related change tickets:**
+```
+searchJiraIssuesUsingJql(
+    jql="text ~ '[customer name]' AND (text ~ 'migration' OR text ~ 'change' OR text ~ 'optimization')",
+    limit=5
+)
+```
+
+Use this to explain differences (e.g., a before/after comparison may correlate with a migration ticket).
+
 ## Output Format
 
 Provide clear, actionable comparison analysis:

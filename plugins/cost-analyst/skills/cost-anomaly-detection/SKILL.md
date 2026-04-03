@@ -239,7 +239,39 @@ Look for specific patterns indicating issues:
 - Logging to expensive destinations
 - Unoptimized data transfer routes
 
-### Step 11: Tag-Based Anomaly Detection
+### Step 11: Cross-Reference with Tickets and Documentation
+Before finalizing the anomaly report, check for existing context:
+
+**Search for related tickets (Jira):**
+```
+searchJiraIssuesUsingJql(
+    jql="text ~ 'cost' AND (text ~ 'anomaly' OR text ~ 'spike' OR text ~ '[affected service]') AND status != Done",
+    limit=10
+)
+```
+
+**Search for related tickets (DevRev):**
+```
+hybrid_search(
+    query="cost anomaly [affected service or account]",
+    namespace="ticket"
+)
+```
+
+**Search for runbooks (Confluence):**
+```
+searchConfluenceUsingCql(
+    cql="text ~ 'cost' AND (text ~ 'anomaly' OR text ~ 'runbook') AND type = 'page'",
+    limit=5
+)
+```
+
+For each anomaly found:
+- Check if it's already tracked in an existing ticket
+- Check if there's a runbook with remediation steps
+- Note any related historical incidents
+
+### Step 12: Tag-Based Anomaly Detection
 Check for anomalies in tagged resources:
 
 ```
@@ -425,13 +457,19 @@ Current level: $X,XXX (within/outside normal range)
 - Current cost is X standard deviations from baseline
 - Coefficient of variation: XX% (baseline: XX%)
 
-### 10. Prioritized Action Plan
+### 10. Ticket & Documentation Cross-Reference
+- **Existing related tickets:** [Jira/DevRev tickets that cover any detected anomalies]
+- **Applicable runbooks:** [Confluence pages with remediation guidance]
+- **Previously resolved similar anomalies:** [Historical ticket references]
+
+### 11. Prioritized Action Plan
 
 **Immediate Actions (Within 24 Hours):**
 1. **[Action]** - Prevents $X,XXX/month
    - Severity: High
    - Effort: Low
    - Owner: [Suggested owner]
+   - Ticket: [Link to existing or newly created ticket]
 
 2. **[Action]** - Prevents $X,XXX/month
    - [Details]
@@ -445,6 +483,27 @@ Current level: $X,XXX (within/outside normal range)
 2. Review [dimension] daily for next week
 3. Investigate [specific pattern] further
 4. Implement [preventive measure]
+
+**Tickets Created:**
+For high-severity anomalies not already tracked, create tickets:
+
+**Jira:**
+```
+createJiraIssue(
+    projectKey="<project>",
+    summary="Cost anomaly: [type] — [service/account] — [severity]",
+    description="<anomaly details and recommended action>",
+    issueType="Task"
+)
+```
+
+**DevRev:**
+```
+create_ticket(
+    title="Cost anomaly: [type] — [service/account] — [severity]",
+    description="<anomaly details and recommended action>"
+)
+```
 
 ### 11. False Positive Assessment
 

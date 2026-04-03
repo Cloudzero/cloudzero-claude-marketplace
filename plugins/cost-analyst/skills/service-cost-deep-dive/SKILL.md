@@ -212,7 +212,40 @@ Identify:
 - Idle periods
 - Unusual spikes
 
-### Step 8: Service-Specific Optimization Analysis
+### Step 8: Check Related Tickets and Documentation
+Search for existing context about this service:
+
+**Jira — existing optimization or issue tickets:**
+```
+searchJiraIssuesUsingJql(
+    jql="text ~ '[service name]' AND (text ~ 'cost' OR text ~ 'optimization' OR text ~ 'rightsizing')",
+    limit=10
+)
+```
+
+**DevRev — related tickets:**
+```
+hybrid_search(
+    query="[service name] cost optimization",
+    namespace="ticket"
+)
+```
+
+**Confluence — architecture and optimization docs:**
+```
+searchConfluenceUsingCql(
+    cql="text ~ '[service name]' AND type = 'page'",
+    limit=5
+)
+```
+
+Note:
+- Any in-progress optimization efforts (avoid duplicating work)
+- Architecture decisions explaining current service usage
+- Historical optimization results for this service
+- Known constraints or business reasons for current configuration
+
+### Step 9: Service-Specific Optimization Analysis
 
 **For Compute Services (EC2, ECS, EKS, Lambda):**
 - Instance type distribution
@@ -247,7 +280,7 @@ Identify:
 - Cold start impact
 - Duration optimization opportunities
 
-### Step 9: Cost Type Comparison
+### Step 10: Cost Type Comparison
 Compare different cost perspectives:
 
 ```
@@ -405,7 +438,13 @@ Provide comprehensive service analysis:
 
 **Total Potential Savings:** $[Sum]/month (XX% reduction)
 
-### 10. Detailed Recommendations
+### 10. Related Tickets & Documentation
+- **Existing tickets:** [Any Jira/DevRev tickets related to this service's costs]
+- **In-progress optimizations:** [Any active optimization efforts already underway]
+- **Architecture docs:** [Relevant Confluence pages explaining service usage]
+- **Historical context:** [Past optimization results or decisions]
+
+### 11. Detailed Recommendations
 
 **Immediate Actions (Quick Wins):**
 1. [Action with high impact, low effort]
@@ -425,7 +464,28 @@ Provide comprehensive service analysis:
 2. [Implement tagging policies]
 3. [Regular review cadence]
 
-### 11. Comparison to Best Practices
+**Create Optimization Ticket (if warranted):**
+If significant savings opportunities are identified and not already tracked:
+
+**Jira:**
+```
+createJiraIssue(
+    projectKey="<project>",
+    summary="[Service] optimization: potential $X/mo savings",
+    description="<deep dive findings and specific recommendations>",
+    issueType="Task"
+)
+```
+
+**DevRev:**
+```
+create_ticket(
+    title="[Service] optimization: potential $X/mo savings",
+    description="<deep dive findings and specific recommendations>"
+)
+```
+
+### 12. Comparison to Best Practices
 
 **Industry Benchmarks:**
 - Typical [service] costs for similar workloads: [Range]

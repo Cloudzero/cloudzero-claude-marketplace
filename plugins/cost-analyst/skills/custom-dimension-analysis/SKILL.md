@@ -205,6 +205,48 @@ Compare dimension values against each other:
 - Why do some teams spend more on specific services?
 - Architectural differences between teams/products
 
+### Step 10: Cross-Reference with Tickets and Documentation
+Search for context related to the custom dimensions being analyzed:
+
+**Confluence — team/product structure docs:**
+```
+searchConfluenceUsingCql(
+    cql="text ~ '[customer name]' AND (text ~ 'team' OR text ~ 'product' OR text ~ 'cost center') AND type = 'page'",
+    limit=5
+)
+```
+
+**Jira/DevRev — tickets by team or product:**
+```
+searchJiraIssuesUsingJql(
+    jql="text ~ '[dimension value]' AND text ~ 'cost' AND status != Done",
+    limit=10
+)
+```
+
+```
+hybrid_search(
+    query="[dimension value] cost allocation showback",
+    namespace="ticket"
+)
+```
+
+Use this to:
+- Enrich showback/chargeback reports with known context per team/product
+- Identify existing optimization tickets per dimension value
+- Reference team structure documentation for accurate attribution
+
+If unallocated costs are significant and not already tracked, create a remediation ticket:
+
+```
+createJiraIssue(
+    projectKey="<project>",
+    summary="Cost allocation gap: $X unallocated ([XX]% of total)",
+    description="<unallocated cost breakdown and recommended CostFormation changes>",
+    issueType="Task"
+)
+```
+
 ## Output Format
 
 Provide comprehensive custom dimension analysis:

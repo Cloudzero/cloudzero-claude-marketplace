@@ -1,6 +1,6 @@
 ---
 name: understand-cloudzero-organization
-description: Foundational skill that retrieves and understands organization-specific CloudZero context including custom dimensions, workflows, team structures, and cost allocation policies - must be used before any cost analysis
+description: Foundational skill that retrieves and understands organization-specific CloudZero context including custom dimensions, workflows, team structures, and cost allocation policies - enriched with Confluence documentation and Jira/DevRev ticket context - must be used before any cost analysis
 author: CloudZero <support@cloudzero.com>
 version: 1.0.0
 license: Apache-2.0
@@ -70,14 +70,65 @@ get_org_context()
 
 This returns comprehensive organization-specific information.
 
-### Step 3: Analyze and Internalize Context
+### Step 3: Enrich with Internal Documentation
+Search Confluence for customer-specific documentation to supplement the CloudZero context:
+
+```
+searchConfluenceUsingCql(
+    cql="text ~ '[customer name]' AND type = 'page'",
+    limit=10
+)
+```
+
+Look for:
+- Onboarding notes and architecture decisions
+- Runbooks and known issue documentation
+- Account mapping and team structure docs
+- CostFormation configuration notes
+- Historical context (migrations, incidents, special agreements)
+
+If relevant pages are found, read the most important ones:
+```
+getConfluencePage(pageId="<page_id>")
+```
+
+### Step 4: Check for Open Customer Tickets
+Query Jira and DevRev for active tickets related to this customer:
+
+**Jira:**
+```
+searchJiraIssuesUsingJql(
+    jql="project = '<project>' AND status != Done AND text ~ '[customer name]'",
+    limit=10
+)
+```
+
+**DevRev:**
+```
+hybrid_search(
+    query="[customer name]",
+    namespace="ticket"
+)
+```
+
+Note any:
+- Open support tickets or escalations
+- In-progress feature requests
+- Known issues affecting this customer
+- Pending action items from previous engagements
+
+This context helps inform analysis priorities and avoids duplicating known work.
+
+### Step 5: Analyze and Internalize Context
 Review the returned context to understand:
 - What custom dimensions exist (e.g., teams, products, cost centers)
 - What the organization's priorities are (optimization, allocation, governance)
 - Any specific guidance or workflows for this organization
 - Important context that affects cost interpretation
+- What internal documentation exists for this customer
+- What active tickets or known issues are in play
 
-### Step 4: Make Context Available to Other Skills
+### Step 6: Make Context Available to Other Skills
 Store key insights from organization context for reference by subsequent skills:
 - List of available custom dimensions
 - Key team/product names
@@ -98,6 +149,16 @@ After retrieving organization context, provide a concise summary:
 - **User:Defined:CostCenter**: [If available]
 - [Other custom dimensions...]
 
+### Internal Documentation
+- [Key Confluence pages found and their relevance]
+- [Architecture decisions or runbooks available]
+- [Any gaps in documentation]
+
+### Active Tickets & Known Issues
+- **Open tickets**: [Count and brief summary of active Jira/DevRev tickets]
+- **Escalations**: [Any active escalations]
+- **Pending action items**: [Items from prior engagements]
+
 ### Key Insights
 - [Important context point 1]
 - [Important context point 2]
@@ -108,6 +169,7 @@ Based on organization context:
 - [Recommended dimension to start with]
 - [Preferred time periods]
 - [Key stakeholders or reporting needs]
+- [Any analysis priorities informed by open tickets or known issues]
 
 ## Integration with Other Skills
 
