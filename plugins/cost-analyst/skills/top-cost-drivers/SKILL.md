@@ -1,6 +1,6 @@
 ---
 name: top-cost-drivers
-description: Identifies and ranks the biggest contributors to cloud spending across services, accounts, teams, regions, or custom dimensions to help prioritize cost optimization efforts and understand spending distribution
+description: Use when identifying where cloud spend is concentrated — which services, accounts, teams, or regions are driving the most cost — to prioritize optimization efforts
 author: CloudZero <support@cloudzero.com>
 version: 1.0.0
 license: Apache-2.0
@@ -185,7 +185,7 @@ Provide a clear, actionable analysis:
 **[Dimension] (Top 10-20)**
 
 | Rank | [Dimension] | Cost | % of Total | Cumulative % |
-|------|-------------|------|------------|--------------|
+|------|-------------|------|------------|---------------|
 | 1 | [Value 1] | $X,XXX | XX% | XX% |
 | 2 | [Value 2] | $X,XXX | XX% | XX% |
 | ... | ... | ... | ... | ... |
