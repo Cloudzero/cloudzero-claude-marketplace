@@ -222,7 +222,7 @@ Provide clear, actionable comparison analysis:
 
 **Total Costs:**
 | Group | Total Cost | Difference from [Baseline] | % Difference |
-|-------|------------|---------------------------|-------------- |
+|-------|------------|---------------------------|--------------|
 | Group A | $X,XXX | +$X,XXX | +XX% |
 | Group B | $X,XXX | -$X,XXX | -XX% |
 | ... | ... | ... | ... |

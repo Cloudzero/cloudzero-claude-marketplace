@@ -185,7 +185,7 @@ Provide a clear, actionable analysis:
 **[Dimension] (Top 10-20)**
 
 | Rank | [Dimension] | Cost | % of Total | Cumulative % |
-|------|-------------|------|------------|---------------|
+|------|-------------|------|------------|--------------|
 | 1 | [Value 1] | $X,XXX | XX% | XX% |
 | 2 | [Value 2] | $X,XXX | XX% | XX% |
 | ... | ... | ... | ... | ... |

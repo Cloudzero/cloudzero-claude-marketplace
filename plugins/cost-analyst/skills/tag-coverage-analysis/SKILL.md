@@ -290,7 +290,7 @@ For each critical tag, show value distribution:
 
 **Resources with Partial Tagging:**
 | Environment | Team | Application | Cost | Missing Tags |
-|-------------|------|-------------|------|---------------|
+|-------------|------|-------------|------|--------------|
 | production | (untagged) | App X | $X,XXX | Team |
 | (untagged) | Team A | App Y | $X,XXX | Environment |
 
@@ -322,7 +322,7 @@ For each critical tag, show value distribution:
 **Historical Coverage:**
 
 | Month | Environment Tag | Team Tag | Overall |
-|-------|----------------|----------|----------|
+|-------|----------------|----------|---------|
 | 3 months ago | XX% | XX% | XX% |
 | 2 months ago | XX% | XX% | XX% |
 | Last month | XX% | XX% | XX% |
