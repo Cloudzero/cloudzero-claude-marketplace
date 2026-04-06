@@ -1,6 +1,6 @@
 ---
 name: tag-coverage-analysis
-description: Evaluates cloud resource tagging quality and coverage to identify untagged or poorly tagged resources, calculate tag coverage percentages, and improve cost allocation accuracy for showback and chargeback
+description: "Use when evaluating how well cloud resources are tagged for cost allocation — to find untagged costs, improve showback accuracy, or prepare for chargeback reporting"
 author: CloudZero <support@cloudzero.com>
 version: 1.0.0
 license: Apache-2.0
