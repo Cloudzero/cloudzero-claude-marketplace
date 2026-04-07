@@ -22,6 +22,15 @@ Do not guess. Do not proceed past a blocker silently.**
 
 ---
 
+## Prerequisites
+
+This skill runs read-only cloud CLI commands (e.g. `aws ec2 describe-instances`,
+`gcloud compute instances describe`, `kubectl get`). For defense-in-depth, configure a
+**read-only IAM role or profile** for the cloud accounts being investigated. Avoid
+running this skill with credentials that have write access to production resources.
+
+---
+
 ## Phase 1 — Fetch and filter recommendations
 
 Call `get_optimize_recs` directly (do not delegate) with `status = unaddressed`, sorted
@@ -104,11 +113,12 @@ Extrapolate from the sample to adjust the savings estimate for the full group.
 
 ### Check A — IaC
 
-Search local IaC files for the resource identifier:
+Search local IaC files for the resource identifier. Always single-quote interpolated
+resource identifiers in shell commands to prevent metacharacter interpretation:
 
 ```
-grep -r "[resource-id]" . \
-  --include="*.tf" --include="*.tfvars" --include="*.tfstate" \
+grep -r '[resource-id]' . \
+  --include="*.tf" --include="*.tfvars" \
   --include="*.yaml" --include="*.yml" --include="*.json" \
   --include="*.ts" --include="*.py" 2>/dev/null
 ```
@@ -124,7 +134,7 @@ active, direct changes will be reverted.
 Search git history for the resource identifier and recent IaC changes:
 
 ```
-git log --all --oneline -S "[resource-id]"
+git log --all --oneline -S '[resource-id]'
 git log --all --oneline --since="90 days ago" -- "*.tf" "*.yaml" "*.yml"
 ```
 
@@ -265,8 +275,13 @@ materially changes a confidence verdict, note it and update the rollup row.
 
 ## Phase 6 — Per-recommendation report files
 
-Write `~/[resource-name]-investigation-[date].md` for each HIGH and MEDIUM result
-before presenting the rollup. Each report contains:
+Write `./optimize-triage-reports/[resource-name]-investigation-[date].md` for each HIGH
+and MEDIUM result before presenting the rollup. Create the directory if it does not
+exist. These reports may contain sensitive organizational data (account IDs, resource
+identifiers, cost figures, team contacts, IaC configurations) — treat them as
+confidential and do not commit them to version control.
+
+Each report contains:
 
 **Executive Summary** — 2–4 sentences: what the resource is, what it costs, what the
 opportunity is. If realistic savings differs from CloudZero's estimate, explain why.
