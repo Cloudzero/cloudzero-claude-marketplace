@@ -225,10 +225,34 @@ For general cost analysis best practices, see `${CLAUDE_PLUGIN_ROOT}/references/
 For each change detected in Phase 3, apply the appropriate estimation approach:
 
 #### Direct resource changes (Class 1)
-- **Instance type change**: Look up the relative pricing ratio between old and new types. Apply that ratio to the baseline. For example, `t3.medium` → `t3.xlarge` is roughly 2x in compute cost.
-- **New resource**: If similar resources exist in the baseline, use those as a reference. Otherwise, note "new resource — estimate based on typical pricing for this configuration."
+
+- **Instance type change**: Use a multi-strategy approach to get precise cost data:
+
+  **Strategy A — CloudZero dimension lookup (preferred)**: Query CloudZero for actual cost by usage type to find what the organization is already paying for each instance type:
+  ```
+  # Find available usage type dimensions
+  get_available_dimensions(filter="UsageType")
+
+  # Query cost grouped by usage type for the service, filtered to the relevant instance types
+  get_cost_data(
+    group_by=["CZ:Service", "CZ:UsageType"],
+    filters={"CZ:Service": ["AmazonEC2"]},
+    granularity="daily"
+  )
+  ```
+  Usage type values in AWS billing data include instance type info (e.g., `BoxUsage:t3.xlarge`, `InstanceUsage:db.r6g.2xlarge`). If the new instance type already runs elsewhere in the organization, CloudZero will have its actual cost — this is the most accurate source because it reflects the organization's real pricing (RIs, Savings Plans, EDPs).
+
+  **Strategy B — Web pricing lookup (fallback)**: If the new instance type isn't in CloudZero (it's new to the org), look up pricing:
+  ```
+  WebSearch: "AWS <service> <instance_type> on-demand pricing <region> per hour"
+  ```
+  Calculate monthly cost: `hourly_price × 730`. Note that on-demand pricing may overestimate if the org has Savings Plans or RIs.
+
+  **Cross-reference**: When both strategies return data, use CloudZero as ground truth for the old type and the pricing ratio between old and new types from either source to project the new cost.
+
+- **New resource**: First check if the organization already runs the same service/type in CloudZero. If so, use that actual cost as the baseline estimate. If not, look up pricing via web search. Cite the source.
 - **Deleted resource**: The baseline spend for that resource/service is the savings.
-- **Storage/IOPS changes**: Scale linearly from baseline based on the size ratio.
+- **Storage/IOPS changes**: Query CloudZero for current storage cost on the service, then scale proportionally. For new storage types, look up per-GB or per-IOPS pricing via web search.
 
 #### Scaling changes (Class 2)
 - **Replica count**: If replicas go from N to M, cost increases by (M/N - 1) × 100%. Apply to the per-workload baseline.
