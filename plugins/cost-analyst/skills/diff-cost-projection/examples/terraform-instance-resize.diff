@@ -1,0 +1,76 @@
+diff --git a/terraform/modules/database/main.tf b/terraform/modules/database/main.tf
+index a1b2c3d..e4f5g6h 100644
+--- a/terraform/modules/database/main.tf
++++ b/terraform/modules/database/main.tf
+@@ -12,7 +12,7 @@ resource "aws_db_instance" "primary" {
+   engine               = "postgres"
+   engine_version       = "15.4"
+-  instance_class       = "db.r6g.large"
++  instance_class       = "db.r6g.2xlarge"
+   allocated_storage    = 100
+   max_allocated_storage = 500
+   storage_type         = "gp3"
+@@ -45,6 +45,28 @@ resource "aws_db_instance" "primary" {
+   }
+ }
+
++resource "aws_db_instance" "analytics_replica" {
++  identifier             = "${var.environment}-analytics-replica"
++  replicate_source_db    = aws_db_instance.primary.identifier
++  instance_class         = "db.r6g.xlarge"
++  storage_type           = "gp3"
++  max_allocated_storage  = 500
++  publicly_accessible    = false
++  vpc_security_group_ids = [aws_security_group.db.id]
++
++  tags = {
++    Name        = "${var.environment}-analytics-replica"
++    Environment = var.environment
++    Team        = "data-platform"
++    Service     = "analytics"
++  }
++}
++
+diff --git a/terraform/modules/database/outputs.tf b/terraform/modules/database/outputs.tf
+index 1234567..abcdefg 100644
+--- a/terraform/modules/database/outputs.tf
++++ b/terraform/modules/database/outputs.tf
+@@ -8,3 +8,8 @@ output "primary_endpoint" {
+ output "primary_port" {
+   value = aws_db_instance.primary.port
+ }
++
++output "analytics_replica_endpoint" {
++  description = "Endpoint for the analytics read replica"
++  value       = aws_db_instance.analytics_replica.endpoint
++}
+diff --git a/terraform/modules/database/variables.tf b/terraform/modules/database/variables.tf
+index 1111111..2222222 100644
+--- a/terraform/modules/database/variables.tf
++++ b/terraform/modules/database/variables.tf
+@@ -10,3 +10,9 @@ variable "environment" {
+   type    = string
+   default = "production"
+ }
++
++variable "enable_analytics_replica" {
++  description = "Whether to create the analytics read replica"
++  type        = bool
++  default     = true
++}
+diff --git a/docs/architecture.md b/docs/architecture.md
+index aaaaaaa..bbbbbbb 100644
+--- a/docs/architecture.md
++++ b/docs/architecture.md
+@@ -22,6 +22,10 @@ The primary database runs PostgreSQL 15.4 on RDS.
+
+ ### Database Architecture
+
+-The application uses a single RDS PostgreSQL instance for all read/write operations.
++The application uses a primary RDS PostgreSQL instance for writes and an analytics
++read replica for heavy reporting queries. This offloads analytical workloads from
++the primary instance and allows independent scaling.
++
++The primary instance has been upgraded to db.r6g.2xlarge to handle increased write throughput.
+
+ ### Caching

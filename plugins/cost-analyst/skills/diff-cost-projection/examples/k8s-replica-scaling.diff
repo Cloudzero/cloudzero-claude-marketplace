@@ -1,0 +1,83 @@
+diff --git a/k8s/production/api-deployment.yaml b/k8s/production/api-deployment.yaml
+index aaa1111..bbb2222 100644
+--- a/k8s/production/api-deployment.yaml
++++ b/k8s/production/api-deployment.yaml
+@@ -6,7 +6,7 @@ metadata:
+   labels:
+     app: api-server
+ spec:
+-  replicas: 3
++  replicas: 5
+   selector:
+     matchLabels:
+       app: api-server
+@@ -22,10 +22,10 @@ spec:
+         ports:
+         - containerPort: 8080
+         resources:
+           requests:
+-            cpu: "250m"
+-            memory: "512Mi"
++            cpu: "500m"
++            memory: "1Gi"
+           limits:
+-            cpu: "500m"
+-            memory: "1Gi"
++            cpu: "1000m"
++            memory: "2Gi"
+diff --git a/k8s/production/api-hpa.yaml b/k8s/production/api-hpa.yaml
+index ccc3333..ddd4444 100644
+--- a/k8s/production/api-hpa.yaml
++++ b/k8s/production/api-hpa.yaml
+@@ -10,9 +10,9 @@ spec:
+     apiVersion: apps/v1
+     kind: Deployment
+     name: api-server
+-  minReplicas: 3
+-  maxReplicas: 8
++  minReplicas: 5
++  maxReplicas: 15
+   metrics:
+   - type: Resource
+     resource:
+       name: cpu
+       target:
+         type: Utilization
+-        averageUtilization: 70
++        averageUtilization: 60
+diff --git a/k8s/production/worker-deployment.yaml b/k8s/production/worker-deployment.yaml
+index eee5555..fff6666 100644
+--- a/k8s/production/worker-deployment.yaml
++++ b/k8s/production/worker-deployment.yaml
+@@ -6,7 +6,7 @@ metadata:
+   labels:
+     app: background-worker
+ spec:
+-  replicas: 2
++  replicas: 4
+   selector:
+     matchLabels:
+       app: background-worker
+@@ -22,10 +22,10 @@ spec:
+         ports:
+         - containerPort: 9090
+         resources:
+           requests:
+-            cpu: "500m"
+-            memory: "1Gi"
++            cpu: "1000m"
++            memory: "2Gi"
+           limits:
+-            cpu: "1000m"
+-            memory: "2Gi"
++            cpu: "2000m"
++            memory: "4Gi"
+diff --git a/k8s/production/worker-pvc.yaml b/k8s/production/worker-pvc.yaml
+index 1112222..3334444 100644
+--- a/k8s/production/worker-pvc.yaml
++++ b/k8s/production/worker-pvc.yaml
+@@ -10,4 +10,4 @@ spec:
+   resources:
+     requests:
+-      storage: 20Gi
++      storage: 50Gi

@@ -1,0 +1,191 @@
+diff --git a/serverless.yml b/serverless.yml
+index aaaa111..bbbb222 100644
+--- a/serverless.yml
++++ b/serverless.yml
+@@ -25,7 +25,7 @@ functions:
+     handler: src/jobs/aggregate-metrics.handler
+     memorySize: 512
+     timeout: 300
+     events:
+-      - schedule: rate(1 day)
++      - schedule: rate(1 hour)
+     environment:
+       METRICS_TABLE: ${self:custom.metricsTable}
+       AGGREGATION_WINDOW: 3600
+@@ -38,7 +38,7 @@ functions:
+     handler: src/jobs/cleanup-expired.handler
+     memorySize: 256
+     timeout: 120
+     events:
+-      - schedule: cron(0 2 * * ? *)
++      - schedule: cron(0 */4 * * ? *)
+     environment:
+       DATA_TABLE: ${self:custom.dataTable}
+
+@@ -48,6 +48,19 @@ functions:
+     memorySize: 128
+     timeout: 60
+
++  stream-processor:
++    handler: src/jobs/stream-processor.handler
++    memorySize: 1024
++    timeout: 60
++    events:
++      - stream:
++          type: kinesis
++          arn: !GetAtt EventStream.Arn
++          batchSize: 500
++          startingPosition: TRIM_HORIZON
++          maximumBatchingWindowInSeconds: 10
++          parallelizationFactor: 4
++
+diff --git a/src/jobs/aggregate-metrics.js b/src/jobs/aggregate-metrics.js
+index cccc333..dddd444 100644
+--- a/src/jobs/aggregate-metrics.js
++++ b/src/jobs/aggregate-metrics.js
+@@ -1,5 +1,6 @@
+ const { DynamoDBClient, QueryCommand, PutCommand } = require("@aws-sdk/client-dynamodb");
+ const { unmarshall, marshall } = require("@aws-sdk/util-dynamodb");
++const { KafkaClient, ProduceCommand } = require("@aws-sdk/client-kafka");
+
+ const dynamodb = new DynamoDBClient({});
++const kafka = new KafkaClient({});
+
+ exports.handler = async (event) => {
+@@ -30,6 +32,18 @@ exports.handler = async (event) => {
+     })
+   );
+
++  // Publish aggregated metrics to Kafka for real-time dashboards
++  const kafkaRecords = aggregated.map((metric) => ({
++    topic: "metrics-aggregated",
++    partition: 0,
++    value: JSON.stringify(metric),
++  }));
++
++  await kafka.send(
++    new ProduceCommand({
++      records: kafkaRecords,
++    })
++  );
++
+   return { processed: aggregated.length };
+ };
+diff --git a/src/services/cache-client.js b/src/services/cache-client.js
+new file mode 100644
+index 0000000..eeee555
+--- /dev/null
++++ b/src/services/cache-client.js
+@@ -0,0 +1,48 @@
++const Redis = require("ioredis");
++
++const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
++const DEFAULT_TTL = 3600; // 1 hour
++
++class CacheClient {
++  constructor() {
++    this.client = new Redis(REDIS_URL, {
++      maxRetriesPerRequest: 3,
++      retryDelayOnFailover: 100,
++      enableReadyCheck: true,
++      connectTimeout: 5000,
++    });
++  }
++
++  async get(key) {
++    const value = await this.client.get(key);
++    return value ? JSON.parse(value) : null;
++  }
++
++  async set(key, value, ttl = DEFAULT_TTL) {
++    await this.client.set(key, JSON.stringify(value), "EX", ttl);
++  }
++
++  async invalidate(pattern) {
++    const keys = await this.client.keys(pattern);
++    if (keys.length > 0) {
++      await this.client.del(...keys);
++    }
++  }
++
++  async getOrSet(key, fetchFn, ttl = DEFAULT_TTL) {
++    const cached = await this.get(key);
++    if (cached) return cached;
++
++    const value = await fetchFn();
++    await this.set(key, value, ttl);
++    return value;
++  }
++}
++
++module.exports = new CacheClient();
+diff --git a/src/api/middleware/rate-limiter.js b/src/api/middleware/rate-limiter.js
+index ffff666..gggg777 100644
+--- a/src/api/middleware/rate-limiter.js
++++ b/src/api/middleware/rate-limiter.js
+@@ -1,12 +1,14 @@
+-const rateLimit = new Map();
++const cache = require("../../services/cache-client");
+
+ module.exports = async (req, res, next) => {
+   const key = `ratelimit:${req.ip}`;
+-  const current = rateLimit.get(key) || 0;
++  const current = (await cache.get(key)) || 0;
+
+   if (current >= 100) {
+     return res.status(429).json({ error: "Rate limit exceeded" });
+   }
+
+-  rateLimit.set(key, current + 1);
++  await cache.set(key, current + 1, 60); // 1-minute window
+   next();
+ };
+diff --git a/infrastructure/elasticache.tf b/infrastructure/elasticache.tf
+new file mode 100644
+index 0000000..hhhh888
+--- /dev/null
++++ b/infrastructure/elasticache.tf
+@@ -0,0 +1,32 @@
++resource "aws_elasticache_replication_group" "app_cache" {
++  replication_group_id = "${var.environment}-app-cache"
++  description          = "Redis cache for application layer"
++
++  node_type            = "cache.r6g.large"
++  num_cache_clusters   = 2
++  port                 = 6379
++
++  subnet_group_name    = aws_elasticache_subnet_group.cache.name
++  security_group_ids   = [aws_security_group.cache.id]
++
++  at_rest_encryption_enabled = true
++  transit_encryption_enabled = true
++
++  automatic_failover_enabled = true
++  multi_az_enabled           = true
++
++  parameter_group_name = "default.redis7"
++  engine_version       = "7.0"
++
++  snapshot_retention_limit = 7
++  snapshot_window          = "03:00-05:00"
++  maintenance_window       = "sun:05:00-sun:06:00"
++
++  tags = {
++    Name        = "${var.environment}-app-cache"
++    Environment = var.environment
++    Team        = "platform"
++    Service     = "app-cache"
++  }
++}
+diff --git a/README.md b/README.md
+index iiii999..jjjj000 100644
+--- a/README.md
++++ b/README.md
+@@ -18,3 +18,7 @@ npm run dev
+ ## Architecture
+
+ The application uses a serverless architecture with Lambda functions orchestrated by API Gateway.
++
++### Caching Layer
++
++A Redis-backed caching layer (ElastiCache) is used for rate limiting and frequently accessed data.
