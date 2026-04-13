@@ -5,6 +5,36 @@ All notable changes to the CloudZero Cost Analyst Plugin will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-04-10
+
+### Added
+
+#### Cost Projection Skills (2 New)
+
+**Diff Cost Projection** (`/diff-cost-projection`)
+- Analyzes code diffs (PRs, branches, workspace changes) for infrastructure cost impact
+- 7-phase pipeline: retrieve diff, classify files, detect cost signals, map to CloudZero dimensions, query baselines, synthesize estimates, format report
+- Detects Terraform, CDK, CloudFormation, SAM, K8s, scaling, and application code changes
+- 4 cost impact classes: direct IaC, scaling, indirect app code, removals
+- Confidence levels (HIGH/MEDIUM/LOW) with reasoning
+- Early exit for non-impacting changes; optional PR comment posting
+
+**Cost Projection** (`/cost-projection`)
+- Projects monthly cost of infrastructure definitions before deployment
+- Auto-discovers IaC files, CDK constructs, K8s manifests, and cloud SDK usage in codebases
+- Enumerates resources, maps to CloudZero dimensions, queries actual spend for existing resources
+- Looks up current AWS pricing via web search for new resources
+- Line-item cost breakdown by service/resource with monthly totals
+- Supports Terraform, CDK, CloudFormation, SAM, Serverless Framework, Pulumi
+
+#### New Reference Documents
+- `cost-impact-taxonomy.md` — detailed patterns for cost impact classification
+- `service-mapping.md` — IaC resource types to CloudZero dimension mapping
+- `cost-impact-output-examples.md` — sample diff cost projection report formats
+- `cost-projection-output-examples.md` — sample cost projection report formats
+
+---
+
 ## [1.0.0] - 2025-12-05
 
 ### Added

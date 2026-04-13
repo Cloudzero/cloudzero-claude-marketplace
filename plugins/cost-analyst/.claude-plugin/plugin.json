@@ -1,7 +1,7 @@
 {
   "name": "cost-analyst",
-  "version": "1.0.2",
-  "description": "Comprehensive CloudZero cost analysis plugin providing AI-powered skills for investigating cost spikes, analyzing trends, comparing spending, optimizing services, optimization triage, and tracking cloud infrastructure costs using CloudZero's MCP server",
+  "version": "1.1.0",
+  "description": "Comprehensive CloudZero cost analysis plugin providing AI-powered skills for investigating cost spikes, analyzing trends, comparing spending, optimizing services, optimization triage, projecting infrastructure costs from code diffs and IaC definitions, and tracking cloud infrastructure costs using CloudZero's MCP server",
   "author": {
     "name": "CloudZero",
     "url": "https://www.cloudzero.com"
