@@ -30,6 +30,10 @@ Before applying this procedure:
 - If you haven't already in this session, load the understand-cloudzero-organization skill and follow its instructions
 - Reference the cached organization context (don't reload unnecessarily)
 
+## Critical Rule: All Math In Code
+
+**NEVER calculate numbers mentally.** Every derived number — percentages, growth rates, totals, averages, projections, ratios, differences — MUST be computed by writing and executing a Python script (or JavaScript if building a web page). This applies to ALL steps, including dimensional breakdowns and summary tables. The only numbers you may state without code are raw values directly from API responses.
+
 ## How This Skill Works
 
 ### Step 1: Determine Analysis Period
@@ -72,7 +76,7 @@ From this data:
 - Calculate average growth rate across entire period
 - Project forward if trend continues
 
-**Use code execution for all growth calculations** (see best practices). Example Python script:
+Example Python script:
 ```python
 current_week = 10000
 previous_week = 9500
@@ -168,7 +172,7 @@ Break down overall trend into components:
 Calculate each category's contribution to overall trend.
 
 ### Step 7: Forecast Future Costs
-Based on identified trends, project forward. **Use code execution for all projections and range calculations.**
+Based on identified trends, project forward:
 
 **Simple Linear Projection:**
 ```
@@ -345,8 +349,6 @@ Separate trend into components:
 4. **Irregular component:** One-time events or noise
 
 ### Moving Averages
-**Implement moving averages and growth rate segmentation in code** rather than estimating them.
-
 Smooth out noise to see underlying trend:
 
 - 7-day moving average for daily data

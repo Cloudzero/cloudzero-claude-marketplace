@@ -27,6 +27,10 @@ Before applying this procedure:
 - If you haven't already in this session, load the understand-cloudzero-organization skill and follow its instructions
 - Reference the cached organization context (don't reload unnecessarily)
 
+## Critical Rule: All Math In Code
+
+**NEVER calculate numbers mentally.** Every derived number — percentages, growth rates, totals, averages, projections, ratios, differences — MUST be computed by writing and executing a Python script (or JavaScript if building a web page). This applies to ALL steps, including dimensional breakdowns and summary tables. The only numbers you may state without code are raw values directly from API responses.
+
 ## How This Skill Works
 
 ### Step 1: Understand the Spike Period
@@ -52,7 +56,7 @@ get_cost_data(
 )
 ```
 
-**Use code execution for these calculations:**
+Calculate:
 - Absolute dollar change
 - Percentage increase
 - Cost per day in each period

@@ -30,6 +30,10 @@ Where `[target]` is one of:
 - CloudZero MCP plugin (`cost-analyst@cloudzero`) enabled
 - Git repository
 
+## Critical Rule: All Math In Code
+
+**NEVER calculate numbers mentally.** Every derived number — percentages, growth rates, totals, averages, projections, ratios, differences — MUST be computed by writing and executing a Python script (or JavaScript if building a web page). This applies to ALL phases, including cost impact aggregations and summary tables. The only numbers you may state without code are raw values directly from API responses.
+
 ## How This Skill Works
 
 ### Phase 1: Retrieve the Diff
@@ -221,8 +225,6 @@ For general cost analysis best practices, see `${CLAUDE_PLUGIN_ROOT}/references/
 ### Phase 6: Synthesize Cost Impact Estimate
 
 **Goal**: Combine diff analysis with spend baselines to produce estimates.
-
-**Perform all cost impact arithmetic in code** — scaling multipliers, baseline comparisons, and aggregate impact calculations must be computed programmatically.
 
 For each change detected in Phase 3, apply the appropriate estimation approach:
 

@@ -30,6 +30,10 @@ Before applying this procedure:
 - If you haven't already in this session, load the understand-cloudzero-organization skill and follow its instructions
 - Reference the cached organization context (don't reload unnecessarily)
 
+## Critical Rule: All Math In Code
+
+**NEVER calculate numbers mentally.** Every derived number — percentages, growth rates, totals, averages, projections, ratios, differences — MUST be computed by writing and executing a Python script (or JavaScript if building a web page). This applies to ALL steps, including dimensional breakdowns and summary tables. The only numbers you may state without code are raw values directly from API responses.
+
 ## How This Skill Works
 
 ### Step 1: Identify the Service
@@ -264,7 +268,7 @@ get_cost_data(
 )
 ```
 
-**Calculate savings rate in code:**
+Calculate effective savings rate:
 ```python
 savings_rate = ((on_demand_cost - real_cost) / on_demand_cost) * 100
 print(f"Effective savings rate: {savings_rate:.1f}%")

@@ -33,6 +33,10 @@ Before applying this procedure:
 - Reference the cached organization context (don't reload unnecessarily)
 - Organization context is critical for distinguishing legitimate changes from true anomalies
 
+## Critical Rule: All Math In Code
+
+**NEVER calculate numbers mentally.** Every derived number — percentages, growth rates, totals, averages, projections, ratios, differences — MUST be computed by writing and executing a Python script (or JavaScript if building a web page). This applies to ALL steps, including dimensional breakdowns and summary tables. The only numbers you may state without code are raw values directly from API responses.
+
 ## How This Skill Works
 
 ### Step 1: Establish Baseline
@@ -54,7 +58,7 @@ get_cost_data(
 )
 ```
 
-**Use code execution for all statistical calculations:**
+Calculate baseline statistics:
 - Mean daily cost
 - Standard deviation
 - Normal range (e.g., mean ± 2 standard deviations)
@@ -64,7 +68,7 @@ get_cost_data(
 ### Step 2: Total Cost Anomaly Detection
 Identify days with unusual total spending:
 
-**Implement outlier detection in code:**
+**Detect outliers:**
 ```python
 # After fetching daily cost data from API
 from statistics import mean, stdev
@@ -477,8 +481,6 @@ Current level: $X,XXX (within/outside normal range)
 For general cost analysis best practices, see `${CLAUDE_PLUGIN_ROOT}/references/best-practices.md`
 
 ## Anomaly Detection Techniques
-
-**Implement these detection algorithms as executable code** — statistical calculations must not be performed mentally:
 
 ### Statistical Anomaly Detection
 ```python

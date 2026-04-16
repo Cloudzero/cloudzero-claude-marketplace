@@ -31,6 +31,10 @@ Before applying this procedure:
 - If you haven't already in this session, load the understand-cloudzero-organization skill and follow its instructions
 - Reference the cached organization context (don't reload unnecessarily)
 
+## Critical Rule: All Math In Code
+
+**NEVER calculate numbers mentally.** Every derived number — percentages, growth rates, totals, averages, projections, ratios, differences — MUST be computed by writing and executing a Python script (or JavaScript if building a web page). This applies to ALL steps, including dimensional breakdowns and summary tables. The only numbers you may state without code are raw values directly from API responses.
+
 ## How This Skill Works
 
 ### Step 1: Discover Available Tags
@@ -64,7 +68,7 @@ get_cost_data(
 # Get costs WITHOUT the tag (calculate as difference)
 ```
 
-**Use code execution for coverage calculations:**
+**Coverage formula:**
 ```python
 tag_coverage_pct = (tagged_cost / total_cost) * 100
 untagged_cost = total_cost - tagged_cost
@@ -471,8 +475,6 @@ Many variations of same concept.
 ## Advanced Techniques
 
 ### Tagging Maturity Score
-**Implement all scoring and weighted calculations in code:**
-
 Create composite score:
 ```python
 maturity_score = (

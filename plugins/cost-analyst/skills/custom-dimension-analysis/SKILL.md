@@ -32,6 +32,10 @@ Before applying this procedure:
 - Reference the cached organization context (don't reload unnecessarily)
 - This is especially critical for custom dimension analysis as org context defines what custom dimensions exist and their business meanings
 
+## Critical Rule: All Math In Code
+
+**NEVER calculate numbers mentally.** Every derived number — percentages, growth rates, totals, averages, projections, ratios, differences — MUST be computed by writing and executing a Python script (or JavaScript if building a web page). This applies to ALL steps, including dimensional breakdowns and summary tables. The only numbers you may state without code are raw values directly from API responses.
+
 ## How This Skill Works
 
 ### Step 1: Discover Custom Dimensions
@@ -162,8 +166,6 @@ This shows hierarchical cost relationships:
 
 ### Step 8: Unallocated Cost Analysis
 Identify costs not assigned to custom dimensions.
-
-**Use code execution for allocation calculations:**
 
 ```python
 # After fetching total and allocated costs from API
@@ -534,8 +536,6 @@ Variance % = (Variance / Expected Cost) * 100
 Highlight dimension values over/under budget.
 
 ### Cost Optimization Scoring
-**Implement scoring formulas in code:**
-
 For each dimension value:
 ```python
 optimization_score = (

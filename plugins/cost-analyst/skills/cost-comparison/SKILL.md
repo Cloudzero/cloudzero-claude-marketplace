@@ -30,6 +30,10 @@ Before applying this procedure:
 - If you haven't already in this session, load the understand-cloudzero-organization skill and follow its instructions
 - Reference the cached organization context (don't reload unnecessarily)
 
+## Critical Rule: All Math In Code
+
+**NEVER calculate numbers mentally.** Every derived number — percentages, growth rates, totals, averages, projections, ratios, differences — MUST be computed by writing and executing a Python script (or JavaScript if building a web page). This applies to ALL steps, including dimensional breakdowns and summary tables. The only numbers you may state without code are raw values directly from API responses.
+
 ## How This Skill Works
 
 ### Step 1: Identify Comparison Type
@@ -112,8 +116,6 @@ get_cost_data(
 ```
 
 ### Step 3: Calculate Comparison Metrics
-**Compute all comparison metrics in code** (see best practices) — do not calculate differences or percentages mentally.
-
 For each comparable item:
 
 **Absolute Difference:**

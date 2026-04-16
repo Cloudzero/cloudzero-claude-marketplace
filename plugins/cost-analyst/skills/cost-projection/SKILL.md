@@ -32,6 +32,10 @@ Where `[target]` is one of:
 - CloudZero MCP plugin (`cost-analyst@cloudzero`) enabled
 - IaC files accessible in the working directory or at the specified path
 
+## Critical Rule: All Math In Code
+
+**NEVER calculate numbers mentally.** Every derived number — percentages, growth rates, totals, averages, projections, ratios, differences — MUST be computed by writing and executing a Python script (or JavaScript if building a web page). This applies to ALL phases, including cost aggregations and summary tables. The only numbers you may state without code are raw values directly from API responses.
+
 ---
 
 ## How This Skill Works
@@ -294,8 +298,6 @@ Call `get_cost_data` with:
 Use the per-resource cost of similar existing resources as a reference point, then adjust for the new resource's configuration (e.g., if existing is `db.r6g.large` at $X/mo, and new is `db.r6g.2xlarge`, estimate ~2× that cost).
 
 #### Strategy 3: Estimation formulas (fallback)
-
-**Implement all cost estimation arithmetic in code** — compute hourly-to-monthly conversions, multipliers, and aggregations programmatically.
 
 If web lookup doesn't yield clear pricing and no similar resources exist, use these estimation formulas as a last resort. **These are approximate and may be outdated** — always prefer Strategy 1 or 2.
 
