@@ -54,7 +54,7 @@ get_cost_data(
 )
 ```
 
-Calculate baseline statistics:
+**Use code execution for all statistical calculations:**
 - Mean daily cost
 - Standard deviation
 - Normal range (e.g., mean ± 2 standard deviations)
@@ -64,13 +64,19 @@ Calculate baseline statistics:
 ### Step 2: Total Cost Anomaly Detection
 Identify days with unusual total spending:
 
-**Detect Outliers:**
-```
-For each day in recent period:
-  If cost > (baseline_mean + 2 × baseline_stddev):
-    Flag as high anomaly
-  If cost < (baseline_mean - 2 × baseline_stddev):
-    Flag as low anomaly (potential data issue or optimization)
+**Implement outlier detection in code:**
+```python
+# After fetching daily cost data from API
+from statistics import mean, stdev
+baseline_costs = [...]  # daily costs from baseline period
+baseline_mean = mean(baseline_costs)
+baseline_stddev = stdev(baseline_costs)
+
+for day, cost in recent_costs:
+    if cost > (baseline_mean + 2 * baseline_stddev):
+        print(f"{day}: ${cost:,.0f} — HIGH anomaly (>{baseline_mean + 2*baseline_stddev:,.0f})")
+    elif cost < (baseline_mean - 2 * baseline_stddev):
+        print(f"{day}: ${cost:,.0f} — LOW anomaly (<{baseline_mean - 2*baseline_stddev:,.0f})")
 ```
 
 **Look for:**
@@ -472,25 +478,27 @@ For general cost analysis best practices, see `${CLAUDE_PLUGIN_ROOT}/references/
 
 ## Anomaly Detection Techniques
 
+**Implement these detection algorithms as executable code** — statistical calculations must not be performed mentally:
+
 ### Statistical Anomaly Detection
-```
-For each data point:
-  z_score = (value - mean) / stddev
-  If abs(z_score) > 2:
-    Flag as anomaly
+```python
+z_score = (value - mean_val) / stddev_val
+if abs(z_score) > 2:
+    print(f"Anomaly: z-score={z_score:.2f}")
 ```
 
 ### Percentage-Based Detection
-```
-If (current - baseline) / baseline > 0.5:
-  Flag as 50%+ increase anomaly
+```python
+pct_change = (current - baseline) / baseline
+if pct_change > 0.5:
+    print(f"50%+ increase anomaly: {pct_change:.1%}")
 ```
 
 ### Rate-of-Change Detection
-```
+```python
 day_over_day_change = (today - yesterday) / yesterday
-If day_over_day_change > threshold:
-  Flag as rapid change anomaly
+if day_over_day_change > threshold:
+    print(f"Rapid change anomaly: {day_over_day_change:.1%}")
 ```
 
 ### Pattern Matching

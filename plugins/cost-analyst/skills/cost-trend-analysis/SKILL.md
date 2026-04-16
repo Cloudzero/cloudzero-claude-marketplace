@@ -72,15 +72,20 @@ From this data:
 - Calculate average growth rate across entire period
 - Project forward if trend continues
 
-**Example Calculations:**
-```
-Current Week Cost: $10,000
-Previous Week Cost: $9,500
-WoW Growth = ((10000 - 9500) / 9500) * 100 = 5.3%
+**Use code execution for all growth calculations** (see best practices). Example Python script:
+```python
+current_week = 10000
+previous_week = 9500
+wow_growth = ((current_week - previous_week) / previous_week) * 100
 
-If 90-day period shows growth from $250k to $300k:
-Total Growth = ((300000 - 250000) / 250000) * 100 = 20%
-Monthly Growth Rate = (1 + 0.20)^(1/3) - 1 ≈ 6.3% per month
+total_start = 250000  # 90-day period start
+total_end = 300000    # 90-day period end
+total_growth = ((total_end - total_start) / total_start) * 100
+monthly_growth = ((1 + total_growth / 100) ** (1/3) - 1) * 100
+
+print(f"WoW Growth: {wow_growth:.1f}%")
+print(f"Total Growth: {total_growth:.1f}%")
+print(f"Compound Monthly Growth Rate: {monthly_growth:.1f}%")
 ```
 
 ### Step 4: Trend by Key Dimensions
@@ -163,7 +168,7 @@ Break down overall trend into components:
 Calculate each category's contribution to overall trend.
 
 ### Step 7: Forecast Future Costs
-Based on identified trends, project forward:
+Based on identified trends, project forward. **Use code execution for all projections and range calculations.**
 
 **Simple Linear Projection:**
 ```
@@ -340,6 +345,8 @@ Separate trend into components:
 4. **Irregular component:** One-time events or noise
 
 ### Moving Averages
+**Implement moving averages and growth rate segmentation in code** rather than estimating them.
+
 Smooth out noise to see underlying trend:
 
 - 7-day moving average for daily data

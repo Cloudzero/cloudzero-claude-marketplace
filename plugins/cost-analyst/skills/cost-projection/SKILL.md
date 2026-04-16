@@ -295,6 +295,8 @@ Use the per-resource cost of similar existing resources as a reference point, th
 
 #### Strategy 3: Estimation formulas (fallback)
 
+**Implement all cost estimation arithmetic in code** — compute hourly-to-monthly conversions, multipliers, and aggregations programmatically.
+
 If web lookup doesn't yield clear pricing and no similar resources exist, use these estimation formulas as a last resort. **These are approximate and may be outdated** — always prefer Strategy 1 or 2.
 
 | Resource Type | Estimation Formula |

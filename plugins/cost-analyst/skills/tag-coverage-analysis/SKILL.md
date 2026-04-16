@@ -64,11 +64,13 @@ get_cost_data(
 # Get costs WITHOUT the tag (calculate as difference)
 ```
 
-**Coverage Formula:**
-```
-Tag Coverage % = (Cost of Tagged Resources / Total Cost) * 100
-Untagged Cost = Total Cost - Cost of Tagged Resources
-Untagged % = (Untagged Cost / Total Cost) * 100
+**Use code execution for coverage calculations:**
+```python
+tag_coverage_pct = (tagged_cost / total_cost) * 100
+untagged_cost = total_cost - tagged_cost
+untagged_pct = (untagged_cost / total_cost) * 100
+print(f"Tag Coverage: {tag_coverage_pct:.1f}%")
+print(f"Untagged: ${untagged_cost:,.0f} ({untagged_pct:.1f}%)")
 ```
 
 ### Step 3: Analyze Each Critical Tag
@@ -469,9 +471,11 @@ Many variations of same concept.
 ## Advanced Techniques
 
 ### Tagging Maturity Score
+**Implement all scoring and weighted calculations in code:**
+
 Create composite score:
-```
-Maturity Score = (
+```python
+maturity_score = (
   (Coverage % × 0.4) +
   (Value Quality % × 0.3) +
   (Multi-tag Coverage % × 0.2) +
@@ -481,8 +485,8 @@ Maturity Score = (
 
 ### Cost-Weighted Coverage
 Give more weight to expensive resources:
-```
-Weighted Coverage = Σ(Cost × Coverage) / Total Cost
+```python
+weighted_coverage = sum(cost * coverage for cost, coverage in items) / total_cost
 ```
 
 ### Tag Dependency Analysis
@@ -492,8 +496,8 @@ Some tags depend on others:
 
 ### Attribution Gap Analysis
 Calculate how much cost cannot be attributed:
-```
-Attribution Gap = (Untagged Cost + Partial Tag Cost) / Total Cost
+```python
+attribution_gap = (untagged_cost + partial_tag_cost) / total_cost
 ```
 
 ## Tips for Effective Analysis

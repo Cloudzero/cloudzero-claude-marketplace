@@ -150,6 +150,8 @@ get_cost_data(
 ```
 
 ### Step 6: Calculate Contribution Percentages
+**Use code execution to compute percentages and cumulative totals** from the API response data.
+
 For each result:
 1. Calculate total spend across all items
 2. Calculate each item's percentage of total

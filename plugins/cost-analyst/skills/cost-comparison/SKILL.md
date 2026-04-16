@@ -112,6 +112,8 @@ get_cost_data(
 ```
 
 ### Step 3: Calculate Comparison Metrics
+**Compute all comparison metrics in code** (see best practices) — do not calculate differences or percentages mentally.
+
 For each comparable item:
 
 **Absolute Difference:**

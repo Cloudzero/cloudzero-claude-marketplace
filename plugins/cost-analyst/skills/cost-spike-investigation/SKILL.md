@@ -52,7 +52,7 @@ get_cost_data(
 )
 ```
 
-Calculate:
+**Use code execution for these calculations:**
 - Absolute dollar change
 - Percentage increase
 - Cost per day in each period

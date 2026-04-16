@@ -264,9 +264,10 @@ get_cost_data(
 )
 ```
 
-Calculate effective savings rate:
-```
-Savings Rate = ((On-Demand Cost - Real Cost) / On-Demand Cost) * 100
+**Calculate savings rate in code:**
+```python
+savings_rate = ((on_demand_cost - real_cost) / on_demand_cost) * 100
+print(f"Effective savings rate: {savings_rate:.1f}%")
 ```
 
 ## Output Format

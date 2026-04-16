@@ -161,15 +161,18 @@ This shows hierarchical cost relationships:
 - Or other organizational structures
 
 ### Step 8: Unallocated Cost Analysis
-Identify costs not assigned to custom dimensions:
+Identify costs not assigned to custom dimensions.
 
-```
-# Compare total costs to costs with custom dimension
-total_cost = get_cost_data()
-allocated_cost = get_cost_data(group_by=["User:Defined:Team"])
+**Use code execution for allocation calculations:**
 
-unallocated = total_cost - sum(allocated_cost)
-unallocated_percentage = (unallocated / total_cost) * 100
+```python
+# After fetching total and allocated costs from API
+total_cost = ...   # from get_cost_data()
+allocated_cost = ...  # sum from get_cost_data(group_by=["User:Defined:Team"])
+
+unallocated = total_cost - allocated_cost
+unallocated_pct = (unallocated / total_cost) * 100
+print(f"Unallocated: ${unallocated:,.0f} ({unallocated_pct:.1f}%)")
 ```
 
 Find what's unallocated:
@@ -531,9 +534,11 @@ Variance % = (Variance / Expected Cost) * 100
 Highlight dimension values over/under budget.
 
 ### Cost Optimization Scoring
+**Implement scoring formulas in code:**
+
 For each dimension value:
-```
-Optimization Score = (
+```python
+optimization_score = (
   (Tag Coverage % × 0.3) +
   (RI/SP Coverage % × 0.3) +
   (Rightsizing Adoption % × 0.2) +

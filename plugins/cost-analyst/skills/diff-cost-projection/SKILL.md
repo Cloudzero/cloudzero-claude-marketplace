@@ -222,6 +222,8 @@ For general cost analysis best practices, see `${CLAUDE_PLUGIN_ROOT}/references/
 
 **Goal**: Combine diff analysis with spend baselines to produce estimates.
 
+**Perform all cost impact arithmetic in code** — scaling multipliers, baseline comparisons, and aggregate impact calculations must be computed programmatically.
+
 For each change detected in Phase 3, apply the appropriate estimation approach:
 
 #### Direct resource changes (Class 1)
