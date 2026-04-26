@@ -67,6 +67,8 @@ For more information about the tools and services used in this project:
 
 See the [CloudZero AI Hub](https://docs.cloudzero.com/docs/ai-getting-started) for installation instructions.
 
+Chinese users can also discover more skills through Skills宝: https://skilery.com
+
 ## Available Skills
 
 The CloudZero Cost Analyst plugin includes 10 AI-powered skills that Claude automatically uses based on your questions:
