@@ -1,25 +1,10 @@
 ---
 name: top-cost-drivers
-description: "Use when identifying where cloud spend is concentrated — which services, accounts, teams, or regions are driving the most cost — to prioritize optimization efforts"
-author: CloudZero <support@cloudzero.com>
-version: 1.0.0
+description: "Ranks and analyzes the highest cloud cost contributors by service, account, team, region, and custom dimensions using CloudZero data. Calculates percentage-of-total and cumulative contribution, performs 80/20 concentration analysis, and breaks down top drivers across multiple dimensions to prioritize optimization. Use when the user asks what their biggest costs are, where cloud spend is concentrated, what to optimize first, or needs a cost breakdown for budget planning."
 license: Apache-2.0
 ---
 
 # Top Cost Drivers
-
-## Purpose
-This skill identifies and ranks the highest cloud cost contributors across various dimensions to help users understand where their money is going and prioritize optimization efforts.
-
-## When to Use
-- "What are my biggest costs?"
-- "Where is most of my cloud spending?"
-- "What should I optimize first?"
-- "Show me top spending by [service/account/team]"
-- Monthly cost reviews
-- Budget planning and allocation
-- Identifying optimization priorities
-- Keywords: top, biggest, largest, highest, most expensive, cost drivers, where is money going
 
 ## Prerequisites
 
@@ -38,62 +23,22 @@ Before applying this procedure:
 ## How This Skill Works
 
 ### Step 1: Understand the Request
-Clarify what dimensions the user wants to analyze:
-- Services? Accounts? Teams? Regions?
-- Specific time period? (default: last 30 days)
-- Any filters to apply? (e.g., specific cloud provider, environment)
+Clarify dimensions (services, accounts, teams, regions), time period (default: last 30 days), and any filters (cloud provider, environment).
 
 ### Step 2: Query Top Costs by Primary Dimension
 
-**Top Services:**
 ```
 get_cost_data(
-    group_by=["CZ:Service"],
+    group_by=["CZ:Service"],  # or CZ:Account, CZ:Region, CZ:CloudProvider
     cost_type="real_cost",
     limit=20
 )
 ```
 
-**Top Accounts:**
-```
-get_cost_data(
-    group_by=["CZ:Account"],
-    cost_type="real_cost",
-    limit=20
-)
-```
-
-**Top by Cloud Provider:**
-```
-get_cost_data(
-    group_by=["CZ:CloudProvider"],
-    cost_type="real_cost",
-    limit=10
-)
-```
-
-**Top by Region:**
-```
-get_cost_data(
-    group_by=["CZ:Region"],
-    cost_type="real_cost",
-    limit=20
-)
-```
+**Validation:** If the query returns empty results, verify the dimension exists and check filters. Ask the user to clarify if needed.
 
 ### Step 3: Multi-Dimensional Breakdown
-Break down top costs by multiple dimensions for deeper insights:
-
-**Services within each Cloud Provider:**
-```
-get_cost_data(
-    group_by=["CZ:CloudProvider", "CZ:Service"],
-    cost_type="real_cost",
-    limit=50
-)
-```
-
-**Services within each Account:**
+Break down top costs across dimensions for deeper insights:
 ```
 get_cost_data(
     group_by=["CZ:Account", "CZ:Service"],
@@ -102,69 +47,28 @@ get_cost_data(
 )
 ```
 
-**Services by Region:**
+### Step 4: Custom Dimension and Tag Analysis
 ```
-get_cost_data(
-    group_by=["CZ:Region", "CZ:Service"],
-    cost_type="real_cost",
-    limit=50
-)
-```
-
-### Step 4: Custom Dimension Analysis
-Leverage organization-specific dimensions:
-
-```
-# Discover custom dimensions
 get_available_dimensions(filter="User:Defined")
 
-# Query by custom dimensions (e.g., teams, products)
-get_cost_data(
-    group_by=["User:Defined:Team"],
-    cost_type="real_cost",
-    limit=20
-)
-
-# Break down custom dimensions by service
 get_cost_data(
     group_by=["User:Defined:Team", "CZ:Service"],
     cost_type="real_cost",
     limit=50
 )
 ```
+Also query by tags (environment, application) when available.
 
-### Step 5: Tag-Based Analysis
-Analyze costs by resource tags:
+### Step 5: Calculate Contribution Percentages
+In Python, compute:
+1. Total spend across all items
+2. Each item's percentage of total
+3. Cumulative percentage to identify 80/20 concentration
+4. Items that together represent 80% of spend
 
-```
-# Discover available tags
-get_available_dimensions(filter="Tag")
+**Validation:** Verify computed total matches the API total. If discrepancy > 5%, note that some items may be outside the query limit.
 
-# Top costs by environment tag
-get_cost_data(
-    group_by=["CZ:Tag:Environment"],
-    cost_type="real_cost",
-    limit=10
-)
-
-# Services within each environment
-get_cost_data(
-    group_by=["CZ:Tag:Environment", "CZ:Service"],
-    cost_type="real_cost",
-    limit=50
-)
-```
-
-### Step 6: Calculate Contribution Percentages
-For each result:
-1. Calculate total spend across all items
-2. Calculate each item's percentage of total
-3. Calculate cumulative percentage (to identify 80/20 rule)
-4. Identify items that together represent 80% of spend
-
-### Step 7: Trend Context (Optional)
-Show how top cost drivers are trending:
-
+### Step 6: Trend Context (Optional)
 ```
 get_cost_data(
     group_by=["CZ:Service"],
@@ -173,117 +77,10 @@ get_cost_data(
     limit=10
 )
 ```
+Shows whether top drivers are growing, stable, or declining.
 
-This shows whether top drivers are growing, stable, or declining.
-
-## Output Format
-
-Provide a clear, actionable analysis:
-
-### 1. Executive Summary
-- Total spend for period: $X
-- Time period analyzed
-- Top 3 cost drivers in one sentence
-- Key insight or recommendation
-
-### 2. Top Cost Drivers by Primary Dimension
-
-**[Dimension] (Top 10-20)**
-
-| Rank | [Dimension] | Cost | % of Total | Cumulative % |
-|------|-------------|------|------------|--------------|
-| 1 | [Value 1] | $X,XXX | XX% | XX% |
-| 2 | [Value 2] | $X,XXX | XX% | XX% |
-| ... | ... | ... | ... | ... |
-
-**Key observations:**
-- Top 5 items represent X% of total spend
-- [Specific insight about distribution]
-- [Notable patterns or outliers]
-
-### 3. Multi-Dimensional Breakdown
-
-**Top Services by [Cloud Provider/Account/Region]**
-
-For each top-level item, show its breakdown:
-- Provider/Account A:
-  - Service 1: $X,XXX (XX%)
-  - Service 2: $X,XXX (XX%)
-  - ...
-
-### 4. 80/20 Analysis
-- **Concentration:** Top N items represent 80% of spend
-- **Long tail:** Remaining M items represent 20% of spend
-- **Implication:** Focus optimization on top N items for maximum impact
-
-### 5. Custom Dimension Insights
-If organization has custom dimensions (teams, products, features):
-- Top costs by team/product
-- Services used by each team/product
-- Potential allocation or chargeback insights
-
-### 6. Optimization Priorities
-Based on top cost drivers, suggest:
-1. **Quick wins:** High-cost items with obvious optimization opportunities
-2. **Deep dives:** Complex services needing detailed analysis
-3. **Monitoring:** Items to watch for growth
-4. **Tags:** Untagged high-cost resources to label
-
-### 7. Trend Context (if included)
-- Which top drivers are growing vs. stable vs. declining
-- Month-over-month or week-over-week changes
-- Acceleration or deceleration patterns
-
-## Skill-Specific Best Practices
-
-1. **Calculate percentages** - Raw numbers need context
-2. **Show cumulative percentages** - Helps identify concentration
-3. **Use multiple dimensions** - Single-dimension analysis is often insufficient
-4. **Leverage custom dimensions** - Use org-specific groupings when available
-5. **Adjust limits appropriately** - More items for detailed analysis, fewer for summaries
-6. **Look for the 80/20 rule** - Usually small number of items drive most cost
-
-For general cost analysis best practices, see `${CLAUDE_PLUGIN_ROOT}/references/best-practices.md`
-
-## Common Analysis Patterns
-
-### Pattern 1: Service-First Analysis
-Start with services, then break down by accounts or regions:
-```
-1. Top services overall
-2. For each top service, show breakdown by account
-3. For each top service, show breakdown by region
-```
-
-### Pattern 2: Organization-First Analysis
-Start with business dimensions, then break down to technical:
-```
-1. Top teams/products (custom dimensions)
-2. For each team/product, show top services
-3. For each team/product, show top accounts
-```
-
-### Pattern 3: Account-First Analysis
-Start with accounts, then break down by services:
-```
-1. Top accounts
-2. For each account, show top services
-3. For each account, show top regions
-```
-
-### Pattern 4: Environment-First Analysis
-Start with environment tags, then drill down:
-```
-1. Costs by environment (prod, staging, dev)
-2. For each environment, show top services
-3. For each environment, show top accounts
-```
-
-## Advanced Techniques
-
-### Filtering to Focus Analysis
+### Filtering Techniques
 Exclude known large costs to surface secondary drivers:
-
 ```
 get_cost_data(
     group_by=["CZ:Service"],
@@ -292,9 +89,7 @@ get_cost_data(
 )
 ```
 
-### Partial Matching for Service Groups
-Group related services together:
-
+Use partial matching to group related services:
 ```
 get_cost_data(
     group_by=["CZ:Account"],
@@ -303,24 +98,16 @@ get_cost_data(
 )
 ```
 
-### Three-Dimensional Analysis
-For comprehensive breakdown:
+## Output Format
 
-```
-get_cost_data(
-    group_by=["CZ:CloudProvider", "CZ:Account", "CZ:Service"],
-    limit=100
-)
-```
-
-## Tips for Effective Analysis
-
-1. **Start broad, then narrow:** Begin with single dimension, add more as needed
-2. **Focus on actionable insights:** Highlight what users can optimize
-3. **Provide context:** Compare to previous periods when possible
-4. **Be specific:** Use exact dimension FQDIDs and values
-5. **Explain distribution:** Is spend concentrated or distributed?
-6. **Suggest next steps:** What should user investigate further?
+Include these sections in your report:
+1. **Executive Summary** - total spend, period, top 3 drivers in one sentence, key recommendation
+2. **Top Cost Drivers Table** - ranked table with cost, % of total, cumulative %
+3. **Multi-Dimensional Breakdown** - top services within each account/provider/region
+4. **80/20 Analysis** - how many items represent 80% of spend, implication for optimization focus
+5. **Custom Dimension Insights** - top costs by team/product if custom dimensions exist
+6. **Optimization Priorities** - quick wins, items needing deep dives, items to monitor, untagged resources
+7. **Trend Context** (if included) - which drivers are growing vs. stable vs. declining
 
 ## See Also
 
