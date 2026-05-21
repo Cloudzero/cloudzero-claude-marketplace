@@ -4,7 +4,7 @@ description: "Fetch top unaddressed CloudZero Optimize recommendations, dispatch
 author: CloudZero <support@cloudzero.com>
 version: 1.0.0
 license: Apache-2.0
-allowed-tools: Bash, Read, Glob, Grep, WebFetch, Agent
+allowed-tools: Bash, Read, Glob, Grep, WebFetch, Task
 ---
 
 # optimize-triage
