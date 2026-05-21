@@ -2,7 +2,7 @@
 name: diff-cost-projection
 description: "Analyze code diffs for infrastructure cost impact using CloudZero spend data. Detects Terraform, CDK, CloudFormation, SAM, K8s, scaling, and application code changes that affect cloud spending."
 author: CloudZero <support@cloudzero.com>
-version: 0.1.0
+version: 1.0.0
 license: Apache-2.0
 ---
 

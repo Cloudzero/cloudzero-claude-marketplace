@@ -2,7 +2,7 @@
 name: cost-projection
 description: "Project the monthly cost of an infrastructure definition (Terraform, CDK, CloudFormation, SAM) using CloudZero spend data. Reads IaC files, enumerates resources, and produces a line-item cost breakdown."
 author: CloudZero <support@cloudzero.com>
-version: 0.1.0
+version: 1.0.0
 license: Apache-2.0
 ---
 
