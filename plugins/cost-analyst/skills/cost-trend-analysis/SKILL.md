@@ -1,6 +1,8 @@
 ---
 name: cost-trend-analysis
 description: "Analyzes cloud cost data over time to identify growth rates, spending velocity, and trajectory patterns using CloudZero. Calculates WoW/MoM/QoQ growth, decomposes trends by service and account, classifies patterns (linear, exponential, seasonal, step-change), and projects future spending with confidence ranges. Use when the user asks how costs are trending, requests a forecast or budget projection, or wants to understand spending momentum and cost trajectory."
+author: CloudZero <support@cloudzero.com>
+version: 1.0.0
 license: Apache-2.0
 ---
 

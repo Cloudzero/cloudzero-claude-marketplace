@@ -1,6 +1,8 @@
 ---
 name: cost-comparison
 description: "Generates side-by-side cloud cost comparison reports across time periods, environments, accounts, regions, or teams using CloudZero data. Calculates absolute and percentage differences, normalizes for scale, and produces root-cause analysis with optimization recommendations. Use when the user asks to compare costs, benchmark spending, measure before/after optimization impact, or identify which group is more expensive."
+author: CloudZero <support@cloudzero.com>
+version: 1.0.0
 license: Apache-2.0
 ---
 

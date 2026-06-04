@@ -1,6 +1,8 @@
 ---
 name: service-cost-deep-dive
 description: "Performs comprehensive analysis of a specific cloud service's costs using CloudZero, breaking down spending by account, region, usage type, resource, environment, and custom dimensions. Identifies usage patterns, calculates RI/SP savings rates, and produces service-specific optimization recommendations with quantified savings potential. Use when the user asks to analyze a specific service like EC2, RDS, S3, or Lambda, wants a detailed cost breakdown for a particular service, or asks why a service is expensive."
+author: CloudZero <support@cloudzero.com>
+version: 1.0.0
 license: Apache-2.0
 ---
 

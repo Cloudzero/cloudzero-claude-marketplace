@@ -1,6 +1,8 @@
 ---
 name: cost-anomaly-detection
 description: "Scans cloud billing data for cost anomalies by establishing statistical baselines and detecting outliers across services, accounts, regions, and resources using CloudZero. Identifies spikes, step-changes, gradual drift, new resource creation, and potential security or waste indicators, then produces a severity-ranked anomaly report with root-cause analysis and remediation steps. Use when the user asks to check for unusual spending, detect cost anomalies, perform a weekly cost review, investigate unexpected charges, or scan for cloud billing irregularities."
+author: CloudZero <support@cloudzero.com>
+version: 1.0.0
 license: Apache-2.0
 ---
 

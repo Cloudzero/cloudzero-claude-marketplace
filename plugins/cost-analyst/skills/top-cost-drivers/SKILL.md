@@ -1,6 +1,8 @@
 ---
 name: top-cost-drivers
 description: "Ranks and analyzes the highest cloud cost contributors by service, account, team, region, and custom dimensions using CloudZero data. Calculates percentage-of-total and cumulative contribution, performs 80/20 concentration analysis, and breaks down top drivers across multiple dimensions to prioritize optimization. Use when the user asks what their biggest costs are, where cloud spend is concentrated, what to optimize first, or needs a cost breakdown for budget planning."
+author: CloudZero <support@cloudzero.com>
+version: 1.0.0
 license: Apache-2.0
 ---
 
