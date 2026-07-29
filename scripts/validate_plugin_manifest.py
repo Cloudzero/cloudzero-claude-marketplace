@@ -9,7 +9,9 @@ Checks:
   - each marketplace plugin entry has `name` and `source`; `source` resolves
     (relative to the repo root) to a directory containing its own
     .claude-plugin/plugin.json, and that manifest's `name` matches the entry
-  - every listed plugin.json parses as valid JSON and has a non-empty `name`
+  - every listed plugin.json parses as valid JSON and carries the full
+    metadata contract this marketplace documents in CONTRIBUTING.md: name,
+    description, version, author, homepage, repository, license, keywords
   - where both a plugin.json and its marketplace entry declare a `version`,
     they agree (catches version drift between the two manifests)
 """
@@ -21,6 +23,17 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 MARKETPLACE_MANIFEST = REPO_ROOT / ".claude-plugin" / "marketplace.json"
+
+REQUIRED_PLUGIN_FIELDS = (
+    "name",
+    "description",
+    "version",
+    "author",
+    "homepage",
+    "repository",
+    "license",
+    "keywords",
+)
 
 
 def fail(msg: str) -> None:
@@ -83,9 +96,10 @@ def main() -> int:
             ok = False
             continue
 
-        if not entry_plugin.get("name"):
-            fail(f"{entry_plugin_json}: missing required field 'name'")
-            ok = False
+        for field in REQUIRED_PLUGIN_FIELDS:
+            if not entry_plugin.get(field):
+                fail(f"{entry_plugin_json}: missing required field {field!r}")
+                ok = False
 
         if name != entry_plugin.get("name"):
             fail(

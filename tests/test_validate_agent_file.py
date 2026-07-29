@@ -100,6 +100,13 @@ class TestOtherValidations:
     def test_missing_frontmatter_fails(self, tmp_path: Path) -> None:
         assert _run("# No frontmatter\n", tmp_path) == 1
 
+    def test_invalid_yaml_frontmatter_fails(self, tmp_path: Path) -> None:
+        """Regression: an unquoted description containing ': ' is invalid YAML
+        and makes Claude Code load the agent with empty metadata — the old
+        line-oriented parser let exactly this through."""
+        content = _make_frontmatter(description="around a build: a right-sizing pass")
+        assert _run(content, tmp_path) == 1
+
     def test_org_specific_tool_fails(self, tmp_path: Path) -> None:
         content = _make_frontmatter(tools="mcp__myorg__my_tool")
         assert _run(content, tmp_path) == 1

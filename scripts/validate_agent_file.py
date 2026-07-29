@@ -4,7 +4,9 @@
 """Validate every plugin agent file (plugins/*/agents/*.md). Run in CI on every push/PR.
 
 Checks, per agent file:
-  - YAML frontmatter block is present and parses as simple `key: value` pairs
+  - YAML frontmatter block is present and parses as valid YAML (Claude Code
+    silently loads an agent with empty metadata if the frontmatter doesn't
+    parse, so this must be a real YAML parse, not a line-oriented scan)
   - required frontmatter fields are present and non-empty
   - the `tools` field lists only generic, organization-agnostic tools (no
     org-specific MCP tool names — those belong in a consumer's overlay)
@@ -16,6 +18,8 @@ from __future__ import annotations
 import re
 import sys
 from pathlib import Path
+
+import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PLUGINS_DIR = REPO_ROOT / "plugins"
@@ -49,19 +53,21 @@ def validate_agent_file(agent_file: Path) -> bool:
         fail(f"{agent_file}: missing or malformed --- frontmatter block at top of file")
         return False
 
-    fields: dict[str, str] = {}
-    for line in match.group(1).split("\n"):
-        if ":" not in line:
-            continue
-        key, _, value = line.partition(":")
-        fields[key.strip()] = value.strip()
+    try:
+        fields = yaml.safe_load(match.group(1))
+    except yaml.YAMLError as e:
+        fail(f"{agent_file}: frontmatter is not valid YAML (Claude Code would load this agent with empty metadata): {e}")
+        return False
+    if not isinstance(fields, dict):
+        fail(f"{agent_file}: frontmatter must be a YAML mapping, got {type(fields).__name__}")
+        return False
 
     for field in REQUIRED_FIELDS:
         if not fields.get(field):
             fail(f"{agent_file}: frontmatter missing required field: {field}")
             ok = False
 
-    org_tools = ORG_SPECIFIC_TOOL_RE.findall(fields.get("tools", ""))
+    org_tools = ORG_SPECIFIC_TOOL_RE.findall(str(fields.get("tools", "")))
     if org_tools:
         fail(
             f"{agent_file}: tools field lists organization-specific MCP tools: "

@@ -174,9 +174,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **CI Validation**
 - Added `.github/workflows/ci.yml` running on every push/PR to `main` — the repository previously had no CI
-- Added `scripts/validate_plugin_manifest.py`: the marketplace catalog and every listed plugin manifest parse as JSON, carry required fields, `source` paths resolve, and versions agree where declared on both sides
-- Added `scripts/validate_agent_file.py`: validates frontmatter, org-agnostic tool lists, and secret tripwires for every `plugins/*/agents/*.md`
-- Added pytest suites for both validators under `tests/`
+- Added `scripts/validate_plugin_manifest.py`: the marketplace catalog and every listed plugin manifest parse as JSON, carry the full documented metadata contract (name, description, version, author, homepage, repository, license, keywords), `source` paths resolve, and versions agree where declared on both sides
+- Added `scripts/validate_agent_file.py`: real YAML frontmatter validation (a parse failure means Claude Code silently loads the agent with empty metadata), org-agnostic tool lists, and secret tripwires for every `plugins/*/agents/*.md`
+- Added `scripts/validate_skill_frontmatter.py`: every `plugins/*/skills/*/SKILL.md` carries the frontmatter CONTRIBUTING requires and its `name` matches its directory
+- Added pytest suites for all validators under `tests/`
 
 ### Changed
 

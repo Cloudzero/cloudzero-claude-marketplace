@@ -148,13 +148,16 @@ These are shared across the marketplace repo:
 - [SECURITY.md](../../SECURITY.md) — how to report a vulnerability privately.
 - [CODE-OF-CONDUCT.md](../../CODE-OF-CONDUCT.md) — Contributor Covenant.
 
-Every push/PR runs `scripts/validate_agent_file.py` in CI: frontmatter
-validity, no organization-specific MCP tool names sneaking into the generic
-core, and a secret-shaped-string tripwire. It also runs
+Every push/PR runs `scripts/validate_agent_file.py` in CI: real YAML
+frontmatter validation, no organization-specific MCP tool names sneaking
+into the generic core, and a secret-shaped-string tripwire. It also runs
+`scripts/validate_skill_frontmatter.py` (every SKILL.md carries the
+required frontmatter and its name matches its directory) and
 `scripts/validate_plugin_manifest.py`: the marketplace catalog and every
-plugin's `.claude-plugin/plugin.json` parse as JSON and carry their required
-fields, each marketplace entry's `source` resolves to a real plugin
-directory, and manifest `version` fields agree where both are declared.
+plugin's `.claude-plugin/plugin.json` parse as JSON and carry the full
+documented metadata contract, each marketplace entry's `source` resolves
+to a real plugin directory, and manifest `version` fields agree where
+both are declared.
 
 ## License
 

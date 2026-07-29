@@ -55,7 +55,7 @@ To add a plugin to the marketplace:
 4. Check for name conflicts with existing plugins' skills, agents, commands, and MCP server keys — installed plugins share one namespace
 5. Update the root README (Available Plugins, Repository Structure, Installation, Available Skills) and the changelog
 
-CI runs `scripts/validate_plugin_manifest.py` and `scripts/validate_agent_file.py` on every push/PR — run them locally (plus `pytest tests/`) before opening a PR.
+CI runs `scripts/validate_plugin_manifest.py`, `scripts/validate_agent_file.py`, and `scripts/validate_skill_frontmatter.py` on every push/PR — run them locally via `uv` before opening a PR (see CLAUDE.md for the exact commands, e.g. `uv run --no-project --with pyyaml --with pytest -- pytest tests/ -q`).
 
 ### Documentation
 

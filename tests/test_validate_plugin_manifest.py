@@ -38,8 +38,21 @@ def _run(tmp_path: Path) -> int:
         return validate_plugin_manifest.main()
 
 
+def _valid_plugin(name: str, version: str = "0.1.0") -> dict:
+    return {
+        "name": name,
+        "description": f"Test plugin {name}",
+        "version": version,
+        "author": {"name": "CloudZero"},
+        "homepage": "https://github.com/cloudzero/cloudzero-claude-marketplace",
+        "repository": "https://github.com/cloudzero/cloudzero-claude-marketplace",
+        "license": "Apache-2.0",
+        "keywords": ["test"],
+    }
+
+
 def _valid_pair() -> tuple[dict, dict]:
-    plugin = {"name": "model-right-sizer", "version": "0.1.0"}
+    plugin = _valid_plugin("model-right-sizer")
     marketplace = {
         "name": "cloudzero",
         "owner": {"name": "CloudZero"},
@@ -71,7 +84,7 @@ class TestValidPair:
         )
         _write_marketplace(tmp_path, marketplace)
         _write_plugin(tmp_path, SOURCE, plugin)
-        _write_plugin(tmp_path, "plugins/cost-analyst", {"name": "cost-analyst"})
+        _write_plugin(tmp_path, "plugins/cost-analyst", _valid_plugin("cost-analyst"))
         assert _run(tmp_path) == 0
 
 
@@ -103,6 +116,15 @@ class TestRequiredFields:
         _write_marketplace(tmp_path, marketplace)
         _write_plugin(tmp_path, SOURCE, plugin)
         assert _run(tmp_path) == 1
+
+    def test_plugin_missing_any_documented_field_fails(self, tmp_path: Path) -> None:
+        """The full CONTRIBUTING metadata contract is enforced, not just name."""
+        for field in validate_plugin_manifest.REQUIRED_PLUGIN_FIELDS:
+            plugin, marketplace = _valid_pair()
+            del plugin[field]
+            _write_marketplace(tmp_path, marketplace)
+            _write_plugin(tmp_path, SOURCE, plugin)
+            assert _run(tmp_path) == 1, f"Expected failure when plugin.json lacks {field!r}"
 
     def test_marketplace_missing_name_fails(self, tmp_path: Path) -> None:
         plugin, marketplace = _valid_pair()
@@ -164,10 +186,10 @@ class TestVersionDrift:
         _write_plugin(tmp_path, SOURCE, plugin)
         assert _run(tmp_path) == 1
 
-    def test_missing_versions_pass(self, tmp_path: Path) -> None:
-        """Version is optional on both sides; absence isn't drift."""
+    def test_missing_entry_version_passes(self, tmp_path: Path) -> None:
+        """plugin.json's version is required, but the marketplace entry's is
+        optional — its absence isn't drift."""
         plugin, marketplace = _valid_pair()
-        del plugin["version"]
         del marketplace["plugins"][0]["version"]
         _write_marketplace(tmp_path, marketplace)
         _write_plugin(tmp_path, SOURCE, plugin)

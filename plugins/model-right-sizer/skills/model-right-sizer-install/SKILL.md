@@ -79,11 +79,14 @@ scaling by forcing a full report on every micro-edit.
      `https://github.com/cloudzero/cloudzero-claude-marketplace` into
      `.claude/agents/` in this repo, or follow the plugin README's submodule +
      compose pattern if they want it to stay upgradeable independently.
-   - Either way, proceed to stamp the mandate below — it is a statement of
-     intent as much as a live pointer — but say plainly in your report
-     whether the agent was already present, freshly installed, or still
-     missing (with the fallback instruction), don't silently assume it's
-     wired.
+   - If the agent is present or was just installed, proceed to stamp the
+     mandate below. If it is **still missing** (plugin install unavailable
+     and no manual copy yet), do NOT stamp silently: tell the user the
+     mandate would point at an agent that doesn't exist yet, give the
+     manual fix above, and ask whether to stamp anyway (as a statement of
+     intent) or stop until the agent is installed. Either way, say plainly
+     in your report whether the agent was already present, freshly
+     installed, or still missing — don't silently assume it's wired.
 
 3. **Insert or refresh the marker-delimited block** below in the repo's
    `CLAUDE.md` — **append-only**: create the file if none exists (with just

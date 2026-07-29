@@ -34,6 +34,18 @@ Used only for developing and validating this repository — not shipped with, or
 - **License:** MIT
 - **URL:** https://pytest.org
 
+### PyYAML
+
+- **Description:** YAML parser used by the CI validators in `scripts/` to check agent and skill frontmatter
+- **License:** MIT
+- **URL:** https://pyyaml.org
+
+### uv
+
+- **Description:** Python package runner used to execute the validators and tests in CI and locally
+- **License:** Apache-2.0 OR MIT
+- **URL:** https://docs.astral.sh/uv/
+
 ## Embedded Code
 
 This repository does not embed any third-party code or libraries.
