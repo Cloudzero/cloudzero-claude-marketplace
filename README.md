@@ -1,6 +1,6 @@
 # CloudZero Plugin Marketplace
 
-Welcome to the CloudZero Plugin Marketplace for Claude Code! This repository hosts AI-powered plugins that provide comprehensive cloud cost analysis capabilities using CloudZero's MCP (Model Context Protocol) server. Install plugins to investigate cost spikes, analyze trends, compare spending, optimize services, and track cloud infrastructure costs—all through natural conversation with Claude.
+Welcome to the CloudZero Plugin Marketplace for Claude Code! This repository hosts AI-powered plugins for cloud and AI cost intelligence: investigate cost spikes, analyze trends, compare spending, optimize services, and track cloud infrastructure costs using CloudZero's MCP (Model Context Protocol) server—plus right-size which Claude model each AI task should run on. All through natural conversation with Claude.
 
 **Key Features:**
 - 🔍 **Cost Spike Investigation** - Identify and explain sudden cost increases
@@ -11,6 +11,7 @@ Welcome to the CloudZero Plugin Marketplace for Claude Code! This repository hos
 - 👥 **Custom Dimension Analysis** - Business-aligned cost visibility
 - 🚨 **Anomaly Detection** - Proactively identify unusual spending patterns
 - 💰 **Top Cost Drivers** - Identify and prioritize optimization opportunities
+- 🧮 **Model Right-Sizing** - Pick the smallest Claude model that clears the bar for each AI task
 
 ## Available Plugins
 
@@ -20,6 +21,14 @@ The flagship plugin providing comprehensive cost analysis capabilities:
 - Pre-configured CloudZero MCP server integration
 - Dynamic dimension discovery for your organization
 - Showback/chargeback reporting capabilities
+
+### Model Right Sizer Plugin
+A model-selection economist for Claude Code that keeps AI spend as intentional as cloud spend:
+- The `model-right-sizer` agent scores each task on effectiveness need vs. efficiency pressure vs. difficulty, and recommends the smallest Claude model (plus effort and token budget) that clears the bar
+- Runs as a bookend around work: a right-sizing blueprint before, a model-usage report after
+- Companion skills to preview the routing map for an intent (`model-right-sizer-dryrun`) and to stamp a standing right-sizing mandate onto a repo (`model-right-sizer-install`)
+
+See the [Model Right Sizer README](plugins/model-right-sizer/README.md) for full details.
 
 ## Table of Contents
 
@@ -41,12 +50,20 @@ cloudzero-claude-marketplace/
 ├── .claude-plugin/
 │   └── marketplace.json          # Marketplace configuration
 ├── plugins/
-│   └── cost-analyst/             # Cost Analyst plugin
+│   ├── cost-analyst/             # Cost Analyst plugin
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json       # Plugin manifest
+│   │   ├── .mcp.json             # MCP server configuration
+│   │   ├── skills/               # Cost analysis skills
+│   │   └── references/           # Shared reference documentation
+│   └── model-right-sizer/        # Model Right Sizer plugin
 │       ├── .claude-plugin/
 │       │   └── plugin.json       # Plugin manifest
-│       ├── .mcp.json             # MCP server configuration
-│       ├── skills/               # Cost analysis skills
-│       └── references/           # Shared reference documentation
+│       ├── agents/               # The model-right-sizer agent
+│       ├── skills/               # Companion install/dry-run skills
+│       └── README.md             # Plugin documentation
+├── scripts/                      # CI validators (manifests, agent files)
+├── tests/                        # Tests for the validators
 ├── README.md
 └── ...
 ```
@@ -63,9 +80,26 @@ For more information about the tools and services used in this project:
 
 ## Installation
 
-See the [CloudZero AI Hub](https://docs.cloudzero.com/docs/ai-getting-started) for installation instructions.
+Add the CloudZero marketplace to Claude Code once, then install whichever plugins you want from it:
+
+```
+/plugin marketplace add cloudzero/cloudzero-claude-marketplace
+```
+
+Adding the marketplace makes every plugin in this repository available. It does not install them by itself — install each plugin you want:
+
+```
+/plugin install cost-analyst@cloudzero
+/plugin install model-right-sizer@cloudzero
+```
+
+Installing `cost-analyst@cloudzero` gives you the 8 cost analysis skills and the pre-configured CloudZero MCP server. Installing `model-right-sizer@cloudzero` gives you the model-right-sizer agent and its two companion skills.
+
+For platform setup and more installation guidance, see the [CloudZero AI Hub](https://docs.cloudzero.com/docs/ai-getting-started).
 
 ## Available Skills
+
+### Cost Analyst Plugin
 
 The CloudZero Cost Analyst plugin includes 8 AI-powered skills that Claude automatically uses based on your questions:
 
@@ -148,6 +182,42 @@ Proactively scans for cost anomalies, unusual patterns, and irregularities that 
 ```
 "Scan for any cost anomalies or unusual spending patterns"
 ```
+
+### Model Right Sizer Plugin
+
+The Model Right Sizer plugin includes one agent and two skills:
+
+#### The `model-right-sizer` Agent
+**Triggered by:** "Blueprint this task", "Which model should this run on?", "Give me a usage report"
+
+A read-only model-selection economist. Before work starts it produces a right-sizing blueprint — a task→model→effort→budget→confidence routing table biased toward the smallest Claude model that clears the bar. After work closes it produces a usage report comparing recommended vs. actual model spend.
+
+**Example:**
+```
+"Blueprint this PR: refactor a REST endpoint, add tests, update docs — which model should each part run on?"
+```
+
+#### Model Right Sizer Dry Run
+**Triggered by:** "Dry-run the right-sizer on...", "What's the map for...", "How would you route..."
+
+Previews the model-routing map for a free-text intent without building anything — the what-would-this-cost lever, safe to run against any idea.
+
+**Example:**
+```
+"Dry-run the right-sizer on: build a Slack bot that summarizes daily standup threads"
+```
+
+#### Model Right Sizer Install
+**Triggered by:** "Install model-right-sizer in this repo", "Add the right-sizer mandate here"
+
+Stamps a standing mandate onto the current repo's `CLAUDE.md` so every substantive task consults the `model-right-sizer` agent before and after the work. Idempotent and append-only.
+
+**Example:**
+```
+"Install model-right-sizer in this repo"
+```
+
+See the [Model Right Sizer README](plugins/model-right-sizer/README.md) for the full documentation.
 
 ## Usage
 

@@ -1,0 +1,32 @@
+#  SPDX-FileCopyrightText: Copyright (c) CloudZero, Inc. or its affiliates. All Rights Reserved.
+#  SPDX-License-Identifier: Apache-2.0
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Validate plugin agent files
+        run: python3 scripts/validate_agent_file.py
+      - name: Validate marketplace and plugin manifests
+        run: python3 scripts/validate_plugin_manifest.py
+      - name: Install pytest
+        run: python3 -m pip install --user pytest
+      - name: Run tests
+        run: python3 -m pytest tests/ -q

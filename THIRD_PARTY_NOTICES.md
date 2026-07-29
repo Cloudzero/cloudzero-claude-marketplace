@@ -24,6 +24,16 @@ This project relies on the following external services at runtime:
 - **License:** Anthropic Terms of Service
 - **URL:** https://www.anthropic.com
 
+## Development Dependencies
+
+Used only for developing and validating this repository — not shipped with, or required by, any plugin at runtime:
+
+### pytest
+
+- **Description:** Test framework used by CI to run the validator test suites in `tests/`
+- **License:** MIT
+- **URL:** https://pytest.org
+
 ## Embedded Code
 
 This repository does not embed any third-party code or libraries.

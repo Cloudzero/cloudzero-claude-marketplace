@@ -45,6 +45,18 @@ license: Apache-2.0
 ---
 ```
 
+### Adding a New Plugin
+
+To add a plugin to the marketplace:
+
+1. Create a self-contained directory at `plugins/<plugin-name>/` with a `.claude-plugin/plugin.json` manifest (`name`, `version`, `description`, `author`, `homepage`, `repository`, `license`, `keywords` — mirror an existing plugin's manifest)
+2. Put skills in `skills/<skill-name>/SKILL.md` and agents in `agents/<agent-name>.md` inside the plugin directory
+3. Register the plugin in `.claude-plugin/marketplace.json` with an entry like `{ "name": "<plugin-name>", "source": "./plugins/<plugin-name>/" }` (keep the leading `./` and trailing `/`)
+4. Check for name conflicts with existing plugins' skills, agents, commands, and MCP server keys — installed plugins share one namespace
+5. Update the root README (Available Plugins, Repository Structure, Installation, Available Skills) and the changelog
+
+CI runs `scripts/validate_plugin_manifest.py` and `scripts/validate_agent_file.py` on every push/PR — run them locally (plus `pytest tests/`) before opening a PR.
+
 ### Documentation
 
 - Use clear, concise language

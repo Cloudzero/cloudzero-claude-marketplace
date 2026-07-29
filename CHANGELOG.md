@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the CloudZero Cost Analyst Plugin will be documented in this file.
+All notable changes to the CloudZero Plugin Marketplace and its plugins will be documented in this file. Plugin-specific history may also live in a plugin's own changelog (e.g. [plugins/model-right-sizer/CHANGELOG.md](plugins/model-right-sizer/CHANGELOG.md)).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -134,6 +134,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 ## [Unreleased]
+
+### Added
+
+**Model Right Sizer Plugin**
+- Added the `model-right-sizer` plugin at `plugins/model-right-sizer/` (install as `model-right-sizer@cloudzero`), moved in from the standalone `Cloudzero/cloudzero-model-right-sizer` repository, which this marketplace now supersedes as its sole home
+- Ships the `model-right-sizer` agent (a read-only model-selection economist that recommends the smallest Claude model, effort, and token budget that clears the bar for each task) plus two companion skills: `model-right-sizer-install` and `model-right-sizer-dryrun`
+- Bumped marketplace `metadata.version` to 1.1.0
+
+**CI Validation**
+- Added `.github/workflows/ci.yml` running on every push/PR to `main` — the repository previously had no CI
+- Added `scripts/validate_plugin_manifest.py`: the marketplace catalog and every listed plugin manifest parse as JSON, carry required fields, `source` paths resolve, and versions agree where declared on both sides
+- Added `scripts/validate_agent_file.py`: validates frontmatter, org-agnostic tool lists, and secret tripwires for every `plugins/*/agents/*.md`
+- Added pytest suites for both validators under `tests/`
 
 ### Changed
 
