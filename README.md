@@ -11,13 +11,15 @@ Welcome to **CloudZero**, the CloudZero plugin marketplace for Claude Code! This
 - 👥 **Custom Dimension Analysis** - Business-aligned cost visibility
 - 🚨 **Anomaly Detection** - Proactively identify unusual spending patterns
 - 💰 **Top Cost Drivers** - Identify and prioritize optimization opportunities
+- 📝 **Diff Cost Projection** - Estimate cost impact of code changes in PRs and branches
+- 🏗️ **Cost Projection** - Project monthly cost of infrastructure definitions before deployment
 - 🧮 **Model Right-Sizing** - Pick the smallest Claude model that clears the bar for each AI task
 
 ## Available Plugins
 
 ### Cost Analyst Plugin
 The flagship plugin providing comprehensive cost analysis capabilities:
-- 8 specialized cost analysis skills powered by AI
+- 10 specialized cost analysis skills powered by AI
 - Pre-configured CloudZero MCP server integration
 - Dynamic dimension discovery for your organization
 - Showback/chargeback reporting capabilities
@@ -93,7 +95,7 @@ Adding the marketplace makes every plugin in this repository available. It does 
 /plugin install model-right-sizer@cloudzero
 ```
 
-Installing `cost-analyst@cloudzero` gives you the 8 cost analysis skills and the pre-configured CloudZero MCP server. Installing `model-right-sizer@cloudzero` gives you the model-right-sizer agent and its two companion skills.
+Installing `cost-analyst@cloudzero` gives you the 10 cost analysis skills and the pre-configured CloudZero MCP server. Installing `model-right-sizer@cloudzero` gives you the model-right-sizer agent and its two companion skills.
 
 For platform setup and more installation guidance, see the [CloudZero AI Hub](https://docs.cloudzero.com/docs/ai-getting-started).
 
@@ -101,7 +103,7 @@ For platform setup and more installation guidance, see the [CloudZero AI Hub](ht
 
 ### Cost Analyst Plugin
 
-The CloudZero Cost Analyst plugin includes 8 AI-powered skills that Claude automatically uses based on your questions:
+The CloudZero Cost Analyst plugin includes 10 AI-powered skills that Claude automatically uses based on your questions:
 
 ### 1. Cost Spike Investigation
 **Triggered by:** "What caused the cost spike?", "Why did costs increase?", "Investigate cost jump"
@@ -181,6 +183,28 @@ Proactively scans for cost anomalies, unusual patterns, and irregularities that 
 **Example:**
 ```
 "Scan for any cost anomalies or unusual spending patterns"
+```
+
+### 9. Diff Cost Projection
+**Triggered by:** "Cost impact of this PR", "What will this branch cost?", "Estimate cost of my changes"
+
+Analyzes code diffs (PRs, branches, workspace changes) for infrastructure cost impact. Detects Terraform, CDK, CloudFormation, SAM, Kubernetes, scaling, and application code changes that affect cloud spending.
+
+**Example:**
+```
+/diff-cost-projection 456
+"What's the cost impact of the changes on my current branch?"
+```
+
+### 10. Cost Projection
+**Triggered by:** "How much will this stack cost?", "Project cost of this Terraform", "Estimate cost of deployment.cdk"
+
+Reads infrastructure-as-code definitions (Terraform, CDK, CloudFormation, SAM) and projects monthly cost. Enumerates resources, queries CloudZero for existing spend, looks up pricing for new resources, and produces a line-item breakdown.
+
+**Example:**
+```
+/cost-projection terraform/production/
+"How much will this CDK stack cost to deploy?"
 ```
 
 ### Model Right Sizer Plugin
