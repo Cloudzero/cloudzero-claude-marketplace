@@ -32,5 +32,7 @@ jobs:
         run: uv run --no-project scripts/validate_plugin_manifest.py
       - name: Validate model-right-sizer blueprint worked example
         run: uv run --no-project --with 'jsonschema==4.26.0' scripts/validate_blueprint.py
+      - name: Validate MCP server URLs
+        run: uv run --no-project scripts/validate_mcp_urls.py
       - name: Run tests
         run: uv run --no-project --with 'pyyaml==6.0.3' --with 'jsonschema==4.26.0' --with 'pytest==9.1.1' -- pytest tests/ -q
