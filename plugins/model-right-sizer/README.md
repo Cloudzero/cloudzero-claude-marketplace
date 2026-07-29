@@ -98,8 +98,9 @@ ship.
 
 ## Action scope
 
-Read-only, by design. The agent's tool grant is `Read, Grep, Glob, WebFetch`
-— it never edits or writes files. Its companion skills' blast radius:
+Read-only, by design. The agent's tool grant is `Read, Grep, Glob, WebFetch,
+Task` — `Task` lets it delegate the model-pricing fetch to a sub-agent; it
+never edits or writes files. Its companion skills' blast radius:
 
 - `model-right-sizer-install` writes a single marker-delimited mandate block
   into a target repo's `CLAUDE.md` — idempotent, append-only, never

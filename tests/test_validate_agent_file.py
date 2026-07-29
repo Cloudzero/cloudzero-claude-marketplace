@@ -118,3 +118,16 @@ class TestOtherValidations:
     def test_tab_character_fails(self, tmp_path: Path) -> None:
         content = _make_frontmatter() + "\tindented with tab\n"
         assert _run(content, tmp_path) == 1
+
+    @pytest.mark.parametrize(
+        "secret",
+        [
+            "sk-" + "a1B2c3D4e5" * 3,
+            "ghp_" + "A" * 36,
+            "AKIA" + "X" * 16,
+            "xoxb-12345678901-abcdefghij",
+        ],
+    )
+    def test_secret_shaped_string_fails(self, secret: str, tmp_path: Path) -> None:
+        content = _make_frontmatter() + f"Example key: {secret}\n"
+        assert _run(content, tmp_path) == 1

@@ -167,6 +167,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Documentation catch-up: Optimize Triage skill** — the `optimize-triage` skill shipped in cost-analyst (bumping that plugin to 1.2.0) without README or changelog entries; now documented. It fetches top unaddressed CloudZero Optimize recommendations, dispatches parallel research agents with an SRE critique pass, and surfaces actionable findings. Research-only, but it is the only skill granted `Bash` (for read-only cloud CLI commands) — run it with read-only credentials.
+
 **Model Right Sizer Plugin**
 - Added the `model-right-sizer` plugin at `plugins/model-right-sizer/` (install as `model-right-sizer@cloudzero`), moved in from the standalone `Cloudzero/cloudzero-model-right-sizer` repository, which this marketplace now supersedes as its sole home
 - Ships the `model-right-sizer` agent (a read-only model-selection economist that recommends the smallest Claude model, effort, and token budget that clears the bar for each task) plus two companion skills: `model-right-sizer-install` and `model-right-sizer-dryrun`

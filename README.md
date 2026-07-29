@@ -13,13 +13,14 @@ Welcome to **CloudZero**, the CloudZero plugin marketplace for Claude Code! This
 - 💰 **Top Cost Drivers** - Identify and prioritize optimization opportunities
 - 📝 **Diff Cost Projection** - Estimate cost impact of code changes in PRs and branches
 - 🏗️ **Cost Projection** - Project monthly cost of infrastructure definitions before deployment
+- 🧰 **Optimize Triage** - Research and validate CloudZero Optimize recommendations with parallel agents
 - 🧮 **Model Right-Sizing** - Pick the smallest Claude model that clears the bar for each AI task
 
 ## Available Plugins
 
 ### Cost Analyst Plugin
 The flagship plugin providing comprehensive cost analysis capabilities:
-- 10 specialized cost analysis skills powered by AI
+- 11 specialized cost analysis skills powered by AI
 - Pre-configured CloudZero MCP server integration
 - Dynamic dimension discovery for your organization
 - Showback/chargeback reporting capabilities
@@ -95,7 +96,7 @@ Adding the marketplace makes every plugin in this repository available. It does 
 /plugin install model-right-sizer@cloudzero
 ```
 
-Installing `cost-analyst@cloudzero` gives you the 10 cost analysis skills and the pre-configured CloudZero MCP server. Installing `model-right-sizer@cloudzero` gives you the model-right-sizer agent and its two companion skills.
+Installing `cost-analyst@cloudzero` gives you the 11 cost analysis skills and the pre-configured CloudZero MCP server. Installing `model-right-sizer@cloudzero` gives you the model-right-sizer agent and its two companion skills.
 
 For platform setup and more installation guidance, see the [CloudZero AI Hub](https://docs.cloudzero.com/docs/ai-getting-started).
 
@@ -103,7 +104,7 @@ For platform setup and more installation guidance, see the [CloudZero AI Hub](ht
 
 ### Cost Analyst Plugin
 
-The CloudZero Cost Analyst plugin includes 10 AI-powered skills that Claude automatically uses based on your questions:
+The CloudZero Cost Analyst plugin includes 11 AI-powered skills that Claude automatically uses based on your questions:
 
 ### 1. Cost Spike Investigation
 **Triggered by:** "What caused the cost spike?", "Why did costs increase?", "Investigate cost jump"
@@ -205,6 +206,16 @@ Reads infrastructure-as-code definitions (Terraform, CDK, CloudFormation, SAM) a
 ```
 /cost-projection terraform/production/
 "How much will this CDK stack cost to deploy?"
+```
+
+### 11. Optimize Triage
+**Triggered by:** "Triage our Optimize recommendations", "Which optimization recommendations are actionable?", "Research our top savings opportunities"
+
+Fetches top unaddressed CloudZero Optimize recommendations, dispatches parallel research agents per item with an SRE critique pass, and surfaces the genuinely actionable ones with confidence verdicts. Research-only — but note it is the one skill granted `Bash` access, used for read-only cloud CLI commands (e.g. `aws ec2 describe-instances`); run it with read-only credentials.
+
+**Example:**
+```
+"Triage our top CloudZero Optimize recommendations and tell me which are actually actionable"
 ```
 
 ### Model Right Sizer Plugin

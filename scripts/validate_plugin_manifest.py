@@ -57,6 +57,9 @@ def main() -> int:
     marketplace = load_json(MARKETPLACE_MANIFEST)
     if marketplace is None:
         return 1
+    if not isinstance(marketplace, dict):
+        fail(f"{MARKETPLACE_MANIFEST}: top level must be a JSON object, got {type(marketplace).__name__}")
+        return 1
     if not marketplace.get("name"):
         fail(f"{MARKETPLACE_MANIFEST}: missing required field 'name'")
         ok = False
@@ -71,6 +74,10 @@ def main() -> int:
 
     for i, entry in enumerate(plugins):
         label = f"{MARKETPLACE_MANIFEST}: plugins[{i}]"
+        if not isinstance(entry, dict):
+            fail(f"{label}: must be a JSON object, got {type(entry).__name__}")
+            ok = False
+            continue
         name = entry.get("name")
         source = entry.get("source")
         if not name:
@@ -93,6 +100,10 @@ def main() -> int:
 
         entry_plugin = load_json(entry_plugin_json)
         if entry_plugin is None:
+            ok = False
+            continue
+        if not isinstance(entry_plugin, dict):
+            fail(f"{entry_plugin_json}: top level must be a JSON object, got {type(entry_plugin).__name__}")
             ok = False
             continue
 
