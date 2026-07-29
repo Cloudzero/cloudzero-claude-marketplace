@@ -4,8 +4,9 @@
 """Validate MCP server URLs in every plugin .mcp.json against the official domain allowlist. Run in CI on every push/PR.
 
 Checks:
-  - at least one .mcp.json exists under plugins/ (a PR silently dropping the
-    CloudZero MCP configuration should fail, not pass)
+  - every plugin listed in REQUIRED_MCP_PLUGINS still ships its .mcp.json
+    (a PR silently dropping a required CloudZero MCP configuration should
+    fail, not pass)
   - every .mcp.json under plugins/ parses as valid JSON with a non-empty
     `mcpServers` object
   - every server entry that declares a `url` (or is of type http/sse) has a
@@ -26,6 +27,11 @@ from urllib.parse import urlparse
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 ALLOWED_DOMAIN_SUFFIXES = ("cloudzero.com",)
+
+# Plugins whose skills call CloudZero MCP tools and therefore must ship an
+# .mcp.json. If removing one is ever intentional, update this tuple in the
+# same PR so the removal is explicit.
+REQUIRED_MCP_PLUGINS = ("cost-analyst",)
 
 
 def fail(msg: str) -> None:
@@ -77,16 +83,18 @@ def check_file(path: Path) -> bool:
 
 
 def main() -> int:
+    ok = True
+    for plugin in REQUIRED_MCP_PLUGINS:
+        if not (REPO_ROOT / "plugins" / plugin / ".mcp.json").is_file():
+            fail(
+                f"plugins/{plugin}/.mcp.json is missing — this plugin's skills "
+                "require the CloudZero MCP server; if removing it is intentional, "
+                "update REQUIRED_MCP_PLUGINS in this script"
+            )
+            ok = False
     mcp_files = sorted((REPO_ROOT / "plugins").rglob(".mcp.json"))
-    if not mcp_files:
-        fail(
-            "no .mcp.json files found under plugins/ — at least one plugin is "
-            "expected to configure the CloudZero MCP server; if removing MCP "
-            "configuration is intentional, update this check"
-        )
-        return 1
     results = [check_file(path) for path in mcp_files]
-    if all(results):
+    if ok and all(results):
         print(f"OK: {len(mcp_files)} .mcp.json file(s) validated")
         return 0
     return 1
