@@ -22,7 +22,7 @@ This information will help us triage your report more quickly.
 
 ## Scope Notes for This Repository
 
-- **Supply chain:** the `model-right-sizer-install` skill may run `/plugin marketplace add cloudzero/cloudzero-claude-marketplace` and `/plugin install model-right-sizer@cloudzero` in a consumer's environment when the agent it points at isn't already discoverable — the only autonomous install action in this repository, scoped to this marketplace's own plugin. It otherwise writes a single marker-delimited block to the target repo's `CLAUDE.md`.
+- **Supply chain:** the `model-right-sizer-install` skill may run `/plugin marketplace add cloudzero/cloudzero-claude-marketplace` and `/plugin install model-right-sizer@cloudzero` in a consumer's environment when the agent it points at isn't already discoverable — the only install action in this repository, scoped to this marketplace's own plugin, and gated on the user's explicit confirmation before the commands run. It otherwise writes a single marker-delimited block to the target repo's `CLAUDE.md`.
 - **Tool grants:** the cost-analyst `optimize-triage` skill is the only skill granted `Bash`, used for read-only cloud CLI commands; its documentation instructs running with read-only credentials. The `model-right-sizer` agent is read-only (`Read, Grep, Glob, WebFetch, Task`).
 - CI validators (`scripts/`) enforce that agent tool grants stay organization-agnostic and include a secret-shaped-string tripwire.
 

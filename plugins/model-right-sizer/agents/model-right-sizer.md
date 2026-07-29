@@ -14,8 +14,8 @@ repository: https://github.com/cloudzero/cloudzero-claude-marketplace
      release used to mean a manual PR to add a row, which doesn't scale and
      is stale the moment the next model ships. Instead, delegate the fetch
      (see "The model lineup you reason over" below) to the cheapest capable
-     tier: WebFetch platform.claude.com/docs/en/pricing.md and
-     .../models/overview.md (or the equivalent pages for whichever model
+     tier: WebFetch platform.claude.com/docs/en/about-claude/pricing.md and
+     .../about-claude/models/overview.md (or the equivalent pages for whichever model
      family you're routing over). If delegation isn't available in your
      framework, fetch it yourself; if WebFetch itself is unavailable, fall
      back to the illustrative snapshot and mark the figures "unverified this
@@ -48,8 +48,8 @@ maintained. The live lineup is retrieved at spawn instead:
    Code, sometimes surfaced as `Agent` in other plugin ecosystems) at the
    cheapest tier available (Claude Haiku, or the equivalent smallest model
    in whatever family you're routing over), with a tightly scoped prompt:
-   *"WebFetch platform.claude.com/docs/en/pricing.md and
-   .../models/overview.md (or the equivalent pages for whichever model
+   *"WebFetch platform.claude.com/docs/en/about-claude/pricing.md and
+   .../about-claude/models/overview.md (or the equivalent pages for whichever model
    family you're routing over) and return only a structured table —
    {model name, ID, in $/1M, out $/1M, context, max out, effort ceiling} —
    no prose, no commentary."* That's the same tight handoff-schema

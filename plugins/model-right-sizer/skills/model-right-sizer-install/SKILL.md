@@ -64,13 +64,17 @@ scaling by forcing a full report on every micro-edit.
    for `model-right-sizer.md` somewhere your tooling reads agent personas from
    (e.g. `.claude/agents/model-right-sizer.md`, or a plugin's
    `agents/model-right-sizer.md`). If it is **not** there:
-   - Install the `model-right-sizer` Claude Code plugin right now:
+   - Tell the user the agent isn't discoverable and that fixing it means
+     adding the CloudZero marketplace and installing the plugin — then, **with
+     their go-ahead**, run:
      ```
      /plugin marketplace add cloudzero/cloudzero-claude-marketplace
      /plugin install model-right-sizer@cloudzero
      ```
-     Then re-check discoverability — the plugin's `agents/model-right-sizer.md`
-     should now resolve.
+     Do not run these without confirming first — installing a plugin is a
+     change to the user's environment, not just this repo. Then re-check
+     discoverability — the plugin's `agents/model-right-sizer.md` should now
+     resolve.
    - If the plugin-install commands aren't available in this runtime (this
      isn't Claude Code, or plugin installs are disabled here), fall back to
      telling the user the mandate will point at an agent that doesn't exist

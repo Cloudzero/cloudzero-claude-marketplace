@@ -18,6 +18,13 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   `model-right-sizer-install` skill's install commands and fallback links
   were repointed, and the CI validators moved to the marketplace repo's
   `scripts/` where they now validate every plugin in the catalog.
+- Security-review hardening during the move: the install skill now asks for
+  explicit user confirmation before running the plugin-install commands and
+  before stamping the mandate when the agent is undiscoverable, and the
+  agent's pricing-fetch URLs were fixed to the working
+  `platform.claude.com/docs/en/about-claude/...` endpoints (the old paths
+  had started returning 404, silently forcing every run onto the stale
+  in-file snapshot).
 
 ### Added
 - `scripts/validate_plugin_manifest.py` (wired into CI's `validate` job, plus

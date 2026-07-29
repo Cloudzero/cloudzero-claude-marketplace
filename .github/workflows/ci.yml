@@ -25,10 +25,10 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
       - name: Validate plugin agent files
-        run: uv run --no-project --with pyyaml scripts/validate_agent_file.py
+        run: uv run --no-project --with 'pyyaml==6.0.3' scripts/validate_agent_file.py
       - name: Validate plugin skill frontmatter
-        run: uv run --no-project --with pyyaml scripts/validate_skill_frontmatter.py
+        run: uv run --no-project --with 'pyyaml==6.0.3' scripts/validate_skill_frontmatter.py
       - name: Validate marketplace and plugin manifests
         run: uv run --no-project scripts/validate_plugin_manifest.py
       - name: Run tests
-        run: uv run --no-project --with pyyaml --with pytest -- pytest tests/ -q
+        run: uv run --no-project --with 'pyyaml==6.0.3' --with 'pytest==9.1.1' -- pytest tests/ -q

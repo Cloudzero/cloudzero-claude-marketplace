@@ -48,7 +48,9 @@ jobs:
           mkdir -p ~/.ssh
           printf '%s\n' "$MIRROR_SSH_KEY" > ~/.ssh/mirror_key
           chmod 600 ~/.ssh/mirror_key
-          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+          # Pin GitHub's SSH host keys from the TLS-authenticated meta API
+          # instead of trust-on-first-use ssh-keyscan.
+          curl -fsS https://api.github.com/meta | jq -r '.ssh_keys[] | "github.com \(.)"' > ~/.ssh/known_hosts
           export GIT_SSH_COMMAND="ssh -i ~/.ssh/mirror_key -o UserKnownHostsFile=~/.ssh/known_hosts"
           git clone --bare "https://github.com/${GITHUB_REPOSITORY}.git" source.git
           cd source.git

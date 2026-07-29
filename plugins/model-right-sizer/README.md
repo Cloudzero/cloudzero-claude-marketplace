@@ -105,10 +105,11 @@ never edits or writes files. Its companion skills' blast radius:
 - `model-right-sizer-install` writes a single marker-delimited mandate block
   into a target repo's `CLAUDE.md` — idempotent, append-only, never
   overwrites existing content outside that block. If the agent itself isn't
-  discoverable in the target repo, it will also run `/plugin marketplace add`
-  + `/plugin install` to install this plugin (falling back to printing manual
-  copy/submodule instructions if plugin install isn't available) — the only
-  action it takes outside that one `CLAUDE.md` block.
+  discoverable in the target repo, it will also — after asking the user to
+  confirm — run `/plugin marketplace add` + `/plugin install` to install this
+  plugin (falling back to printing manual copy/submodule instructions if
+  plugin install isn't available) — the only action it takes outside that
+  one `CLAUDE.md` block.
 - `model-right-sizer-dryrun` writes nothing; it only returns a routing map.
 
 See the repo-level [SECURITY.md](../../SECURITY.md) for how to report vulnerabilities.
