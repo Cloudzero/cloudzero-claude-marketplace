@@ -4,6 +4,8 @@
 """Validate MCP server URLs in every plugin .mcp.json against the official domain allowlist. Run in CI on every push/PR.
 
 Checks:
+  - at least one .mcp.json exists under plugins/ (a PR silently dropping the
+    CloudZero MCP configuration should fail, not pass)
   - every .mcp.json under plugins/ parses as valid JSON with a non-empty
     `mcpServers` object
   - every server entry that declares a `url` (or is of type http/sse) has a
@@ -77,8 +79,12 @@ def check_file(path: Path) -> bool:
 def main() -> int:
     mcp_files = sorted((REPO_ROOT / "plugins").rglob(".mcp.json"))
     if not mcp_files:
-        print("OK: no .mcp.json files to validate")
-        return 0
+        fail(
+            "no .mcp.json files found under plugins/ — at least one plugin is "
+            "expected to configure the CloudZero MCP server; if removing MCP "
+            "configuration is intentional, update this check"
+        )
+        return 1
     results = [check_file(path) for path in mcp_files]
     if all(results):
         print(f"OK: {len(mcp_files)} .mcp.json file(s) validated")
