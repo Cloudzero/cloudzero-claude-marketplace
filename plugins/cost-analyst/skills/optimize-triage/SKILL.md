@@ -295,9 +295,11 @@ same name. Derive `[resource-name]` from the resource identifier keeping only lo
 alphanumerics and hyphens — strip path separators and every other character — so an
 externally sourced name can never change where the file lands. If two resources in this
 run sanitize to the same name, append the smallest numeric suffix (`-2`, `-3`, …) that
-is unused. Never overwrite an existing file: if a target name already exists on disk,
-take the next suffix instead. Create the directory
-if it does not exist, and write a
+is unused. Never overwrite an existing file: create each report atomically with
+no-clobber semantics — in the shell, `set -o noclobber` before a `>` redirection, which
+fails instead of truncating when the name is already taken, even by a run started in
+the same second — and on such a failure take the next suffix and retry. Create the
+directory if it does not exist, and write a
 `.gitignore` file containing a single `*` inside it so the reports stay out of version
 control even if the user later runs `git add .`. These reports may contain sensitive
 organizational data (account IDs, resource identifiers, cost figures, team contacts,

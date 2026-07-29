@@ -4,10 +4,11 @@
 """Validate MCP server URLs in every plugin .mcp.json against the official domain allowlist. Run in CI on every push/PR.
 
 Checks:
-  - every plugin listed in REQUIRED_MCP_PLUGINS still ships an .mcp.json
-    declaring at least one https CloudZero server (a PR silently dropping a
-    required CloudZero MCP configuration, or swapping it for a stdio-only or
-    non-CloudZero server, should fail, not pass)
+  - every plugin in REQUIRED_MCP_SERVERS still ships an .mcp.json whose
+    named server (the one its skills invoke as mcp__<key>__* tools) is an
+    https endpoint on an approved CloudZero domain — a PR silently dropping
+    that server, swapping it for a stdio-backed or non-CloudZero one, or
+    hiding the swap behind an unrelated approved server, should fail
   - every .mcp.json under plugins/ parses as valid JSON with a non-empty
     `mcpServers` object
   - every server entry that declares a `url` (or is of type http/sse) has a
@@ -29,10 +30,12 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 ALLOWED_DOMAIN_SUFFIXES = ("cloudzero.com",)
 
-# Plugins whose skills call CloudZero MCP tools and therefore must ship an
-# .mcp.json. If removing one is ever intentional, update this tuple in the
-# same PR so the removal is explicit.
-REQUIRED_MCP_PLUGINS = ("cost-analyst",)
+# Plugins whose skills call CloudZero MCP tools, mapped to the server key
+# those skills invoke (as mcp__<key>__* tools). That specific server must be
+# an https endpoint on an approved CloudZero domain — an unrelated approved
+# server elsewhere in the file does not count. If removing an entry is ever
+# intentional, update this mapping in the same PR so the removal is explicit.
+REQUIRED_MCP_SERVERS = {"cost-analyst": "cloudzero"}
 
 
 def fail(msg: str) -> None:
@@ -83,42 +86,42 @@ def check_file(path: Path) -> bool:
     return ok
 
 
-def has_approved_https_server(path: Path) -> bool:
-    """True if the .mcp.json declares at least one https server on an allowed domain."""
+def server_is_approved_https(path: Path, key: str) -> bool:
+    """True if the .mcp.json's server named `key` is https on an allowed domain."""
     try:
         servers = json.loads(path.read_text(encoding="utf-8")).get("mcpServers")
     except (OSError, json.JSONDecodeError):
         return False
     if not isinstance(servers, dict):
         return False
-    for server in servers.values():
-        if not isinstance(server, dict):
-            continue
-        url = server.get("url")
-        if not isinstance(url, str):
-            continue
-        parsed = urlparse(url)
-        if parsed.scheme == "https" and host_allowed(parsed.hostname or ""):
-            return True
-    return False
+    server = servers.get(key)
+    if not isinstance(server, dict):
+        return False
+    url = server.get("url")
+    if not isinstance(url, str):
+        return False
+    parsed = urlparse(url)
+    return parsed.scheme == "https" and host_allowed(parsed.hostname or "")
 
 
 def main() -> int:
     ok = True
-    for plugin in REQUIRED_MCP_PLUGINS:
+    for plugin, server_key in REQUIRED_MCP_SERVERS.items():
         config = REPO_ROOT / "plugins" / plugin / ".mcp.json"
         if not config.is_file():
             fail(
                 f"plugins/{plugin}/.mcp.json is missing — this plugin's skills "
-                "require the CloudZero MCP server; if removing it is intentional, "
-                "update REQUIRED_MCP_PLUGINS in this script"
+                f"require the {server_key!r} CloudZero MCP server; if removing it "
+                "is intentional, update REQUIRED_MCP_SERVERS in this script"
             )
             ok = False
-        elif not has_approved_https_server(config):
+        elif not server_is_approved_https(config, server_key):
             fail(
-                f"plugins/{plugin}/.mcp.json: must configure at least one CloudZero "
-                "MCP server over https — a stdio-only or non-CloudZero configuration "
-                "does not satisfy this plugin's requirement"
+                f"plugins/{plugin}/.mcp.json: server {server_key!r} must be an "
+                "https endpoint on an approved CloudZero domain — this plugin's "
+                f"skills call mcp__{server_key}__* tools, so a missing, "
+                f"stdio-backed, or non-CloudZero {server_key!r} server does not "
+                "satisfy the requirement even if another approved server exists"
             )
             ok = False
     mcp_files = sorted((REPO_ROOT / "plugins").rglob(".mcp.json"))
