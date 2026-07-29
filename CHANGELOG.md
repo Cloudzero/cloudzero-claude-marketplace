@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the CloudZero Plugin Marketplace and its plugins will be documented in this file. Plugin-specific history may also live in a plugin's own changelog (e.g. [plugins/model-right-sizer/CHANGELOG.md](plugins/model-right-sizer/CHANGELOG.md)).
+All notable changes to CloudZero (the CloudZero plugin marketplace) and its plugins will be documented in this file. Plugin-specific history may also live in a plugin's own changelog (e.g. [plugins/model-right-sizer/CHANGELOG.md](plugins/model-right-sizer/CHANGELOG.md)).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).

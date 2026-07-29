@@ -1,10 +1,10 @@
 # Third-Party Notices
 
-This document lists third-party software components included in or used by the CloudZero Plugin Marketplace.
+This document lists third-party software components included in or used by CloudZero, the CloudZero plugin marketplace for Claude Code.
 
 ## Overview
 
-The CloudZero Plugin Marketplace is a collection of AI-powered skills and plugins for cloud cost analysis. This project primarily consists of documentation and configuration files (Markdown, JSON) and does not include third-party software libraries or dependencies.
+CloudZero (this plugin marketplace) is a collection of AI-powered skills and plugins for cloud cost analysis. This project primarily consists of documentation and configuration files (Markdown, JSON) and does not include third-party software libraries or dependencies.
 
 ## Runtime Dependencies
 

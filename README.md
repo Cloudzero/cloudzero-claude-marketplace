@@ -1,6 +1,6 @@
-# CloudZero Plugin Marketplace
+# CloudZero
 
-Welcome to the CloudZero Plugin Marketplace for Claude Code! This repository hosts AI-powered plugins for cloud and AI cost intelligence: investigate cost spikes, analyze trends, compare spending, optimize services, and track cloud infrastructure costs using CloudZero's MCP (Model Context Protocol) server—plus right-size which Claude model each AI task should run on. All through natural conversation with Claude.
+Welcome to **CloudZero**, the CloudZero plugin marketplace for Claude Code! This repository hosts AI-powered plugins for cloud and AI cost intelligence: investigate cost spikes, analyze trends, compare spending, optimize services, and track cloud infrastructure costs using CloudZero's MCP (Model Context Protocol) server—plus right-size which Claude model each AI task should run on. All through natural conversation with Claude.
 
 **Key Features:**
 - 🔍 **Cost Spike Investigation** - Identify and explain sudden cost increases

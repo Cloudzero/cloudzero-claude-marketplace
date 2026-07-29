@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/cloudzero/cloudzero-claude-marketplace/actions/workflows/ci.yml/badge.svg)](https://github.com/cloudzero/cloudzero-claude-marketplace/actions/workflows/ci.yml)
 
-Part of the [CloudZero Plugin Marketplace](../../README.md).
+Part of [CloudZero](../../README.md), the CloudZero plugin marketplace for Claude Code.
 
 A **model-selection economist** agent definition for [Claude Code](https://docs.claude.com/claude-code) (and any similar Claude-Agent-SDK-based agent runtime that reads a persona from a markdown file with YAML frontmatter).
 
@@ -14,7 +14,7 @@ Grounded in two published results on adaptive reasoning budgets:
 
 ## What's in this plugin
 
-This directory is a self-contained **Claude Code plugin** within the CloudZero Plugin Marketplace:
+This directory is a self-contained **Claude Code plugin** within the CloudZero marketplace:
 
 - [`.claude-plugin/plugin.json`](.claude-plugin/plugin.json) — the plugin manifest (name, version, metadata). The plugin is registered in the marketplace catalog at the repo root ([`.claude-plugin/marketplace.json`](../../.claude-plugin/marketplace.json)).
 - [`agents/model-right-sizer.md`](agents/model-right-sizer.md) — the agent definition (frontmatter + system prompt). Self-contained and organization-agnostic: no internal quotes, no internal tool/telemetry references, no hard-coded sibling-agent names.
@@ -26,7 +26,7 @@ Besides right-sizing *which model*, the agent also flags stages where a determin
 
 ## Installing it
 
-Install it from the CloudZero Plugin Marketplace — add the marketplace once, then install the plugin:
+Install it from the CloudZero marketplace — add the marketplace once, then install the plugin:
 
 ```
 /plugin marketplace add cloudzero/cloudzero-claude-marketplace

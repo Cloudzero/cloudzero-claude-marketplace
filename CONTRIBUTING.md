@@ -1,6 +1,6 @@
-# Contributing to CloudZero Plugin Marketplace
+# Contributing to CloudZero
 
-Thank you for your interest in contributing to the CloudZero Plugin Marketplace! This document provides guidelines for contributing to this project.
+Thank you for your interest in contributing to CloudZero, the CloudZero plugin marketplace for Claude Code! This document provides guidelines for contributing to this project.
 
 ## How to Contribute
 

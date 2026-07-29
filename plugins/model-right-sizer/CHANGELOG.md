@@ -5,7 +5,7 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 ## Unreleased
 
 ### Changed
-- **Moved into the CloudZero Plugin Marketplace** — this plugin now lives at
+- **Moved into CloudZero (the CloudZero plugin marketplace)** — this plugin now lives at
   `plugins/model-right-sizer/` in
   [cloudzero/cloudzero-claude-marketplace](https://github.com/cloudzero/cloudzero-claude-marketplace),
   which is its sole home going forward (the standalone
