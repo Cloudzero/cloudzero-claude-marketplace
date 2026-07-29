@@ -49,6 +49,24 @@ def test_required_plugin_config_present_passes(tmp_path: Path) -> None:
     assert _run(tmp_path, required=("cost-analyst",)) == 0
 
 
+def test_stdio_only_config_does_not_satisfy_requirement(tmp_path: Path) -> None:
+    _write_mcp(
+        tmp_path,
+        {"mcpServers": {"local": {"command": "some-binary", "args": ["--serve"]}}},
+        plugin="cost-analyst",
+    )
+    assert _run(tmp_path, required=("cost-analyst",)) == 1
+
+
+def test_non_cloudzero_config_does_not_satisfy_requirement(tmp_path: Path) -> None:
+    _write_mcp(
+        tmp_path,
+        {"mcpServers": {"cz": {"type": "http", "url": "https://evil.example/mcp"}}},
+        plugin="cost-analyst",
+    )
+    assert _run(tmp_path, required=("cost-analyst",)) == 1
+
+
 def test_other_plugin_config_does_not_satisfy_requirement(tmp_path: Path) -> None:
     _write_mcp(
         tmp_path,

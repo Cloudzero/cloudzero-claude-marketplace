@@ -4,9 +4,10 @@
 """Validate MCP server URLs in every plugin .mcp.json against the official domain allowlist. Run in CI on every push/PR.
 
 Checks:
-  - every plugin listed in REQUIRED_MCP_PLUGINS still ships its .mcp.json
-    (a PR silently dropping a required CloudZero MCP configuration should
-    fail, not pass)
+  - every plugin listed in REQUIRED_MCP_PLUGINS still ships an .mcp.json
+    declaring at least one https CloudZero server (a PR silently dropping a
+    required CloudZero MCP configuration, or swapping it for a stdio-only or
+    non-CloudZero server, should fail, not pass)
   - every .mcp.json under plugins/ parses as valid JSON with a non-empty
     `mcpServers` object
   - every server entry that declares a `url` (or is of type http/sse) has a
@@ -82,14 +83,42 @@ def check_file(path: Path) -> bool:
     return ok
 
 
+def has_approved_https_server(path: Path) -> bool:
+    """True if the .mcp.json declares at least one https server on an allowed domain."""
+    try:
+        servers = json.loads(path.read_text(encoding="utf-8")).get("mcpServers")
+    except (OSError, json.JSONDecodeError):
+        return False
+    if not isinstance(servers, dict):
+        return False
+    for server in servers.values():
+        if not isinstance(server, dict):
+            continue
+        url = server.get("url")
+        if not isinstance(url, str):
+            continue
+        parsed = urlparse(url)
+        if parsed.scheme == "https" and host_allowed(parsed.hostname or ""):
+            return True
+    return False
+
+
 def main() -> int:
     ok = True
     for plugin in REQUIRED_MCP_PLUGINS:
-        if not (REPO_ROOT / "plugins" / plugin / ".mcp.json").is_file():
+        config = REPO_ROOT / "plugins" / plugin / ".mcp.json"
+        if not config.is_file():
             fail(
                 f"plugins/{plugin}/.mcp.json is missing — this plugin's skills "
                 "require the CloudZero MCP server; if removing it is intentional, "
                 "update REQUIRED_MCP_PLUGINS in this script"
+            )
+            ok = False
+        elif not has_approved_https_server(config):
+            fail(
+                f"plugins/{plugin}/.mcp.json: must configure at least one CloudZero "
+                "MCP server over https — a stdio-only or non-CloudZero configuration "
+                "does not satisfy this plugin's requirement"
             )
             ok = False
     mcp_files = sorted((REPO_ROOT / "plugins").rglob(".mcp.json"))

@@ -287,16 +287,16 @@ materially changes a confidence verdict, note it and update the rollup row.
 
 ## Phase 6 — Per-recommendation report files
 
-Write `./optimize-triage-reports/[resource-name]-investigation-[date].md` for each HIGH
-and MEDIUM result before presenting the rollup. Derive `[resource-name]` from the
-resource identifier keeping only lowercase alphanumerics and hyphens — strip path
-separators and every other character — so an externally sourced name can never change
-where the file lands. Before writing each report, check the filename against both the
-files already on disk in `./optimize-triage-reports/` (earlier invocations may have
-investigated the same resource on the same date) and the names written or planned this
-run (including names that only become identical after sanitization): if it is taken,
-append the smallest numeric suffix (`-2`, `-3`, …) that is unused in both sets, so no
-report ever overwrites another. Create the directory
+Write `./optimize-triage-reports/[resource-name]-investigation-[timestamp].md` for each
+HIGH and MEDIUM result before presenting the rollup. `[timestamp]` is this run's start
+time as `YYYY-MM-DD-HHMMSS` UTC — the same value for every report in the run — so
+repeated or concurrent invocations write distinct files rather than racing over the
+same name. Derive `[resource-name]` from the resource identifier keeping only lowercase
+alphanumerics and hyphens — strip path separators and every other character — so an
+externally sourced name can never change where the file lands. If two resources in this
+run sanitize to the same name, append the smallest numeric suffix (`-2`, `-3`, …) that
+is unused. Never overwrite an existing file: if a target name already exists on disk,
+take the next suffix instead. Create the directory
 if it does not exist, and write a
 `.gitignore` file containing a single `*` inside it so the reports stay out of version
 control even if the user later runs `git add .`. These reports may contain sensitive
