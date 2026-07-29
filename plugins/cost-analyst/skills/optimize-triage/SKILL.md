@@ -1,10 +1,10 @@
 ---
 name: optimize-triage
-description: >
-  Fetch top unaddressed CloudZero Optimize recommendations, dispatch parallel research
-  agents per item, apply SRE critique, and surface actionable findings with confidence
-  verdicts and per-resource report files. Read-only research only.
-allowed-tools: Bash, Read, Glob, Grep, WebFetch, Task
+description: "Fetch top unaddressed CloudZero Optimize recommendations, dispatch parallel research agents per item, apply SRE critique, and surface actionable findings with confidence verdicts and per-resource report files. Read-only research only."
+author: CloudZero <support@cloudzero.com>
+version: 1.0.0
+license: Apache-2.0
+allowed-tools: Bash, Read, Glob, Grep, WebFetch, Agent
 ---
 
 # optimize-triage
