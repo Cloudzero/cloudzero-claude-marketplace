@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the CloudZero Cost Analyst Plugin will be documented in this file.
+All notable changes to CloudZero (the CloudZero plugin marketplace) and its plugins will be documented in this file. Plugin-specific history may also live in a plugin's own changelog (e.g. [plugins/model-right-sizer/CHANGELOG.md](plugins/model-right-sizer/CHANGELOG.md)).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -164,6 +164,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 ## [Unreleased]
+
+### Added
+
+**Documentation catch-up: Optimize Triage skill** — the `optimize-triage` skill shipped in cost-analyst (bumping that plugin to 1.2.0) without README or changelog entries; now documented. It fetches top unaddressed CloudZero Optimize recommendations, dispatches parallel research agents with an SRE critique pass, and surfaces actionable findings. Research-only, but it is the only skill granted `Bash` (for read-only cloud CLI commands) — run it with read-only credentials.
+
+**Model Right Sizer Plugin**
+- Added the `model-right-sizer` plugin at `plugins/model-right-sizer/` (install as `model-right-sizer@cloudzero`), moved in from the standalone `Cloudzero/cloudzero-model-right-sizer` repository, which this marketplace now supersedes as its sole home
+- Ships the `model-right-sizer` agent (a read-only model-selection economist that recommends the smallest Claude model, effort, and token budget that clears the bar for each task) plus two companion skills: `model-right-sizer-install` and `model-right-sizer-dryrun`
+- Bumped marketplace `metadata.version` to 1.2.0 (1.1.0 was already used by the cost projection skills release)
+
+**CI Validation**
+- Added `.github/workflows/ci.yml` running on every push/PR to `main` — the repository previously had no CI
+- Added `scripts/validate_plugin_manifest.py`: the marketplace catalog and every listed plugin manifest parse as JSON, carry the full documented metadata contract (name, description, version, author, homepage, repository, license, keywords), `source` paths resolve, and versions agree where declared on both sides
+- Added `scripts/validate_agent_file.py`: real YAML frontmatter validation (a parse failure means Claude Code silently loads the agent with empty metadata), org-agnostic tool lists, and secret tripwires for every `plugins/*/agents/*.md`
+- Added `scripts/validate_skill_frontmatter.py`: every `plugins/*/skills/*/SKILL.md` carries the frontmatter CONTRIBUTING requires and its `name` matches its directory
+- Added pytest suites for all validators under `tests/`
 
 ### Changed
 

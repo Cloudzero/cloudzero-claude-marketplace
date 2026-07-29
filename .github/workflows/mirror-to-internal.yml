@@ -1,0 +1,57 @@
+#  SPDX-FileCopyrightText: Copyright (c) CloudZero, Inc. or its affiliates. All Rights Reserved.
+#  SPDX-License-Identifier: Apache-2.0
+#
+# Mirrors this public marketplace into the private
+# Cloudzero/cloudzero-claude-marketplace-internal repository, which the
+# claude.ai admin console syncs for organization-wide plugin distribution
+# (organization sync requires a private or internal repo — public repos
+# are not allowed).
+#
+# Auth: the MIRROR_SSH_KEY secret holds the private half of a write-enabled
+# deploy key installed on the internal repository.
+
+name: Mirror to internal marketplace
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 6 * * *' # daily fallback in case a push event is missed
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mirror-to-internal
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    # Guard so the mirrored copy of this workflow never runs inside the
+    # internal repository itself.
+    if: github.repository == 'Cloudzero/cloudzero-claude-marketplace'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check mirror credentials are configured
+        env:
+          MIRROR_SSH_KEY: ${{ secrets.MIRROR_SSH_KEY }}
+        run: |
+          if [ -z "$MIRROR_SSH_KEY" ]; then
+            echo "::error::MIRROR_SSH_KEY secret is not set — add the private half of the internal repo's write deploy key."
+            exit 1
+          fi
+      - name: Mirror all branches and tags to the internal repository
+        env:
+          MIRROR_SSH_KEY: ${{ secrets.MIRROR_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$MIRROR_SSH_KEY" > ~/.ssh/mirror_key
+          chmod 600 ~/.ssh/mirror_key
+          # Pin GitHub's SSH host keys from the TLS-authenticated meta API
+          # instead of trust-on-first-use ssh-keyscan.
+          curl -fsS https://api.github.com/meta | jq -r '.ssh_keys[] | "github.com \(.)"' > ~/.ssh/known_hosts
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/mirror_key -o UserKnownHostsFile=~/.ssh/known_hosts"
+          git clone --bare "https://github.com/${GITHUB_REPOSITORY}.git" source.git
+          cd source.git
+          git push --mirror "git@github.com:Cloudzero/cloudzero-claude-marketplace-internal.git"

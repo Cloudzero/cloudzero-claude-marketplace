@@ -6,13 +6,17 @@
   },
   "license": "Apache-2.0",
   "metadata": {
-    "description": "CloudZero Plugin Marketplace - AI-powered cloud cost analysis tools",
-    "version": "1.0.0"
+    "description": "CloudZero - AI-powered cloud and AI optimization",
+    "version": "1.2.0"
   },
   "plugins": [
     {
       "name": "cost-analyst",
       "source": "./plugins/cost-analyst/"
+    },
+    {
+      "name": "model-right-sizer",
+      "source": "./plugins/model-right-sizer/"
     }
   ]
 }
