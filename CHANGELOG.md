@@ -165,6 +165,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Planned
+
+- Additional specialized skills for Reserved Instance analysis
+- Savings Plan optimization skill
+- Budget tracking and alerting integration
+- Cost allocation rule recommendations
+- Interactive cost report generation
+- Integration with additional CloudZero features
+
+---
+
+## [1.2.0] - 2026-07-29
+
 ### Added
 
 **Documentation catch-up: Optimize Triage skill** — the `optimize-triage` skill shipped in cost-analyst (bumping that plugin to 1.2.0) without README or changelog entries; now documented. It fetches top unaddressed CloudZero Optimize recommendations, dispatches parallel research agents with an SRE critique pass, and surfaces actionable findings. Research-only, but it is the only skill granted `Bash` (for read-only cloud CLI commands) — run it with read-only credentials.
@@ -181,6 +194,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `scripts/validate_skill_frontmatter.py`: every `plugins/*/skills/*/SKILL.md` carries the frontmatter CONTRIBUTING requires and its `name` matches its directory
 - Added pytest suites for all validators under `tests/`
 
+**Repository Infrastructure**
+- Added `.github/workflows/mirror-to-internal.yml` — mirrors this public marketplace into the private internal repository used by claude.ai organization plugin sync
+- Added `CLAUDE.md` (PR-monitoring mandate and validation commands) and SECURITY.md scope notes covering the install skill's supply-chain behavior and per-skill tool grants
+
 ### Changed
 
 **Repository Structure Refactoring**
@@ -192,14 +209,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated README to reflect new multi-plugin marketplace structure
 - Each plugin is now self-contained with its own configuration, skills, and dependencies
 
-### Planned
+**Branding**
+- Renamed the marketplace's human-facing name to simply "CloudZero" with the tagline "AI-powered cloud and AI optimization" (machine name and install identifiers unchanged)
 
-- Additional specialized skills for Reserved Instance analysis
-- Savings Plan optimization skill
-- Budget tracking and alerting integration
-- Cost allocation rule recommendations
-- Interactive cost report generation
-- Integration with additional CloudZero features
+**Security Hardening (from pre-release security review)**
+- Pinned CI Python dependency versions; Python tooling runs through `uv`
+- Fixed the model-right-sizer agent's pricing-fetch URLs to the working `/docs/en/about-claude/` endpoints (old paths had started returning 404)
+- Mirror workflow now pins GitHub SSH host keys from the TLS-authenticated meta API instead of trust-on-first-use `ssh-keyscan`
+- `model-right-sizer-install` requires explicit user confirmation before running plugin-install commands or stamping the mandate when the agent is undiscoverable
 
 ---
 
@@ -224,6 +241,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.0.0...v1.2.0
 [1.0.1]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/cloudzero/cloudzero-claude-marketplace/releases/tag/v1.0.0
