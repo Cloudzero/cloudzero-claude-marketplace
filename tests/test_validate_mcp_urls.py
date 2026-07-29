@@ -21,16 +21,16 @@ def _write_mcp(tmp_path: Path, config: dict, plugin: str = "test-plugin") -> Non
     (plugin_dir / ".mcp.json").write_text(json.dumps(config))
 
 
-def _run(tmp_path: Path, required: tuple[str, ...] = ()) -> int:
+def _run(tmp_path: Path, required: dict[str, str] | None = None) -> int:
     with patch.object(validate_mcp_urls, "REPO_ROOT", tmp_path), patch.object(
-        validate_mcp_urls, "REQUIRED_MCP_PLUGINS", required
+        validate_mcp_urls, "REQUIRED_MCP_SERVERS", required or {}
     ):
         return validate_mcp_urls.main()
 
 
 def test_missing_required_plugin_config_fails(tmp_path: Path) -> None:
     (tmp_path / "plugins").mkdir()
-    assert _run(tmp_path, required=("cost-analyst",)) == 1
+    assert _run(tmp_path, required={"cost-analyst": "cloudzero"}) == 1
 
 
 def test_required_plugin_config_present_passes(tmp_path: Path) -> None:
@@ -46,7 +46,7 @@ def test_required_plugin_config_present_passes(tmp_path: Path) -> None:
         },
         plugin="cost-analyst",
     )
-    assert _run(tmp_path, required=("cost-analyst",)) == 0
+    assert _run(tmp_path, required={"cost-analyst": "cloudzero"}) == 0
 
 
 def test_stdio_only_config_does_not_satisfy_requirement(tmp_path: Path) -> None:
@@ -55,16 +55,30 @@ def test_stdio_only_config_does_not_satisfy_requirement(tmp_path: Path) -> None:
         {"mcpServers": {"local": {"command": "some-binary", "args": ["--serve"]}}},
         plugin="cost-analyst",
     )
-    assert _run(tmp_path, required=("cost-analyst",)) == 1
+    assert _run(tmp_path, required={"cost-analyst": "cloudzero"}) == 1
+
+
+def test_unrelated_approved_server_does_not_satisfy_requirement(tmp_path: Path) -> None:
+    _write_mcp(
+        tmp_path,
+        {
+            "mcpServers": {
+                "other": {"type": "http", "url": "https://api.cloudzero.com/mcp"},
+                "cloudzero": {"command": "some-binary", "args": ["--serve"]},
+            }
+        },
+        plugin="cost-analyst",
+    )
+    assert _run(tmp_path, required={"cost-analyst": "cloudzero"}) == 1
 
 
 def test_non_cloudzero_config_does_not_satisfy_requirement(tmp_path: Path) -> None:
     _write_mcp(
         tmp_path,
-        {"mcpServers": {"cz": {"type": "http", "url": "https://evil.example/mcp"}}},
+        {"mcpServers": {"cloudzero": {"type": "http", "url": "https://evil.example/mcp"}}},
         plugin="cost-analyst",
     )
-    assert _run(tmp_path, required=("cost-analyst",)) == 1
+    assert _run(tmp_path, required={"cost-analyst": "cloudzero"}) == 1
 
 
 def test_other_plugin_config_does_not_satisfy_requirement(tmp_path: Path) -> None:
@@ -73,7 +87,7 @@ def test_other_plugin_config_does_not_satisfy_requirement(tmp_path: Path) -> Non
         {"mcpServers": {"cz": {"type": "http", "url": "https://api.cloudzero.com/mcp"}}},
         plugin="some-other-plugin",
     )
-    assert _run(tmp_path, required=("cost-analyst",)) == 1
+    assert _run(tmp_path, required={"cost-analyst": "cloudzero"}) == 1
 
 
 def test_no_mcp_files_passes_when_none_required(tmp_path: Path) -> None:
