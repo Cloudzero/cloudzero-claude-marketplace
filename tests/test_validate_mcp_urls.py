@@ -26,9 +26,9 @@ def _run(tmp_path: Path) -> int:
         return validate_mcp_urls.main()
 
 
-def test_no_mcp_files_passes(tmp_path: Path) -> None:
+def test_no_mcp_files_fails(tmp_path: Path) -> None:
     (tmp_path / "plugins").mkdir()
-    assert _run(tmp_path) == 0
+    assert _run(tmp_path) == 1
 
 
 def test_official_cloudzero_https_url_passes(tmp_path: Path) -> None:

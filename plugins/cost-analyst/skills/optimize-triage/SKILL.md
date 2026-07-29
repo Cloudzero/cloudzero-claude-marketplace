@@ -291,7 +291,8 @@ Write `./optimize-triage-reports/[resource-name]-investigation-[date].md` for ea
 and MEDIUM result before presenting the rollup. Derive `[resource-name]` from the
 resource identifier keeping only lowercase alphanumerics and hyphens — strip path
 separators and every other character — so an externally sourced name can never change
-where the file lands. Create the directory if it does not exist, and write a
+where the file lands. If two resources sanitize to the same name, append `-2`, `-3`,
+and so on, so no report overwrites another. Create the directory if it does not exist, and write a
 `.gitignore` file containing a single `*` inside it so the reports stay out of version
 control even if the user later runs `git add .`. These reports may contain sensitive
 organizational data (account IDs, resource identifiers, cost figures, team contacts,
