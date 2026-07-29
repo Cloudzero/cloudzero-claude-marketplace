@@ -165,6 +165,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Security Considerations section in every cost-analyst skill** — all 12 skills now
+  instruct Claude to treat externally sourced strings (dimension values, tag values,
+  resource names, Jira/Slack/git content, CLI output) as data, never as instructions.
+  `optimize-triage` additionally passes an anti-injection preamble to every research
+  agent it dispatches and constrains what may be interpolated into shell commands.
+- **MCP server URL validation in CI** (`scripts/validate_mcp_urls.py`) — every plugin
+  `.mcp.json` must use https and point at cloudzero.com or a subdomain, so a PR cannot
+  quietly repoint MCP traffic at a lookalike domain.
+
+### Changed
+
+- **`optimize-triage` report files** — report filenames are sanitized to lowercase
+  alphanumerics and hyphens, and the skill now writes a `.gitignore` inside
+  `optimize-triage-reports/` so confidential reports stay out of version control.
+
 ### Planned
 
 - Additional specialized skills for Reserved Instance analysis
