@@ -250,7 +250,9 @@ both are declared. `scripts/validate_blueprint.py` and
 `scripts/validate_agent_schema.py` each validate their schema's checked-in
 worked example in full, plus the one check a JSON Schema alone can't
 express (a dangling `handoff_schema_ref`; a `stamp_markdown` that drifts
-from the typed fields next to it).
+from the typed fields next to it). `scripts/validate_mcp_urls.py` checks that
+every plugin `.mcp.json` server URL uses https on an approved CloudZero
+domain, and that required MCP servers keep their canonical endpoints.
 
 ## License
 

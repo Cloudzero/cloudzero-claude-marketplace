@@ -15,8 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `optimize-triage` additionally passes an anti-injection preamble to every research
   agent it dispatches and constrains what may be interpolated into shell commands.
 - **MCP server URL validation in CI** (`scripts/validate_mcp_urls.py`) — every plugin
-  `.mcp.json` must use https and point at cloudzero.com or a subdomain, so a PR cannot
-  quietly repoint MCP traffic at a lookalike domain.
+  `.mcp.json` must use https on cloudzero.com or a subdomain, and required MCP
+  servers must keep their canonical endpoints, so a PR cannot quietly repoint MCP
+  traffic at a lookalike domain or a different CloudZero URL.
 
 ### Changed
 

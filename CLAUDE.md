@@ -20,6 +20,7 @@ uv run --no-project --with pyyaml scripts/validate_agent_file.py
 uv run --no-project --with pyyaml scripts/validate_skill_frontmatter.py
 uv run --no-project scripts/validate_plugin_manifest.py
 uv run --no-project --with jsonschema scripts/validate_blueprint.py
+uv run --no-project scripts/validate_mcp_urls.py
 uv run --no-project --with pyyaml --with jsonschema --with pytest -- pytest tests/ -q
 ```
 
