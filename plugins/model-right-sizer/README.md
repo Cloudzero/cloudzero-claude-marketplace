@@ -159,7 +159,9 @@ required frontmatter and its name matches its directory) and
 plugin's `.claude-plugin/plugin.json` parse as JSON and carry the full
 documented metadata contract, each marketplace entry's `source` resolves
 to a real plugin directory, and manifest `version` fields agree where
-both are declared.
+both are declared. Finally, `scripts/validate_mcp_urls.py` checks that
+every plugin `.mcp.json` server URL uses https on an approved CloudZero
+domain, and that required MCP servers keep their canonical endpoints.
 
 ## License
 

@@ -28,7 +28,7 @@ def _write_mcp(tmp_path: Path, config: dict, plugin: str = "test-plugin") -> Non
     (plugin_dir / ".mcp.json").write_text(json.dumps(config))
 
 
-def _run(tmp_path: Path, required: dict[str, str] | None = None) -> int:
+def _run(tmp_path: Path, required: dict[str, dict] | None = None) -> int:
     with patch.object(validate_mcp_urls, "REPO_ROOT", tmp_path), patch.object(
         validate_mcp_urls, "REQUIRED_MCP_SERVERS", required or {}
     ):
