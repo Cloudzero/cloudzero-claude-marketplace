@@ -19,6 +19,7 @@ CI runs these on every push/PR; run them locally before pushing. Python tooling 
 uv run --no-project --with pyyaml scripts/validate_agent_file.py
 uv run --no-project --with pyyaml scripts/validate_skill_frontmatter.py
 uv run --no-project scripts/validate_plugin_manifest.py
+uv run --no-project scripts/validate_mcp_urls.py
 uv run --no-project --with pyyaml --with pytest -- pytest tests/ -q
 ```
 

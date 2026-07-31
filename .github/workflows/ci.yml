@@ -30,5 +30,7 @@ jobs:
         run: uv run --no-project --with 'pyyaml==6.0.3' scripts/validate_skill_frontmatter.py
       - name: Validate marketplace and plugin manifests
         run: uv run --no-project scripts/validate_plugin_manifest.py
+      - name: Validate MCP server URLs
+        run: uv run --no-project scripts/validate_mcp_urls.py
       - name: Run tests
         run: uv run --no-project --with 'pyyaml==6.0.3' --with 'pytest==9.1.1' -- pytest tests/ -q
