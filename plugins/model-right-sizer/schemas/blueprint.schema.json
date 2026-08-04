@@ -98,11 +98,17 @@
     "budget": {
       "type": "object",
       "additionalProperties": false,
+      "required": ["token_ceiling"],
+      "description": "token_ceiling is always required and always an actual integer, never null or omitted -- use 0 for a row that spends no model tokens at all (e.g. routed entirely through a deterministic query layer). This is what keeps 'budget: {}' or 'budget: {token_ceiling: null}' from satisfying the schema despite Pass A's 'not a vibe' requirement.",
       "properties": {
-        "token_ceiling": { "type": ["integer", "null"] },
+        "token_ceiling": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "0 means explicitly zero model tokens (not 'unspecified')."
+        },
         "thinking_budget": {
           "type": ["string", "null"],
-          "description": "e.g. '<=8k thinking'. Null only for a stage with no effort dial at all."
+          "description": "e.g. '<=8k thinking'. Null only for a stage with no effort dial at all, or 0 token_ceiling."
         }
       }
     },

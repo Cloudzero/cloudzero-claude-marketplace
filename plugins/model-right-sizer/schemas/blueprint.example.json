@@ -88,7 +88,7 @@
       },
       "default_model": "claude-haiku-4-5",
       "keep_or_override": "override",
-      "budget": { "token_ceiling": null, "thinking_budget": null },
+      "budget": { "token_ceiling": 0, "thinking_budget": null },
       "handoff_schema_ref": "route_via_query_layer",
       "rationale": "Pure structured lookup; a query layer is reliable by construction and removes hallucination risk entirely, at less cost than even the cheapest model tier."
     }

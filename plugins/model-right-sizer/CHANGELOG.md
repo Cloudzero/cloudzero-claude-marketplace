@@ -13,10 +13,13 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   number with no reason. Also defines `work_routing_map[]` (the build-unit
   translation of the blueprint), `message_schemas[]` (deduplicated handoff
   shapes referenced by id), `price_sheet`, and `uncertainty_ledger`
-  (including calibration-history adjustments). Shipped alongside
-  `schemas/blueprint.example.json`, a worked instance that validates against
-  it — added because an LLM conforms to a shown example more reliably than
-  to a formal schema alone.
+  (including calibration-history adjustments). `budget.token_ceiling` is
+  `required` and always an actual integer (`0` for a row that spends no
+  model tokens at all, e.g. one routed via `deterministic_query_layer`) —
+  an empty or all-null `budget` object cannot satisfy the schema. Shipped
+  alongside `schemas/blueprint.example.json`, a worked instance that
+  validates against it — added because an LLM conforms to a shown example
+  more reliably than to a formal schema alone.
 
 ### Changed
 - **Pass A now emits a single schema-conformant JSON object instead of
@@ -31,10 +34,13 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 - `model-right-sizer-dryrun` now packages that same JSON contract as its
   own deliverable: step 3 points at the schema/example files instead of
   re-describing the shape in a second, hand-written prose list, and step 4
-  sanity-checks the agent's response actually parses and carries the
-  required top-level keys (asking it to re-emit once if not) before
-  printing the JSON verbatim as "what an orchestrator should parse to route
-  dispatch."
+  sanity-checks the agent's response two levels deep — not just that it
+  parses and carries the required top-level keys, but that every row's
+  nested signals/pick/budget fields are actually populated (not hollow),
+  enum fields hold legal values, and every `handoff_schema_ref` resolves to
+  a real `message_schemas[]` entry — asking the agent to re-emit once if
+  not, before printing the JSON verbatim as "what an orchestrator should
+  parse to route dispatch."
 - `model-right-sizer-install`'s standing mandate block now runs
   `model-right-sizer-dryrun` directly for the "before" pass — rather than
   generically "consulting the agent for a blueprint" — and hands the

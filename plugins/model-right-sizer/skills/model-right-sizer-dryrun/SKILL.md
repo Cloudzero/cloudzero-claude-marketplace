@@ -80,19 +80,39 @@ real run, not a dry run.
    or prose rendering instead — if the agent returns one, ask it to re-emit
    as the JSON object.
 
-4. **Validate, emit the JSON, and STOP.** Before printing anything, sanity-check
-   the agent's response: does it parse as JSON, and are the required
-   top-level keys (`schema_version`, `mode`, `intent`, `price_sheet`,
-   `blueprint_rows`, `work_routing_map`, `message_schemas`,
-   `uncertainty_ledger`) all present? If it doesn't parse or is missing a
-   required key, ask the agent to re-emit once — don't silently pass along
-   malformed output. Once it checks out, print the JSON verbatim
-   (pretty-printed) to the chat as the whole deliverable — this is what an
-   orchestrator or any downstream tooling should parse to route dispatch, not
-   a paraphrase of it. Do not follow it with a build. Do not write it to a
-   file unless the user explicitly asks. Close by naming, in one line, that
-   this was a dry run — nothing was built, and the actual usage report (Pass
-   B) would only exist if the work were really run.
+4. **Validate, emit the JSON, and STOP.** Before printing anything,
+   sanity-check the agent's response — top-level shape is necessary but not
+   sufficient, so go one level deeper than "does it parse":
+   - Does it parse as JSON, and are the required top-level keys
+     (`schema_version`, `mode`, `intent`, `price_sheet`, `blueprint_rows`,
+     `work_routing_map`, `message_schemas`, `uncertainty_ledger`) all
+     present?
+   - For every entry in `blueprint_rows[]` (and `work_routing_map[]`):
+     `signals.effectiveness` / `.efficiency` / `.difficulty` each carry a
+     `score` (0–100) and a non-empty `reason`; `pick.primary` and
+     `pick.runner_up` each carry a `model` and a `confidence`; `budget`
+     carries an actual integer `token_ceiling` (never missing, never
+     `null` — `0` is the legitimate value for a row that spends no model
+     tokens, e.g. one routed via `deterministic_query_layer`); any `effort`,
+     `keep_or_override`, or `loop_class` value present is one of the
+     schema's legal enum values, not free text.
+   - Every `handoff_schema_ref` that isn't `"none"` or
+     `"route_via_query_layer"` resolves to an actual entry `id` in
+     `message_schemas[]` — a dangling reference is as broken as a missing
+     key.
+
+   If it doesn't parse, is missing a required key, or fails one of the
+   nested checks above, ask the agent to re-emit once — a JSON blob with
+   the right top-level shape but a hollow or dangling-reference row is not
+   conformant, and passing it along silently would hand the orchestrator a
+   blueprint it can't actually route by. Once it genuinely checks out,
+   print the JSON verbatim (pretty-printed) to the chat as the whole
+   deliverable — this is what an orchestrator or any downstream tooling
+   should parse to route dispatch, not a paraphrase of it. Do not follow it
+   with a build. Do not write it to a file unless the user explicitly asks.
+   Close by naming, in one line, that this was a dry run — nothing was
+   built, and the actual usage report (Pass B) would only exist if the work
+   were really run.
 
 ## What this does NOT do
 
