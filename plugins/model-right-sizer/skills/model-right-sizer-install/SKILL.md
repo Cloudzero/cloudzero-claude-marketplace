@@ -113,7 +113,7 @@ scaling by forcing a full report on every micro-edit.
      `AGENTS.md` isn't invented as a target unless the repo already has
      one.
 
-   Say in your step 5 report which file(s) you found and which you
+   Say in your step 6 report which file(s) you found and which you
    targeted — don't let this decision happen silently.
 
 4. **Insert or refresh the marker-delimited block** below in every file
