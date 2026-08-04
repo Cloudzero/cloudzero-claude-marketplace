@@ -1,0 +1,140 @@
+{
+  "schema_version": "1.0",
+  "mode": "dry_run",
+  "intent": "Build a Slack bot that summarizes daily standup threads and posts a digest each morning.",
+  "price_sheet": {
+    "source": "delegated_fetch",
+    "models": [
+      {
+        "name": "Claude Sonnet 5",
+        "id": "claude-sonnet-5",
+        "in_per_1m": 3,
+        "out_per_1m": 15,
+        "context_tokens": 1000000,
+        "max_output_tokens": 128000,
+        "effort_ceiling": "max"
+      },
+      {
+        "name": "Claude Haiku 4.5",
+        "id": "claude-haiku-4-5",
+        "in_per_1m": 1,
+        "out_per_1m": 5,
+        "context_tokens": 200000,
+        "max_output_tokens": 64000,
+        "effort_ceiling": null
+      }
+    ]
+  },
+  "blueprint_rows": [
+    {
+      "id": "stage-1",
+      "name": "Parse and summarize each standup thread",
+      "description": "Read a day's standup thread per channel and produce a short structured summary.",
+      "query_shaped": false,
+      "query_layer_note": null,
+      "loop_class": "single-shot",
+      "signals": {
+        "effectiveness": {
+          "score": 55,
+          "reason": "A wrong summary costs a human a re-read of the thread, moderate but not severe cost of error."
+        },
+        "efficiency": {
+          "score": 70,
+          "reason": "Runs once per channel per day, low volume, no human watching latency."
+        },
+        "difficulty": {
+          "score": 40,
+          "reason": "Bounded summarization over well-specified input/output, not open-ended reasoning."
+        }
+      },
+      "pick": {
+        "primary": { "model": "claude-sonnet-5", "effort": "low", "confidence": 72 },
+        "runner_up": { "model": "claude-haiku-4-5", "effort": "low", "confidence": 28 },
+        "what_flips_it": "If daily volume exceeds ~50 channels, drop to Haiku on a batch call to hold latency/cost.",
+        "why_not_tier_above": "Opus's extra reasoning depth isn't needed for a bounded single-thread summary.",
+        "why_not_tier_below": "Haiku's smaller context risks truncating a long thread before it's summarized."
+      },
+      "default_model": "claude-opus-4-8",
+      "keep_or_override": "override",
+      "budget": { "token_ceiling": 20000, "thinking_budget": "<=2k thinking" },
+      "handoff_schema_ref": "digest-summary-v1",
+      "rationale": "Bounded, well-specified summarization; Sonnet at low effort clears the bar for a fraction of the default tier's cost."
+    },
+    {
+      "id": "stage-2",
+      "name": "Look up each channel's configured digest recipients",
+      "description": "Resolve which users should receive a given channel's digest.",
+      "query_shaped": true,
+      "query_layer_note": "Answered by a single indexed lookup against the workspace's channel-config table; route via a deterministic query layer instead of a model call.",
+      "loop_class": "single-shot",
+      "signals": {
+        "effectiveness": {
+          "score": 20,
+          "reason": "A wrong lookup just misroutes one message; cheap to catch and retry."
+        },
+        "efficiency": {
+          "score": 85,
+          "reason": "Runs once per channel per day, pure key-value lookup, no reasoning content."
+        },
+        "difficulty": {
+          "score": 10,
+          "reason": "Single indexed lookup against structured config, no ambiguity."
+        }
+      },
+      "pick": {
+        "primary": { "model": "deterministic_query_layer", "confidence": 90 },
+        "runner_up": { "model": "claude-haiku-4-5", "effort": "none", "confidence": 10 },
+        "what_flips_it": "If recipient routing ever needs interpreting free-text preferences instead of a structured config row, promote to a model call."
+      },
+      "default_model": "claude-haiku-4-5",
+      "keep_or_override": "override",
+      "budget": { "token_ceiling": null, "thinking_budget": null },
+      "handoff_schema_ref": "route_via_query_layer",
+      "rationale": "Pure structured lookup; a query layer is reliable by construction and removes hallucination risk entirely, at less cost than even the cheapest model tier."
+    }
+  ],
+  "work_routing_map": [
+    {
+      "id": "unit-1",
+      "build_unit": "Slack bot: message-fetch + summarization module",
+      "derived_from_stage_id": "stage-1",
+      "pick": {
+        "primary": { "model": "claude-sonnet-5", "effort": "low", "confidence": 72 },
+        "runner_up": { "model": "claude-haiku-4-5", "effort": "low", "confidence": 28 },
+        "what_flips_it": "If daily volume exceeds ~50 channels, drop to Haiku on a batch call to hold latency/cost."
+      },
+      "budget": { "token_ceiling": 20000, "thinking_budget": "<=2k thinking" },
+      "handoff_schema_ref": "digest-summary-v1",
+      "rationale": "Same reasoning as stage-1: bounded summarization, Sonnet at low effort."
+    }
+  ],
+  "message_schemas": [
+    {
+      "id": "digest-summary-v1",
+      "seam_description": "summarization stage -> digest-assembly stage",
+      "fields": [
+        { "name": "channel_id", "type": "string" },
+        { "name": "summary", "type": "string", "description": "<=280 characters" },
+        { "name": "thread_count", "type": "integer" },
+        { "name": "confidence", "type": "number" }
+      ],
+      "exclude": ["full thread transcript", "raw Slack message payloads", "chain-of-thought"]
+    }
+  ],
+  "uncertainty_ledger": {
+    "assumptions": [
+      "Digest volume stays under ~50 channels/day",
+      "A channel-config table already exists and is queryable"
+    ],
+    "price_sheet_freshness": "verified_this_run",
+    "would_measure": [
+      "Actual per-channel summary token count once real thread lengths are known",
+      "Whether Haiku alone clears the bar once volume passes the stated flip condition"
+    ],
+    "calibration": {
+      "ledger_found": false,
+      "adjusted_row_ids": [],
+      "notes": "No recommended-vs-actual calibration history available yet for this repo; reasoned from first principles."
+    }
+  }
+}

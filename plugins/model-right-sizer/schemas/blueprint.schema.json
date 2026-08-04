@@ -1,0 +1,274 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cloudzero/cloudzero-claude-marketplace/blob/main/plugins/model-right-sizer/schemas/blueprint.schema.json",
+  "title": "model-right-sizer Right-Sizing Blueprint (Pass A)",
+  "description": "Strict output contract for the model-right-sizer agent's Pass A (the Right-Sizing Blueprint). The agent emits exactly one JSON object conforming to this schema instead of prose or markdown tables. See blueprint.example.json for a worked instance. additionalProperties is false at every level on purpose — an agent cannot reintroduce free-form fields.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "mode",
+    "intent",
+    "price_sheet",
+    "blueprint_rows",
+    "work_routing_map",
+    "message_schemas",
+    "uncertainty_ledger"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "description": "Bump alongside this file and the plugin CHANGELOG when the shape changes."
+    },
+    "mode": {
+      "enum": ["dry_run", "live_blueprint"],
+      "description": "dry_run = produced by the model-right-sizer-dryrun skill against a hypothetical intent; live_blueprint = produced as the front bookend of a real build."
+    },
+    "intent": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The free-text task or build this blueprint was produced for."
+    },
+    "price_sheet": { "$ref": "#/$defs/priceSheet" },
+    "blueprint_rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/blueprintRow" },
+      "description": "One row per decomposed stage/sub-agent this work will spend model tokens on. Carries the three-signal scoring."
+    },
+    "work_routing_map": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/routingMapRow" },
+      "description": "One row per execution/build unit — the 'who produces what' translation of the blueprint rows into dispatchable work. May be empty for a dry run with no build units yet decided."
+    },
+    "message_schemas": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/messageSchema" },
+      "description": "One entry per distinct handoff-seam shape, referenced by id from blueprint_rows[].handoff_schema_ref and work_routing_map[].handoff_schema_ref. Do not author one per pair of stages — share an entry across seams with the same shape."
+    },
+    "uncertainty_ledger": { "$ref": "#/$defs/uncertaintyLedger" }
+  },
+  "$defs": {
+    "score": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["score", "reason"],
+      "properties": {
+        "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "One clause. Never a bare number."
+        }
+      }
+    },
+    "modelChoice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model", "confidence"],
+      "properties": {
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A model ID from price_sheet.models[], or the literal 'deterministic_query_layer' when the pick is to route via a deterministic query layer instead of a model."
+        },
+        "effort": {
+          "enum": ["none", "low", "medium", "high", "xhigh", "max"],
+          "description": "Omit (or 'none') when model is 'deterministic_query_layer' or the model has no effort dial."
+        },
+        "confidence": { "type": "integer", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "pick": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primary", "runner_up", "what_flips_it"],
+      "properties": {
+        "primary": { "$ref": "#/$defs/modelChoice" },
+        "runner_up": { "$ref": "#/$defs/modelChoice" },
+        "what_flips_it": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The concrete condition that would flip primary and runner-up."
+        },
+        "why_not_tier_above": { "type": "string" },
+        "why_not_tier_below": { "type": "string" }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "token_ceiling": { "type": ["integer", "null"] },
+        "thinking_budget": {
+          "type": ["string", "null"],
+          "description": "e.g. '<=8k thinking'. Null only for a stage with no effort dial at all."
+        }
+      }
+    },
+    "blueprintRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "query_shaped",
+        "signals",
+        "pick",
+        "budget",
+        "handoff_schema_ref",
+        "keep_or_override",
+        "rationale"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "query_shaped": {
+          "type": "boolean",
+          "description": "True if this stage is fundamentally a structured-data query/computation (lookup, join, aggregate, arithmetic) rather than open-ended reasoning."
+        },
+        "query_layer_note": {
+          "type": ["string", "null"],
+          "description": "Required-in-spirit when query_shaped is true: the deterministic-query-layer alternative and its expected token/reliability delta."
+        },
+        "loop_class": {
+          "enum": ["single-shot", "low-tool-turn", "agentic", null],
+          "description": "single-shot / low-tool-turn (<=2 tool turns) vs agentic (>=3 tool turns / unattended multi-tool). Governs whether a down-pin is safe to ship live or must be measurement-gated."
+        },
+        "signals": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["effectiveness", "efficiency", "difficulty"],
+          "description": "The three pillars. All three are required on every row — none may be omitted or left as a bare number.",
+          "properties": {
+            "effectiveness": { "$ref": "#/$defs/score" },
+            "efficiency": { "$ref": "#/$defs/score" },
+            "difficulty": { "$ref": "#/$defs/score" }
+          }
+        },
+        "pick": { "$ref": "#/$defs/pick" },
+        "default_model": {
+          "type": ["string", "null"],
+          "description": "The consuming system's static default for this role/stage, if one exists. Null if there is none."
+        },
+        "keep_or_override": { "enum": ["keep", "override"] },
+        "budget": { "$ref": "#/$defs/budget" },
+        "handoff_schema_ref": {
+          "type": "string",
+          "minLength": 1,
+          "description": "An id into message_schemas[], or the literal 'none' (terminal stage, nothing downstream to hand off to), or 'route_via_query_layer'."
+        },
+        "rationale": { "type": "string", "minLength": 1 }
+      }
+    },
+    "routingMapRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "build_unit", "pick", "budget", "handoff_schema_ref", "rationale"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "build_unit": { "type": "string", "minLength": 1 },
+        "derived_from_stage_id": {
+          "type": ["string", "null"],
+          "description": "blueprint_rows[].id this build unit was decomposed from, if traceable to one."
+        },
+        "pick": { "$ref": "#/$defs/pick" },
+        "budget": { "$ref": "#/$defs/budget" },
+        "handoff_schema_ref": { "type": "string", "minLength": 1 },
+        "rationale": { "type": "string", "minLength": 1 }
+      }
+    },
+    "messageSchema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "seam_description", "fields", "exclude"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "seam_description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "e.g. 'build stage -> review stage' or 'finder -> verifier fan-out'."
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "type"],
+            "properties": {
+              "name": { "type": "string" },
+              "type": { "type": "string" },
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "exclude": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "What this handoff must NOT carry, e.g. 'full transcript', 'raw retrieved rows', 'chain-of-thought', 'tool call logs'."
+        }
+      }
+    },
+    "priceSheet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "models"],
+      "properties": {
+        "source": {
+          "enum": ["delegated_fetch", "direct_fetch", "fallback_snapshot"],
+          "description": "delegated_fetch = a sub-agent dispatch fetched live pricing; direct_fetch = this agent fetched it itself; fallback_snapshot = live retrieval failed, figures are the illustrative snapshot and unverified this run."
+        },
+        "models": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "id", "in_per_1m", "out_per_1m"],
+            "properties": {
+              "name": { "type": "string" },
+              "id": { "type": "string" },
+              "in_per_1m": { "type": "number" },
+              "out_per_1m": { "type": "number" },
+              "context_tokens": { "type": ["integer", "null"] },
+              "max_output_tokens": { "type": ["integer", "null"] },
+              "effort_ceiling": { "type": ["string", "null"] }
+            }
+          }
+        }
+      }
+    },
+    "uncertaintyLedger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assumptions", "price_sheet_freshness", "would_measure"],
+      "properties": {
+        "assumptions": { "type": "array", "items": { "type": "string" } },
+        "price_sheet_freshness": {
+          "enum": ["verified_this_run", "unverified", "stale_fallback"]
+        },
+        "would_measure": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "The 2-3 things that would sharpen the next blueprint."
+        },
+        "calibration": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "ledger_found": {
+              "type": "boolean",
+              "description": "Whether a recommended-vs-actual calibration history was available and consulted."
+            },
+            "adjusted_row_ids": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "blueprint_rows[].id / work_routing_map[].id values whose pick changed because of the calibration history."
+            },
+            "notes": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

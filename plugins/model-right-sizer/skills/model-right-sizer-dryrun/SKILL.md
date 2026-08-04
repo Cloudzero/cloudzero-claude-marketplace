@@ -5,12 +5,14 @@ description: >-
   You give it a free-text INTENT — "build a CLI that…", "add a feature
   that…", "refactor X into Y" — and it invokes the `model-right-sizer`
   agent in BLUEPRINT-ONLY mode: decompose the work, score each piece, and
-  emit the task→model→effort→budget→schema→confidence routing table (the
-  "map"), then STOP. No build, no file edits, no after-the-fact usage
-  report — it is the what-would-this-cost / how-would-this-route preview
-  lever, safe to run against any idea. Read-only. Use when someone says
-  "dry-run the right-sizer on …", "what's the map for …", "how would you
-  route …", or "show me the blueprint for … before I build it".
+  emit a single schema-conformant JSON blueprint (task→model→effort→budget→
+  schema→confidence, per `schemas/blueprint.schema.json`), then STOP. No
+  build, no file edits, no after-the-fact usage report — it is the
+  what-would-this-cost / how-would-this-route preview lever, safe to run
+  against any idea, and the JSON it returns is what an orchestrator parses
+  to route dispatch. Read-only. Use when someone says "dry-run the
+  right-sizer on …", "what's the map for …", "how would you route …", or
+  "show me the blueprint for … before I build it".
 license: Apache-2.0
 author: CloudZero, Inc.
 version: 0.1.0
@@ -20,20 +22,24 @@ repository: https://github.com/cloudzero/cloudzero-claude-marketplace
 # model-right-sizer-dryrun — map an intent, don't build it
 
 This skill does exactly one thing: turn a plain-English **intent** into the
-`model-right-sizer` agent's **blueprint** — the routing map that says which
-model, effort, and reasoning budget each piece of the work should run on —
-and then stop. Nothing is built, nothing is edited, no closing usage report
-is run. It is the *preview* half of the agent's bookend, unbundled from the
-work it normally brackets.
+`model-right-sizer` agent's **blueprint** — a single JSON object, conformant
+to
+[`../../schemas/blueprint.schema.json`](../../schemas/blueprint.schema.json),
+saying which model, effort, and reasoning budget each piece of the work
+should run on — and then stop. Nothing is built, nothing is edited, no
+closing usage report is run. It is the *preview* half of the agent's
+bookend, unbundled from the work it normally brackets.
 
 It is the companion to
 [`model-right-sizer.md`](../../agents/model-right-sizer.md) (the agent that
-produces the map) and a sibling to
+produces the blueprint) and a sibling to
 [`model-right-sizer-install`](../model-right-sizer-install/SKILL.md) (which
-stamps the standing mandate onto a repo). Where `-install` says *"consult
-the agent around every real task,"* this skill lets you consult just the
-**front** bookend, on demand, against a hypothetical — so you can see the
-shape and the intelligence budget of a build before committing to it.
+stamps the standing mandate onto a repo — and, since that mandate now runs
+this skill directly before every substantive task, this is no longer only
+an *ad hoc* preview). Called on demand, against a hypothetical, it lets you
+see the shape and the intelligence budget of a build before committing to
+it; called by the mandate, it's the mechanism that produces the JSON the
+orchestrating session routes real dispatch by.
 
 ## Why "blueprint-only" is not a new mode
 
@@ -63,25 +69,27 @@ real run, not a dry run.
 
 3. **Invoke `model-right-sizer` for Pass A only.** Dispatch the
    `model-right-sizer` agent with the intent and an explicit instruction that
-   this is a **blueprint-only dry run**: produce the Pass A deliverables and
-   stop. Pass it, verbatim, the scope of Pass A to return:
-   - **Task decomposition** — the stages/sub-agents the intent would spend
-     model tokens on, one row each; flag any data-query-shaped stage that a
-     deterministic query layer could answer instead of a model.
-   - **Three signals per stage** — Effectiveness-need, Efficiency-pressure,
-     and Difficulty (0–100 each), every number with a one-clause reason.
-   - **Probability-weighted picks** — per stage: primary model + effort +
-     confidence %, runner-up + %, and the concrete "what flips it."
-   - **The routing table** — `stage → default → model → effort → budget →
-     handoff schema → confidence → keep-or-override → rationale`.
-   - **The work-routing map** — build unit → tier → effort → budget →
-     schema → confidence → rationale → what-flips-it.
-   - **Message-schema spec** — the minimal payload each handoff seam carries.
-   - **Uncertainty ledger** — assumptions, price-sheet freshness state, and
-     what it would measure to sharpen the map.
+   this is a **blueprint-only dry run**: produce the Pass A deliverable and
+   stop. Tell it to set `mode: "dry_run"` and `intent` to the captured
+   text. The deliverable is the single JSON object described in
+   `model-right-sizer.md`'s Pass A section, conforming to
+   [`../../schemas/blueprint.schema.json`](../../schemas/blueprint.schema.json)
+   — see
+   [`../../schemas/blueprint.example.json`](../../schemas/blueprint.example.json)
+   for a worked instance. Do not ask for, and do not accept, a markdown-table
+   or prose rendering instead — if the agent returns one, ask it to re-emit
+   as the JSON object.
 
-4. **Emit the map and STOP.** Print the agent's blueprint to the chat as the
-   whole deliverable. Do not follow it with a build. Do not write it to a
+4. **Validate, emit the JSON, and STOP.** Before printing anything, sanity-check
+   the agent's response: does it parse as JSON, and are the required
+   top-level keys (`schema_version`, `mode`, `intent`, `price_sheet`,
+   `blueprint_rows`, `work_routing_map`, `message_schemas`,
+   `uncertainty_ledger`) all present? If it doesn't parse or is missing a
+   required key, ask the agent to re-emit once — don't silently pass along
+   malformed output. Once it checks out, print the JSON verbatim
+   (pretty-printed) to the chat as the whole deliverable — this is what an
+   orchestrator or any downstream tooling should parse to route dispatch, not
+   a paraphrase of it. Do not follow it with a build. Do not write it to a
    file unless the user explicitly asks. Close by naming, in one line, that
    this was a dry run — nothing was built, and the actual usage report (Pass
    B) would only exist if the work were really run.
@@ -99,7 +107,13 @@ real run, not a dry run.
 ## Related
 
 - [`model-right-sizer.md`](../../agents/model-right-sizer.md) — the agent
-  whose Pass A this skill surfaces on demand.
+  whose Pass A this skill surfaces, both on demand and as the mandate's
+  before-hook.
+- [`../../schemas/blueprint.schema.json`](../../schemas/blueprint.schema.json)
+  / [`blueprint.example.json`](../../schemas/blueprint.example.json) — the
+  strict contract this skill's output must conform to; defined once here,
+  not restated.
 - [`model-right-sizer-install`](../model-right-sizer-install/SKILL.md) — the
-  sibling that installs the standing before/after mandate; this skill is the
-  on-demand, front-bookend-only preview of it.
+  sibling that installs the standing before/after mandate. Its "before" hook
+  now runs *this* skill directly, so this is no longer only an on-demand
+  preview — it's also the live front-bookend mechanism.

@@ -4,7 +4,47 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 
 ## Unreleased
 
+### Added
+- `schemas/blueprint.schema.json` — a strict JSON Schema (draft 2020-12,
+  `additionalProperties: false` throughout) for Pass A, the right-sizing
+  blueprint. Requires every `blueprint_rows[]` entry to carry all
+  **three signals** (effectiveness, efficiency, difficulty), each as a
+  `{score, reason}` pair — a row can no longer omit a pillar or give a bare
+  number with no reason. Also defines `work_routing_map[]` (the build-unit
+  translation of the blueprint), `message_schemas[]` (deduplicated handoff
+  shapes referenced by id), `price_sheet`, and `uncertainty_ledger`
+  (including calibration-history adjustments). Shipped alongside
+  `schemas/blueprint.example.json`, a worked instance that validates against
+  it — added because an LLM conforms to a shown example more reliably than
+  to a formal schema alone.
+
 ### Changed
+- **Pass A now emits a single schema-conformant JSON object instead of
+  prose/markdown tables.** `agents/model-right-sizer.md`'s "Pass A" section
+  now points at `schemas/blueprint.schema.json` (+ the worked example) as
+  the output contract; the former "blueprint table" and "work-routing map"
+  deliverables are now named as the JSON's `blueprint_rows[]` and
+  `work_routing_map[]` fields respectively, populated as data, never
+  re-rendered as a table. Added a matching "bounce from" condition and two
+  vocabulary terms. Pass B (the closing usage report) is unchanged — it
+  stays a lean markdown table printed to chat.
+- `model-right-sizer-dryrun` now packages that same JSON contract as its
+  own deliverable: step 3 points at the schema/example files instead of
+  re-describing the shape in a second, hand-written prose list, and step 4
+  sanity-checks the agent's response actually parses and carries the
+  required top-level keys (asking it to re-emit once if not) before
+  printing the JSON verbatim as "what an orchestrator should parse to route
+  dispatch."
+- `model-right-sizer-install`'s standing mandate block now runs
+  `model-right-sizer-dryrun` directly for the "before" pass — rather than
+  generically "consulting the agent for a blueprint" — and hands the
+  resulting JSON blueprint to the orchestrating session/agent to route
+  sub-agent/model dispatch by its `blueprint_rows` / `work_routing_map`
+  picks. The "after" pass is unchanged: it still consults `model-right-sizer`
+  directly for Pass B, never through the dry-run skill, since a dry run has
+  no "actual" to reconcile against. Step 2's discoverability check now also
+  verifies `model-right-sizer-dryrun` resolves (not just the agent file),
+  since the mandate depends on both.
 - **Moved into CloudZero (the CloudZero plugin marketplace)** — this plugin now lives at
   `plugins/model-right-sizer/` in
   [cloudzero/cloudzero-claude-marketplace](https://github.com/cloudzero/cloudzero-claude-marketplace),

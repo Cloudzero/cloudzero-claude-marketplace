@@ -5,14 +5,17 @@ description: >-
   CLAUDE.md — a one-shot install for a repo that should consult the
   `model-right-sizer` agent before and after every substantive turn.
   Idempotent and append-only: an existing CLAUDE.md is never overwritten,
-  only the marker-delimited mandate block is inserted or refreshed. Also
-  checks whether the `model-right-sizer` agent file itself is discoverable
-  in this repo and, if it's missing, installs the `model-right-sizer`
-  Claude Code plugin to fix that (falling back to manual instructions if
-  plugin install isn't available). Deliberately narrow and
-  organization-agnostic — it installs only the right-sizing mandate (plus
-  its own agent dependency, if absent), not any broader development
-  process. Use when someone says
+  only the marker-delimited mandate block is inserted or refreshed. The
+  mandate's "before" hook runs the `model-right-sizer-dryrun` skill directly
+  to produce a schema-conformant JSON blueprint for the orchestrator to
+  route by. Also checks whether the `model-right-sizer` agent file and the
+  `model-right-sizer-dryrun` skill are discoverable in this repo and, if
+  either is missing, installs the `model-right-sizer` Claude Code plugin to
+  fix that (falling back to manual instructions if plugin install isn't
+  available). Deliberately narrow and organization-agnostic — it installs
+  only the right-sizing mandate (plus its own agent + dry-run-skill
+  dependencies, if absent), not any broader development process. Use when
+  someone says
   "install model-right-sizer in this repo", "init this repo for
   model-right-sizer", "add the right-sizer mandate here", or "make this repo
   consult model-right-sizer every turn".
@@ -51,46 +54,58 @@ where the assistant is about to do non-trivial work** — write or edit code or
 docs, dispatch a sub-agent, run a multi-step tool chain, or otherwise spend a
 real slice of model reasoning. Trivial conversational turns are exempt, and
 `model-right-sizer` already scales its own output to the size of the task
-(one-line skip for a tiny change, full table for a substantial one) — see
-`model-right-sizer.md`'s "Your output shape" section. Don't fight that
-scaling by forcing a full report on every micro-edit.
+(one-line skip for a tiny change, full blueprint/report for a substantial
+one) — see `model-right-sizer.md`'s "Your output shape" section. Don't fight
+that scaling by forcing a full blueprint on every micro-edit.
 
 ## What to do
 
 1. **Confirm the target.** This skill always targets the **current** repo —
    the one the user wants onboarded — never a copy elsewhere.
 
-2. **Check the agent is actually discoverable, and install it if not.** Look
-   for `model-right-sizer.md` somewhere your tooling reads agent personas from
-   (e.g. `.claude/agents/model-right-sizer.md`, or a plugin's
-   `agents/model-right-sizer.md`). If it is **not** there:
-   - Tell the user the agent isn't discoverable and that fixing it means
-     adding the CloudZero marketplace and installing the plugin — then, **with
-     their go-ahead**, run:
+2. **Check the agent — and the dry-run skill — are actually discoverable,
+   and install what's missing.** The mandate's "before" hook (step 3 below)
+   now invokes `model-right-sizer-dryrun` directly, not just the agent, so
+   both need to resolve. Look for `model-right-sizer.md` somewhere your
+   tooling reads agent personas from (e.g. `.claude/agents/model-right-sizer.md`,
+   or a plugin's `agents/model-right-sizer.md`) and for
+   `model-right-sizer-dryrun` somewhere it reads skills from. If either is
+   **not** there:
+   - Tell the user the agent and/or skill isn't discoverable and that fixing
+     it means adding the CloudZero marketplace and installing the plugin —
+     then, **with their go-ahead**, run:
      ```
      /plugin marketplace add cloudzero/cloudzero-claude-marketplace
      /plugin install model-right-sizer@cloudzero
      ```
      Do not run these without confirming first — installing a plugin is a
-     change to the user's environment, not just this repo. Then re-check
-     discoverability — the plugin's `agents/model-right-sizer.md` should now
-     resolve.
+     change to the user's environment, not just this repo. This installs the
+     agent and both companion skills (`model-right-sizer-dryrun`,
+     `model-right-sizer-install`) together. Then re-check discoverability —
+     the plugin's `agents/model-right-sizer.md` and
+     `skills/model-right-sizer-dryrun/` should now resolve.
    - If the plugin-install commands aren't available in this runtime (this
      isn't Claude Code, or plugin installs are disabled here), fall back to
-     telling the user the mandate will point at an agent that doesn't exist
-     yet, and offer the manual fix instead: copy
-     `plugins/model-right-sizer/agents/model-right-sizer.md` from
-     `https://github.com/cloudzero/cloudzero-claude-marketplace` into
-     `.claude/agents/` in this repo, or follow the plugin README's submodule +
-     compose pattern if they want it to stay upgradeable independently.
-   - If the agent is present or was just installed, proceed to stamp the
-     mandate below. If it is **still missing** (plugin install unavailable
-     and no manual copy yet), do NOT stamp silently: tell the user the
-     mandate would point at an agent that doesn't exist yet, give the
-     manual fix above, and ask whether to stamp anyway (as a statement of
-     intent) or stop until the agent is installed. Either way, say plainly
-     in your report whether the agent was already present, freshly
-     installed, or still missing — don't silently assume it's wired.
+     telling the user the mandate will point at an agent/skill that doesn't
+     exist yet, and offer the manual fix instead: copy
+     `plugins/model-right-sizer/agents/model-right-sizer.md` into
+     `.claude/agents/` **and**
+     `plugins/model-right-sizer/skills/model-right-sizer-dryrun/` into
+     `.claude/skills/` (both from
+     `https://github.com/cloudzero/cloudzero-claude-marketplace`) in this
+     repo, or follow the plugin README's submodule + compose pattern if they
+     want it to stay upgradeable independently. If only the agent gets
+     copied and not the skill, say so explicitly in the report — the
+     mandate's "before" hook would then be pointing at a skill that doesn't
+     exist.
+   - If the agent and skill are present or were just installed, proceed to
+     stamp the mandate below. If either is **still missing** (plugin install
+     unavailable and no manual copy yet), do NOT stamp silently: tell the
+     user the mandate would point at something that doesn't exist yet, give
+     the manual fix above, and ask whether to stamp anyway (as a statement of
+     intent) or stop until both are installed. Either way, say plainly
+     in your report whether the agent and skill were already present, freshly
+     installed, or still missing — don't silently assume either is wired.
 
 3. **Insert or refresh the marker-delimited block** below in the repo's
    `CLAUDE.md` — **append-only**: create the file if none exists (with just
@@ -103,21 +118,30 @@ scaling by forcing a full report on every micro-edit.
 
    **Before starting any substantive task** in this repo (writing or editing
    code or docs, dispatching a sub-agent, running a multi-step tool chain),
-   consult the `model-right-sizer` agent for a **right-sizing blueprint**:
-   which model — and effort level — each piece of the work should run on,
-   weighing effectiveness need against efficiency pressure, biased toward the
-   smallest model that clears the bar. Route any sub-agent or model dispatch
-   by its picks.
+   run the **`model-right-sizer-dryrun`** skill against the task at hand (its
+   plain-English description as the intent). That returns a **right-sizing
+   blueprint** — a single JSON object, schema-conformant per
+   `model-right-sizer`'s `schemas/blueprint.schema.json` — saying which model
+   and effort level each piece of the work should run on, weighing
+   effectiveness need against efficiency pressure and difficulty, biased
+   toward the smallest model that clears the bar. Hand that JSON blueprint to
+   the orchestrating session/agent driving this task, and route every
+   sub-agent or model dispatch by its `blueprint_rows` / `work_routing_map`
+   picks rather than by default or gut feel.
 
-   **After the task closes**, consult it again for a **model-usage report**:
-   recommended vs. actual model per stage, the reasoning behind each pick, and
-   an order-of-magnitude cost estimate — so model spend on this repo stays as
-   measurable and intentional as any other resource it consumes.
+   **After the task closes**, consult the `model-right-sizer` agent directly
+   for a **model-usage report** (this pass runs the agent itself, not the
+   dry-run skill — there's a real "actual" to reconcile against now, which a
+   dry run never has): recommended vs. actual model per stage, the reasoning
+   behind each pick, and an order-of-magnitude cost estimate — so model spend
+   on this repo stays as measurable and intentional as any other resource it
+   consumes.
 
    Both passes scale to the size of the task — a trivial turn gets a one-line
-   skip, a substantial one gets the full table. `model-right-sizer` is
-   **read-only**: it reports and recommends, it never edits files or makes
-   the call for you — you (or your own tooling) apply its picks.
+   skip, a substantial one gets the full blueprint (Pass A) or report (Pass
+   B). `model-right-sizer` is **read-only**: it reports and recommends, it
+   never edits files or makes the call for you — you (or your own tooling)
+   apply its picks.
 
    This mandate is intentionally narrow — model selection only. It does not
    presume any particular development process. If this repo already follows
@@ -136,9 +160,9 @@ scaling by forcing a full report on every micro-edit.
    markers and content landed as expected.
 
 5. **Report** what happened: created vs. refreshed, and whether the agent
-   was already present, freshly installed via the plugin, or — if
-   plugin-install wasn't available and it's still missing — the one-line
-   manual instruction to add it.
+   and the dry-run skill were already present, freshly installed via the
+   plugin, or — if plugin-install wasn't available and either is still
+   missing — the one-line manual instruction to add it.
 
 ## Why this stays isolated from any bigger flow
 
@@ -157,7 +181,10 @@ this skill's text to do it.
 ## Related
 
 - [`model-right-sizer.md`](../../agents/model-right-sizer.md) — the agent
-  this mandate points at.
+  this mandate points at, and the sole source for Pass B (the usage report).
+- [`model-right-sizer-dryrun`](../model-right-sizer-dryrun/SKILL.md) — the
+  skill this mandate's "before" hook now runs directly to produce the JSON
+  blueprint; see its own file for what it returns and why.
 - [`README.md`](../../README.md) — "Using it" / "Importing it into another
   repo without duplicating it" — how to get the agent file itself into a
   target repo, the same pattern this skill's file follows.
