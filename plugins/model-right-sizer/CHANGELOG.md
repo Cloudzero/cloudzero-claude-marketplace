@@ -5,6 +5,14 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 ## Unreleased
 
 ### Changed
+- `model-right-sizer-install` now detects whether the target repo has
+  `CLAUDE.md`, `AGENTS.md`, or both, instead of always targeting
+  `CLAUDE.md`: only `AGENTS.md` present → stamp the mandate there alone
+  (no redundant `CLAUDE.md` is created); both present → stamp both,
+  independently; neither present → create `CLAUDE.md`, unchanged from
+  prior behavior. New step 3 makes the detection explicit and requires it
+  to be named in the step 6 report rather than assumed. Steps 4-6
+  renumbered and generalized to "every targeted file" accordingly.
 - **Moved into CloudZero (the CloudZero plugin marketplace)** — this plugin now lives at
   `plugins/model-right-sizer/` in
   [cloudzero/cloudzero-claude-marketplace](https://github.com/cloudzero/cloudzero-claude-marketplace),

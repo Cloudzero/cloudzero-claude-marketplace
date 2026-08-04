@@ -2,17 +2,18 @@
 name: model-right-sizer-install
 description: >-
   Stamp a standalone model-right-sizer mandate onto the CURRENT repo's
-  CLAUDE.md — a one-shot install for a repo that should consult the
-  `model-right-sizer` agent before and after every substantive turn.
-  Idempotent and append-only: an existing CLAUDE.md is never overwritten,
-  only the marker-delimited mandate block is inserted or refreshed. Also
-  checks whether the `model-right-sizer` agent file itself is discoverable
-  in this repo and, if it's missing, installs the `model-right-sizer`
-  Claude Code plugin to fix that (falling back to manual instructions if
-  plugin install isn't available). Deliberately narrow and
-  organization-agnostic — it installs only the right-sizing mandate (plus
-  its own agent dependency, if absent), not any broader development
-  process. Use when someone says
+  agent-instructions file — `CLAUDE.md`, `AGENTS.md`, or both, whichever
+  the repo actually has (see step 3) — a one-shot install for a repo that
+  should consult the `model-right-sizer` agent before and after every
+  substantive turn. Idempotent and append-only: an existing file is never
+  overwritten, only the marker-delimited mandate block is inserted or
+  refreshed, independently, in each targeted file. Also checks whether the
+  `model-right-sizer` agent file itself is discoverable in this repo and,
+  if it's missing, installs the `model-right-sizer` Claude Code plugin to
+  fix that (falling back to manual instructions if plugin install isn't
+  available). Deliberately narrow and organization-agnostic — it installs
+  only the right-sizing mandate (plus its own agent dependency, if absent),
+  not any broader development process. Use when someone says
   "install model-right-sizer in this repo", "init this repo for
   model-right-sizer", "add the right-sizer mandate here", or "make this repo
   consult model-right-sizer every turn".
@@ -27,10 +28,12 @@ repository: https://github.com/cloudzero/cloudzero-claude-marketplace
 This skill installs one thing, and only one thing: a standalone,
 **organization-agnostic mandate** that every substantive task in this repo
 must consult the `model-right-sizer` agent for model-selection guidance,
-bookended around the work itself. (It will also install the
-`model-right-sizer` plugin itself, if the agent it points at isn't already
-discoverable — see step 2 below — but that's making its own prerequisite
-true, not scope creep.) It does not install a broader development process
+bookended around the work itself. It targets whichever agent-instructions
+file(s) the repo actually uses — `CLAUDE.md`, `AGENTS.md`, or both — see
+step 3 below. (It will also install the `model-right-sizer` plugin itself,
+if the agent it points at isn't already discoverable — see step 2 below —
+but that's making its own prerequisite true, not scope creep.) It does not
+install a broader development process
 (no worktree discipline, no review pipeline, no ticket reconciliation) —
 those belong to whatever flow your own org already runs, if any. This
 mandate is scoped narrowly on purpose so any repo, in any org, can adopt it
@@ -92,10 +95,33 @@ scaling by forcing a full report on every micro-edit.
      in your report whether the agent was already present, freshly
      installed, or still missing — don't silently assume it's wired.
 
-3. **Insert or refresh the marker-delimited block** below in the repo's
-   `CLAUDE.md` — **append-only**: create the file if none exists (with just
-   this block); if it exists, replace only the text between the markers,
-   leave everything else in the file untouched.
+3. **Detect which file(s) to target: `CLAUDE.md`, `AGENTS.md`, or both.**
+   Look in the repo root for each. Do not assume — check for both, every
+   time, since a repo can adopt either convention (or migrate between them)
+   independently of this skill.
+   - **Only `AGENTS.md` exists** (no `CLAUDE.md`) → target `AGENTS.md`
+     alone. Do not also create a `CLAUDE.md` — the repo has already opted
+     into the `AGENTS.md` convention, respect that instead of adding a
+     second, redundant instructions file it didn't ask for.
+   - **Only `CLAUDE.md` exists** (no `AGENTS.md`) → target `CLAUDE.md`
+     alone, as before.
+   - **Both exist** → target **both**, independently — the mandate block
+     goes in each file, so whichever one a given tool actually reads, the
+     mandate is there.
+   - **Neither exists** → target `CLAUDE.md` (create it fresh, with just
+     this block). This is the same default this skill has always had;
+     `AGENTS.md` isn't invented as a target unless the repo already has
+     one.
+
+   Say in your step 5 report which file(s) you found and which you
+   targeted — don't let this decision happen silently.
+
+4. **Insert or refresh the marker-delimited block** below in every file
+   targeted in step 3 — **append-only, per file**: create the file if it's
+   the target and doesn't exist yet (the "neither exists" case above); if a
+   targeted file already exists, replace only the text between the markers
+   in that file, leaving everything else in it untouched. The block's
+   content is identical regardless of which file(s) it lands in.
 
    ```markdown
    <!-- model-right-sizer-mandate:begin (managed by model-right-sizer-install — do not hand-edit; re-run the skill to refresh) -->
@@ -132,13 +158,16 @@ scaling by forcing a full report on every micro-edit.
    <!-- model-right-sizer-mandate:end -->
    ```
 
-4. **Verify, don't assume.** Re-read the file after writing and confirm the
-   markers and content landed as expected.
+5. **Verify, don't assume.** Re-read **every** file targeted in step 3
+   after writing and confirm the markers and content landed as expected in
+   each one — don't declare success on the strength of only one when two
+   were targeted.
 
-5. **Report** what happened: created vs. refreshed, and whether the agent
-   was already present, freshly installed via the plugin, or — if
-   plugin-install wasn't available and it's still missing — the one-line
-   manual instruction to add it.
+6. **Report** what happened: which file(s) you found (`CLAUDE.md`,
+   `AGENTS.md`, or both) and targeted; created vs. refreshed, per file; and
+   whether the agent was already present, freshly installed via the
+   plugin, or — if plugin-install wasn't available and it's still missing
+   — the one-line manual instruction to add it.
 
 ## Why this stays isolated from any bigger flow
 
