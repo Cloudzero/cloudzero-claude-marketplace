@@ -352,6 +352,13 @@ class TestAuditHarness:
             "restoring a whole-file backup silently discards a concurrent "
             "adoption made by another session while the probe was in flight"
         )
+        assert "rename over" in skill and "atomic" in skill, (
+            "a non-atomic insert can leave an orphan BEGIN delimiter"
+        )
+        assert "UNPAIRED canary delimiter" in skill, (
+            "sed '/BEGIN/,/END/d' on an orphan BEGIN deletes to EOF, taking the "
+            "learnings and the protected regions with it — cleanup must refuse"
+        )
         assert "Residual risk, stated plainly" in skill, (
             "a SIGKILL beats every trap; the skill must say so rather than imply "
             "the hole is closed"
