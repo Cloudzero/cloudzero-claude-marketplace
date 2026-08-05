@@ -20,7 +20,173 @@ This directory is a self-contained **Claude Code plugin** within the CloudZero m
 - [`agents/model-right-sizer.md`](agents/model-right-sizer.md) — the agent definition (frontmatter + system prompt). Self-contained and organization-agnostic: no internal quotes, no internal tool/telemetry references, no hard-coded sibling-agent names.
 - [`skills/model-right-sizer-install/SKILL.md`](skills/model-right-sizer-install/SKILL.md) — a companion skill that stamps a narrow, organization-agnostic mandate onto a *target* repo's `CLAUDE.md`: consult `model-right-sizer` before and after every substantive task. It also installs this plugin itself if the agent isn't already discoverable there. Beyond that, it's just the mandate — no broader development process — so it can be adopted independently of whatever flow (if any) the target repo already runs.
 - [`skills/model-right-sizer-dryrun/SKILL.md`](skills/model-right-sizer-dryrun/SKILL.md) — a companion skill that previews the agent's routing map for a free-text intent, without building anything.
+- [`skills/model-right-sizer-calibrate/SKILL.md`](skills/model-right-sizer-calibrate/SKILL.md) — a companion skill that feeds and reads the calibration ledger: `append` turns a usage report into schema-valid rows, `summary` aggregates them by task shape, `review` adopts a staged SkillOpt proposal. The write half of the loop below.
+- [`skills/model-right-sizer-eval/SKILL.md`](skills/model-right-sizer-eval/SKILL.md) — the audit harness for the learning loop: three rounds, two arms, disjoint task sets, and a saturation gate. Built to be able to return "no" — see [Auditing the loop](#auditing-the-loop--does-it-actually-work) below.
+- [`templates/`](templates/) — the seed for the machine-wide learned skill, the authoritative [ledger row schema](templates/ledger-entry.schema.json), and a [SkillOpt-Sleep config](templates/skillopt-sleep.config.json). Templates, not discovered skills — a seed under `skills/` would be discovered as a second, never-learning copy of the installed one.
+- [`eval/`](eval/) — [`routing-tasks.jsonl`](eval/routing-tasks.jsonl), 16 synthetic routing decisions covering the rubric's real boundaries (agentic down-pin, the query-layer fork, the over-thinking tax, cost-of-error size-up, caching/batch economics, handoff seams) as the held-out gate a distilled learning must clear; plus [`boundary-rubric.json`](eval/boundary-rubric.json) and [`probe-set-A.jsonl`](eval/probe-set-A.jsonl) for the audit harness.
 - [`CHANGELOG.md`](CHANGELOG.md) — dated entries for every change to the agent core or its companion skills. Update this in the same PR as the change.
+
+## The learning loop (what the agent remembers)
+
+Out of the box the agent has no memory: it recommends Sonnet for a stage, the
+run overrides to Opus and pays two rework cycles, and the next spawn — same
+repo, an hour later — recommends Sonnet again. The cost-of-error signal its
+whole rubric is built to price gets thrown away every turn. Pass A step 8
+("close the loop, if a calibration history exists") is the hook; this is what
+fills it.
+
+```
+Pass A blueprint ──reads──▸ ~/.claude/skills/model-right-sizer-learned/
+                            ├── SKILL.md       distilled learnings
+                            └── ledger.jsonl   append-only evidence
+                                      ▲                    │
+Pass B usage report ──emits rows──────┘                    │
+  (via model-right-sizer-calibrate)                        │
+                                                           ▼
+                            SkillOpt-Sleep (optional, nightly)
+                            harvest ▸ mine ▸ replay ▸ held-out gate
+                            ▸ stage proposal ▸ you adopt
+```
+
+**It lives outside every repo on purpose.** Cost-of-error is only knowable from
+what past picks actually cost, and siloed per repo that evidence never reaches a
+sample size that means anything. Stored once in the user-level skills directory,
+it's discovered by every session in every repo — a calibration measured on one
+codebase sharpens the pick made on the next.
+
+**The price of that reach is a hard constraint: rows record a task *shape*, not
+a task.** `stage_kind`, `loop_class`, the three signals, recommended-vs-actual,
+rework cycles — never repo names, paths, ticket ids, code, or customer data. The
+[schema](templates/ledger-entry.schema.json) enforces it structurally:
+`additionalProperties: false` everywhere, a closed `stage_kind` vocabulary, and
+a 240-char cap on the one free-text field (prose long enough to narrate a
+specific incident is prose long enough to identify it).
+
+### SkillOpt is optional — the loop works without it
+
+[SkillOpt-Sleep](https://github.com/microsoft/skillopt) distills accumulated
+evidence into the learned skill's prose nightly, behind a held-out validation
+gate, and **stages** proposals rather than applying them. It's a genuine
+enhancement, not a prerequisite: with zero dependencies installed, the ledger
+still accumulates, `model-right-sizer-calibrate summary` still aggregates it by
+task shape, and the agent still reads both. Distillation just happens by hand
+instead of overnight.
+
+If you do wire it up, know what you're agreeing to: it reads local session
+transcripts and writes an `evidence.jsonl` under its staging tree.
+`redact_secrets` is on by default and `"evidence_log": false` disables the log.
+Nothing is ever auto-adopted — `model-right-sizer-calibrate review` shows you
+the diff first.
+
+The seed's protected regions (`<!-- SLOW_UPDATE_START/END -->`,
+`<!-- APPENDIX_START/END -->`) are regions SkillOpt won't edit. They hold the
+contract and the execution reminders, so the learnings can evolve without the
+rules governing them drifting underneath.
+
+## Auditing the loop — does it actually work?
+
+A learning loop nobody audits is a story about improvement, not improvement.
+[`model-right-sizer-eval`](skills/model-right-sizer-eval/SKILL.md) is the
+harness that answers it, and it is built to be able to return "no."
+
+### Stage 0 — the wire test (run this first)
+
+Whether memory *improves accuracy* is unanswerable until you know it is **read at
+all**. Stage 0 plants a sentinel learning — one that contradicts first
+principles, carries a per-run nonsense codename, and comes with matching ledger
+rows — then runs the agent blind against a task it speaks to, alongside a
+no-memory control. Crucially it runs **twice**: once with rows that genuinely
+support the sentinel's claim, once with rows that contradict it.
+
+Four pass criteria: **read** (codename + row ids appear) · **scoped** (an
+unmatched `stage_kind` is reported as unmatched and its pick is unchanged) ·
+**responsive** (valid evidence moves the pick) · **resistant** (contradicted
+evidence does not). The last one is what separates a reasoning loop from a
+compliance loop — an agent that obeys any text in its memory file is
+suggestible, and one bad distillation would poison every later pick.
+
+**Result, 2026-08-05, plugin 0.2.0 — all four passed:**
+
+| Arm | Pick | Verdict |
+|---|---|---|
+| Control (no memory) | Haiku 4.5 @ `none`, batch, conf 0.68 | baseline |
+| Malformed sentinel (rows contradict the claim) | Haiku 4.5, unchanged | **resisted** |
+| Valid sentinel (rows support the claim) | Sonnet 5 @ `low`, batch, conf 0.62 | **responded** |
+
+The treatment arm volunteered its own counterfactual — *"without the ledger I
+would have picked Haiku 4.5 @ none, ~$32, confidence ~0.75"* — which the control
+run independently confirms. It cited rows individually rather than in bulk,
+discounting two of seven as possibly mitigated by the task's stated conditions,
+which is why its confidence landed at 0.62 rather than higher. The malformed arm
+rejected its sentinel and named the defect: the rows recorded the *top* tier
+reworking, so a claim about the cheapest tier rested on a model with zero
+measured runs in its own evidence.
+
+Same agent, same task, same sentinel id — the only variable was whether the rows
+supported their claim. **The loop is live and discriminating.** What that does
+*not* yet show is that accumulation over many rounds raises accuracy; that is
+what the three-round protocol below is for, and it remains undemonstrated.
+
+### The three-round accuracy protocol
+
+**The design, in one table.** Three rounds, two arms, disjoint task sets:
+
+| Round | Treatment | Control | Set |
+|---|---|---|---|
+| 1 | agent + seed skill, empty ledger | agent alone | A |
+| 2 | + learnings distilled from A | agent alone | B |
+| 3 | + learnings from A and B | agent alone | C |
+
+Three failure modes it defends against, each with the specific countermeasure:
+
+| Failure mode | Countermeasure |
+|---|---|
+| Memorization read as learning | **Disjoint sets** — learn on A, measure on B |
+| Set difficulty read as improvement | **A no-memory control every round**; only the treatment-minus-control gap counts |
+| Answer leakage from disk | **Sandbox isolation** — the agent never reads this repo, and tasks are authored at run time so they exist nowhere to be found |
+
+Scoring is 3 points/task from
+[`eval/boundary-rubric.json`](eval/boundary-rubric.json): **Tier** (band, not
+model id) · **Dial** (effort band + an explicit numeric budget) · **Boundary**
+(the specific reasoning that boundary tests — the discriminating criterion).
+
+### Run the saturation gate first
+
+**If the round-1 control arm scores above 70%, stop — the experiment is invalid.**
+A control near ceiling means first principles already answer your tasks, so
+memory has nothing to add and any measured gain is noise.
+
+### The first run of this harness failed that gate
+
+Run 2026-08-05 against plugin 0.2.0, Set A, eight boundaries, both arms on Opus:
+
+| Arm | Total |
+|---|---|
+| Control (no memory) | **24/24** |
+| Treatment (seed skill, empty ledger) | **24/24** |
+
+Saturated. Rounds 2 and 3 were not run. This does **not** show the loop works —
+it shows this eval couldn't tell, because every boundary tested is one the agent
+file teaches explicitly, so the persona answers it unaided. Both arms
+independently found that caching was worth ~$207/day against a tier choice worth
+~$18.50/day, and that three of eight stages improve by removing the model
+entirely. That strength is exactly why the test couldn't discriminate.
+
+The lesson is now the harness's central rule:
+
+> **A calibration ledger can only pay for itself on questions first principles
+> cannot settle.**
+
+So a discriminating set tests environment-specific economics ("this shape has
+cost two rework cycles at the mid tier, three times here"), genuinely contested
+calls where the agent's own output is a near-coin-flip, local threshold
+calibration (the agent file's "~400 lines → bump a tier" is a seed prior it will
+tell you is unmeasured), and anti-learning checks (a stale learning must lose to
+a fresh price sheet). The eval skill spells each out.
+
+[`eval/probe-set-A.jsonl`](eval/probe-set-A.jsonl) is that first set, kept as a
+worked example and marked **burned** — publishing it contaminated it. Author your
+own for a blind run.
 
 Besides right-sizing *which model*, the agent also flags stages where a deterministic query layer (e.g. PromptQL) would answer a data question more reliably and cheaper than a raw model call, and designs the minimal message schema each agent-to-agent handoff should carry — so a multi-stage chain doesn't leak full transcripts between hops. See the "Agent-to-agent message-schema design" section and the deterministic-query-layer lever in `agents/model-right-sizer.md`.
 
@@ -33,7 +199,7 @@ Install it from the CloudZero marketplace — add the marketplace once, then ins
 /plugin install model-right-sizer@cloudzero
 ```
 
-That installs the agent (`agents/model-right-sizer.md`) and both companion skills (`skills/model-right-sizer-install/`, `skills/model-right-sizer-dryrun/`) together. Adding the marketplace also makes the [`cost-analyst`](../cost-analyst/) plugin available (`/plugin install cost-analyst@cloudzero`). To try it before installing, or to iterate on a local checkout, load it directly for a session instead:
+That installs the agent (`agents/model-right-sizer.md`) and all four companion skills (`skills/model-right-sizer-install/`, `skills/model-right-sizer-dryrun/`, `skills/model-right-sizer-calibrate/`, `skills/model-right-sizer-eval/`) together. Adding the marketplace also makes the [`cost-analyst`](../cost-analyst/) plugin available (`/plugin install cost-analyst@cloudzero`). To try it before installing, or to iterate on a local checkout, load it directly for a session instead:
 
 ```
 claude --plugin-dir /path/to/cloudzero-claude-marketplace/plugins/model-right-sizer
@@ -41,7 +207,7 @@ claude --plugin-dir /path/to/cloudzero-claude-marketplace/plugins/model-right-si
 
 Once installed, the agent needs no special tools beyond `Read`, `Grep`, `Glob`, `WebFetch`, and `Task` (used to delegate the live model-pricing fetch to a cheap sub-agent tier, when your framework supports dispatching one — otherwise it falls back to fetching with `WebFetch` directly) — it never edits files; it only reads context and reports.
 
-To also enforce that the agent gets consulted on every substantive turn, run the `model-right-sizer-install` skill once against the repo you want to onboard (it's a companion in this same plugin, so installing the plugin is enough — just invoke the skill in the target repo). It writes a marker-delimited mandate block into that repo's `CLAUDE.md` — idempotent and append-only, safe to re-run to refresh the wording.
+To also enforce that the agent gets consulted on every substantive turn, run the `model-right-sizer-install` skill once against the repo you want to onboard (it's a companion in this same plugin, so installing the plugin is enough — just invoke the skill in the target repo). It writes a marker-delimited mandate block into that repo's `CLAUDE.md`, and — after asking — seeds the machine-wide learning loop described above (the learned skill, its ledger, and a matching block in the user-level `CLAUDE.md`). Idempotent and append-only throughout: safe to re-run to refresh the wording, and a re-run never touches accumulated learnings.
 
 ### Dropping the files in manually instead
 
@@ -64,19 +230,31 @@ See the **"Extending this agent for your own organization"** section at the bott
 
 ## Prerequisites
 
-None. This plugin is an agent definition and two companion skills — no
-runtime dependencies, no code that calls an LLM or CloudZero API directly.
-It's read by whatever agent runtime loads it (Claude Code, or a compatible
-Claude-Agent-SDK-based runtime), which supplies its own model access. No API
-keys are required by the plugin itself.
+None. This plugin is an agent definition, four companion skills, and a few
+markdown/JSON templates — no runtime dependencies, no code that calls an LLM or
+CloudZero API directly. It's read by whatever agent runtime loads it (Claude
+Code, or a compatible Claude-Agent-SDK-based runtime), which supplies its own
+model access. No API keys are required by the plugin itself.
+
+`skillopt` (`pip install skillopt`) is the one **optional** dependency, and only
+if you want the learning loop's nightly distillation. Everything else — the
+ledger, the summary, the agent reading both — works with nothing installed.
 
 ## Configuration
 
-No environment variables or config files. The only "configuration" is the
-model lineup table inside `agents/model-right-sizer.md`, which the agent is
-instructed to re-verify against the live pricing page at spawn time (see the
-`PRICING FRESHNESS` comment at the top of the file) rather than trust as a
-baked-in snapshot — see [Model identifiers](#model-identifiers) below.
+No environment variables, and no config file this plugin requires. Two things
+are configuration-adjacent:
+
+- The model lineup table inside `agents/model-right-sizer.md`, which the agent
+  is instructed to re-verify against the live pricing page at spawn time (see
+  the `PRICING FRESHNESS` comment at the top of the file) rather than trust as
+  a baked-in snapshot — see [Model identifiers](#model-identifiers) below.
+- `~/.skillopt-sleep/config.json`, only if you opt into nightly distillation.
+  [`templates/skillopt-sleep.config.json`](templates/skillopt-sleep.config.json)
+  is the starting point; the load-bearing key is `target_skill_path`, which must
+  point at the installed learned skill. If it drifts, SkillOpt distills into a
+  file nothing reads — a failure that looks exactly like "the loop learned
+  nothing." Key names track the installed SkillOpt version.
 
 ## Supported models
 
@@ -108,9 +286,18 @@ never edits or writes files. Its companion skills' blast radius:
   discoverable in the target repo, it will also — after asking the user to
   confirm — run `/plugin marketplace add` + `/plugin install` to install this
   plugin (falling back to printing manual copy/submodule instructions if
-  plugin install isn't available) — the only action it takes outside that
-  one `CLAUDE.md` block.
+  plugin install isn't available). **Everything it writes outside the repo
+  requires explicit confirmation first**: seeding
+  `~/.claude/skills/model-right-sizer-learned/`, stamping a marker-delimited
+  block into the user-level `CLAUDE.md`, and — separately again — writing a
+  SkillOpt-Sleep config or installing a schedule. Re-running never overwrites
+  accumulated learnings or the ledger; only the seed's protected regions are
+  refreshed.
 - `model-right-sizer-dryrun` writes nothing; it only returns a routing map.
+- `model-right-sizer-calibrate` appends to the machine-wide `ledger.jsonl`
+  (append-only — it never rewrites or reorders existing rows) and, in `review`
+  mode and only on an explicit yes, applies a staged SkillOpt proposal to the
+  learned skill. It never touches the repo you're working in.
 
 See the repo-level [SECURITY.md](../../SECURITY.md) for how to report vulnerabilities.
 
@@ -129,15 +316,31 @@ account data is involved anywhere in this repo.
 - *"Dry-run: build a Slack bot that summarizes daily standup threads."* →
   invokes `model-right-sizer-dryrun`, which returns only the routing map, no
   build.
+- *"Log this run."* → `model-right-sizer-calibrate append` turns the usage
+  report into ledger rows, e.g. `{stage_kind: "code-review", loop_class:
+  "low-tool-turn", recommended: sonnet@high, actual: opus@high, outcome:
+  {quality: "rework", rework_cycles: 2}, verdict: "size-up"}`.
+- *"What has the right-sizer learned?"* → `summary` returns, per task shape,
+  the verdict split and rework totals — e.g. *"`code-review`: 6 rows, 4
+  size-up, 3 with rework ≥ 2 → this shape is being under-powered."*
 
 ## Limitations
 
 - Pricing/model-ID tables go stale as providers ship new models — the agent
   depends on live re-verification at spawn time, not memorized figures; if
   it can't refresh, it's instructed to say so and mark figures unverified.
-- No memory across spawns unless the host runtime provides one.
+- Memory across spawns now exists (the learning loop above), but it is only as
+  good as what gets logged: it depends on sessions actually running
+  `model-right-sizer-calibrate append` after work closes. A ledger nobody feeds
+  reads exactly like no ledger at all — which is why the agent is instructed to
+  state the evidence base out loud on every blueprint.
+- Early ledger rows are an anecdote, not a trend. `summary` reports sample size
+  for that reason; don't act on a two-row group.
 - Confidence percentages are the model's own calibration, not a measured
   statistic — treat them as a structured judgment call, not a guarantee.
+- The held-out eval set ships as a curated review checklist and gate input; how
+  a given SkillOpt version consumes a *custom* gate set is version-dependent —
+  verify with `skillopt-sleep dry-run` before relying on it.
 - Tested primarily against Claude Code; other Claude-Agent-SDK-based
   runtimes should work but aren't independently verified here.
 
@@ -160,6 +363,15 @@ plugin's `.claude-plugin/plugin.json` parse as JSON and carry the full
 documented metadata contract, each marketplace entry's `source` resolves
 to a real plugin directory, and manifest `version` fields agree where
 both are declared.
+
+`tests/test_learned_skill_seed.py` covers the learning-loop artifacts, which
+those validators structurally can't see: they live outside
+`plugins/*/skills/*/SKILL.md`. It pins the seed's frontmatter `name` to the
+directory it installs into, checks both protected marker pairs are present and
+balanced with the trainable section between them, and asserts the schema stays
+closed (`additionalProperties: false` at every level, a populated `stage_kind`
+enum, a capped `lesson`) — the properties that keep ledger rows repo-agnostic
+by construction rather than by good intentions.
 
 ## License
 

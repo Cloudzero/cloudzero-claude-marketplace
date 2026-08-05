@@ -4,6 +4,127 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 
 ## Unreleased
 
+### Added
+- **A machine-wide learning loop — the agent now has a memory across sessions
+  and repos.** Pass A step 8 has always said "close the loop, if a calibration
+  history exists," but nothing created that history: every spawn reasoned from
+  first principles, and the README listed "no memory across spawns" as a
+  limitation. The loop that fills it:
+  - **`model-right-sizer-learned`** — an additive skill seeded into the
+    user-level skill directory (`~/.claude/skills/model-right-sizer-learned/`),
+    so *every* session in *every* repo discovers it. Carries distilled
+    learnings between two protected regions
+    (`<!-- SLOW_UPDATE_START/END -->`, `<!-- APPENDIX_START/END -->`) that hold
+    the contract and execution reminders, alongside an append-only
+    `ledger.jsonl` of measured evidence. Shipped as
+    `templates/learned-skill.seed.md` — deliberately *outside* `skills/`, since
+    a seed under `skills/` would be discovered as a second, never-learning copy
+    of the installed skill.
+  - **`skills/model-right-sizer-calibrate/`** — the write half the read-only
+    agent can't provide. `append` turns a Pass B usage report into
+    schema-valid rows; `summary` aggregates the ledger by task shape (what Pass
+    A reads on day one, before any distillation has run); `review` diffs a
+    staged SkillOpt proposal and adopts it only on an explicit yes.
+  - **`templates/ledger-entry.schema.json`** — the authoritative row schema,
+    and the mechanism that makes machine-wide storage *safe*. A row records a
+    task **shape**, never task content: `additionalProperties: false` at every
+    level, a closed `stage_kind` vocabulary, and a 240-char cap on the single
+    free-text field. Repo-agnosticism here isn't a nicety — it's the
+    precondition for storing the evidence centrally at all, which in turn is
+    what lets cost-of-error reach a sample size that means anything.
+  - **`eval/routing-tasks.jsonl`** — 16 synthetic, repo-agnostic routing
+    decisions covering the rubric's real boundaries (agentic down-pin, the
+    deterministic-query-layer fork, the over-thinking tax, cost-of-error
+    size-up, caching/batch economics, handoff seams, no-false-certainty), as
+    the held-out gate a distilled learning must clear.
+  - **Optional [SkillOpt-Sleep](https://github.com/microsoft/skillopt)
+    integration** (`templates/skillopt-sleep.config.json`) to distill the
+    ledger nightly behind that gate. Deliberately optional — the plugin's
+    "Prerequisites: None" still holds, because the ledger, the summary, and the
+    agent reading both work with nothing installed. Sleep stages proposals; it
+    never auto-adopts, and the install skill surfaces the transcript-harvesting
+    privacy note before anyone agrees to a nightly job.
+  - **`skills/model-right-sizer-eval/`** — the audit harness that answers
+    "does the loop actually work," built to be able to return *no*. Three
+    rounds × two arms over **disjoint** task sets, so a gain is transfer rather
+    than recall; a **no-memory control arm every round**, so set difficulty
+    can't masquerade as improvement; and **sandbox isolation** keeping the agent
+    out of this repo, whose own `eval/routing-tasks.jsonl` spells the answers
+    out in its `reference_text`. Plus `eval/boundary-rubric.json` (the eight
+    boundaries and their 3-point scoring) and `eval/probe-set-A.jsonl` (the
+    first set, kept as a worked example and marked **burned** — publishing it
+    contaminated it).
+  - **A Stage 0 "wire test" in that harness** — whether memory improves accuracy
+    is unanswerable until you know it is read at all. Plants a sentinel learning
+    that contradicts first principles, carries a per-run nonsense codename, and
+    ships with matching ledger rows; runs the agent blind alongside a no-memory
+    control; and runs **twice** — once with rows that support the sentinel's
+    claim, once with rows that contradict it. Four pass criteria: read · scoped ·
+    responsive · **resistant**. The last is the one that matters most: an agent
+    that obeys any text in its memory file is suggestible rather than
+    calibrated, and one bad distillation would poison every later pick.
+
+    **Result 2026-08-05, all four passed.** Control picked Haiku 4.5 @ `none`
+    (conf 0.68). The malformed sentinel was **rejected** — the agent noticed its
+    rows recorded the *top* tier reworking, so a claim about the cheapest tier
+    rested on a model with zero measured runs in its own evidence, and it
+    flagged the synthetic numeric signature besides. The valid sentinel was
+    **followed**: pick moved to Sonnet 5 @ `low` (conf 0.62), with the agent
+    volunteering the counterfactual ("without the ledger I would have picked
+    Haiku 4.5 @ none, ~$32, confidence ~0.75") that the control run
+    independently confirms. Rows were cited individually — two of seven
+    discounted as possibly mitigated by the task's conditions, which is why
+    confidence landed at 0.62 rather than higher. A second task with no matching
+    `stage_kind` was reported unmatched with its pick untouched, in every arm.
+
+    Same agent, same task, same sentinel id; the only variable was whether the
+    rows supported their claim. The loop is **live and discriminating** — it
+    responds to evidence quality, not to the presence of text in a file. It does
+    **not** yet show that accumulation over rounds raises accuracy.
+  - **A `saturation_gate` in that harness, added because its own first run
+    failed it.** Run 2026-08-05, Set A, both arms on Opus: control **24/24**,
+    treatment **24/24**. Rounds 2 and 3 were not run — continuing would have
+    cost ~200k tokens to confirm a ceiling already reached, and any reported
+    trend would have been noise. The result does not show the loop works; it
+    shows the eval couldn't tell, because every boundary tested is one the agent
+    file teaches explicitly. The rule it produced is now the harness's spine:
+    *a calibration ledger can only pay for itself on questions first principles
+    cannot settle* — so discriminating sets test environment-specific
+    economics, genuinely contested calls, local threshold calibration, and
+    anti-learning (a stale learning must lose to a fresh price sheet).
+  - **`tests/test_learned_skill_seed.py`** — the loop's artifacts live outside
+    `plugins/*/skills/*/SKILL.md`, so no existing validator sees them. Pins the
+    seed's frontmatter `name` to its install directory (a drift there silently
+    breaks every cross-reference), checks the protected regions are present,
+    balanced, and bracketing the trainable section, and asserts the schema
+    stays closed. Also covers the audit harness: the rubric keeps all three
+    scoring criteria and its saturation gate, a probe set exercises every scored
+    boundary exactly once, and a shipped probe set stays marked burned and
+    carries **no** answer fields — so a leaked set alone gives an agent nothing.
+
+### Changed
+- `agents/model-right-sizer.md` — Pass A step 8 now names the discovery
+  convention (the learned skill + ledger, and the task-shape contract) instead
+  of an abstract "if a ledger exists"; Pass B emits calibration rows for the
+  session to persist, with an explicit "omit what you didn't measure, never
+  estimate into the ledger" rule — an invented token count is indistinguishable
+  from a measurement afterward and poisons every future pick that reads it. The
+  agent stays **read-only**: it emits rows, it never writes them. The
+  "Extending this agent" section now draws the line between the two overlay
+  kinds: rubric reasoned from first principles stays in the agent file,
+  anything true only *because of past runs* belongs in the learned skill.
+- `model-right-sizer-install` (0.1.0 → 0.2.0) — seeds the learned skill (never
+  clobbering accumulated learnings on re-run; only the protected regions
+  refresh), stamps a `model-right-sizer-learning-loop` block into the
+  user-level `CLAUDE.md`, extends the repo mandate to honor the loop, and
+  offers to wire SkillOpt-Sleep. Every write outside the target repo requires
+  explicit confirmation first — the same bar the skill already applied to
+  plugin installs — and the closing report says per artifact what was created,
+  refreshed, skipped, or declined, including what a declined write costs.
+- `model-right-sizer-dryrun` — reads the ledger as part of Pass A, and is
+  explicit that a dry run never appends to it (nothing ran, so there's nothing
+  to measure).
+
 ### Changed
 - **Moved into CloudZero (the CloudZero plugin marketplace)** — this plugin now lives at
   `plugins/model-right-sizer/` in

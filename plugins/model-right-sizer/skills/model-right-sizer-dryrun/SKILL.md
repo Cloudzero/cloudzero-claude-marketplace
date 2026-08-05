@@ -79,6 +79,12 @@ real run, not a dry run.
    - **Message-schema spec** — the minimal payload each handoff seam carries.
    - **Uncertainty ledger** — assumptions, price-sheet freshness state, and
      what it would measure to sharpen the map.
+   - **The calibration read** — Pass A step 8 applies to a dry run too: the
+     agent reads the machine-wide `model-right-sizer-learned` skill and its
+     ledger rows matching each stage's shape, and states what the evidence
+     changed, including "nothing" and including "no ledger yet". A dry run is
+     *read-only against the ledger* — it never appends, because nothing
+     actually ran to measure.
 
 4. **Emit the map and STOP.** Print the agent's blueprint to the chat as the
    whole deliverable. Do not follow it with a build. Do not write it to a
@@ -103,3 +109,6 @@ real run, not a dry run.
 - [`model-right-sizer-install`](../model-right-sizer-install/SKILL.md) — the
   sibling that installs the standing before/after mandate; this skill is the
   on-demand, front-bookend-only preview of it.
+- [`model-right-sizer-calibrate`](../model-right-sizer-calibrate/SKILL.md) —
+  owns the ledger this dry run reads. `summary` is the fastest way to see what
+  evidence a map is being drawn against.
