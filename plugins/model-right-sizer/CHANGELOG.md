@@ -107,7 +107,14 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
       designed to be inert — delimited, tagged `provenance: canary (NOT
       evidence)`, neutralized by a rule in the learned skill's **protected**
       appendix where training can't drop it, and swept by every entry point to
-      the loop rather than only by re-running the verification.
+      the loop rather than only by re-running the verification. The insert is
+      **atomic** (write alongside, then `mv` — `rename(2)` can't leave a torn
+      half with an orphan `BEGIN`), and cleanup **refuses to range-delete unless
+      both delimiters are present**, because `sed '/BEGIN/,/END/d'` over an
+      orphan `BEGIN` cuts to end-of-file and would take the accumulated
+      learnings and both protected regions with it. Verified empirically: the
+      paired case round-trips byte-identical, the orphan case is refused with
+      the file untouched, and the unguarded form destroys 44 of 93 lines.
   - **A Stage 0 "wire test" in that harness** — whether memory improves accuracy
     is unanswerable until you know it is read at all. Plants a sentinel learning
     that contradicts first principles, carries a per-run nonsense codename, and

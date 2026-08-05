@@ -76,11 +76,41 @@ plugin.
       on normal exit, error, and interrupt alike:
       ```bash
       SKILL=~/.claude/skills/model-right-sizer-learned/SKILL.md
-      # Delete ONLY the delimited block. Never restore a whole-file snapshot.
-      trap 'sed -i.bak "/verify-canary:BEGIN/,/verify-canary:END/d" "$SKILL" \
-            && rm -f "$SKILL.bak"' EXIT INT TERM
-      # ...insert canary, run the probe...
+      cp "$SKILL" "$SKILL.verify-backup"   # diagnostic + manual recovery only
+
+      cleanup() {
+        # Range-delete ONLY when both delimiters are present. An unpaired BEGIN
+        # would make sed cut from there to EOF — taking the learnings and the
+        # protected regions with it.
+        if grep -q 'verify-canary:BEGIN' "$SKILL" && grep -q 'verify-canary:END' "$SKILL"; then
+          sed -i.tmp '/verify-canary:BEGIN/,/verify-canary:END/d' "$SKILL" && rm -f "$SKILL.tmp"
+        elif grep -q 'verify-canary:' "$SKILL"; then
+          echo "UNPAIRED canary delimiter in $SKILL — refusing to range-delete." >&2
+          echo "Recover from $SKILL.verify-backup after checking for concurrent edits." >&2
+          return 1
+        fi
+      }
+      trap cleanup EXIT INT TERM
+
+      # Insert ATOMICALLY: build the canaried copy alongside, then rename over
+      # the target. rename(2) is atomic, so the file is either the original or
+      # the fully-delimited version — never a torn half with an orphan BEGIN.
+      add_canary "$SKILL" > "$SKILL.new" && mv -f "$SKILL.new" "$SKILL"
+      # ...run the probe...
       ```
+      Then confirm the canary token no longer appears anywhere under the
+      learned skill.
+
+      **Two failure modes are closed here, and both are worth naming.** A
+      non-atomic insert can be interrupted after `BEGIN` is written and before
+      `END` is — and a naive `sed '/BEGIN/,/END/d'` on that file deletes
+      everything from `BEGIN` to end-of-file, destroying the accumulated
+      learnings *and* the protected regions. Writing through a temp file and
+      renaming makes that state unreachable; the paired-delimiter guard means
+      that even if it somehow occurs, cleanup refuses rather than amputating the
+      file. This is the one case where the backup earns its keep — as the
+      recovery path a human reaches for, not as an automatic restore.
+
       **Cleanup must be a surgical block delete, not a snapshot restore.** The
       learned skill is machine-wide and other sessions write to it: if one
       adopts a staged learning or re-runs the installer while your probe is in
