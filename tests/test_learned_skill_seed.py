@@ -103,6 +103,17 @@ class TestLearnedSkillSeed:
             f"row can be told apart from the rubric restated"
         )
 
+    def test_seed_neutralizes_a_surviving_canary(self):
+        """No trap survives SIGKILL, so the last line of defense lives in the
+        artifact itself: a surviving canary must be inert, not misleading. This
+        rule sits in a PROTECTED region so training can never drop it."""
+        text = SEED.read_text()
+        appendix = text[text.index("<!-- APPENDIX_START -->"):]
+        assert "provenance: canary" in appendix, (
+            "the canary-is-not-evidence rule must live inside the protected "
+            "appendix, where SkillOpt cannot edit it away"
+        )
+
     def test_seed_stays_compact(self):
         size = len(SEED.read_text())
         assert size <= SEED_MAX_CHARS, (
@@ -314,7 +325,29 @@ class TestAuditHarness:
         skill = (PLUGIN_DIR / "skills" / "model-right-sizer-verify" / "SKILL.md").read_text()
         assert "verify-canary:BEGIN" in skill, "canary must be delimited for deterministic removal"
         assert "Sweep first" in skill, "must sweep a leftover canary from an aborted prior run"
-        assert "Restore on every exit path" in skill
+        assert "Install a real exit trap" in skill, (
+            "cleanup must be registered with the shell before the canary is "
+            "written, not left as a trailing step the aborted run never reaches"
+        )
+
+    def test_collision_recovery_is_a_bounded_loop_not_one_retry(self):
+        """Two writers that collided are running the same algorithm at the same
+        moment, so both recovering by 'take the next free id' collide again.
+        The randomized backoff is what breaks the lockstep."""
+        skill = (PLUGIN_DIR / "skills" / "model-right-sizer-calibrate" / "SKILL.md").read_text()
+        assert "Recovery is a loop, not a single retry" in skill
+        assert "randomized" in skill, "retries in lockstep re-collide without a backoff"
+        assert "abort and report" in skill, "an ambiguous row is worse than no row"
+
+    def test_verify_registers_a_real_exit_trap(self):
+        """'Restore afterwards' is an instruction, not a mechanism — an aborted
+        session never reaches its own last step."""
+        skill = (PLUGIN_DIR / "skills" / "model-right-sizer-verify" / "SKILL.md").read_text()
+        assert "trap " in skill and "EXIT INT TERM" in skill
+        assert "Residual risk, stated plainly" in skill, (
+            "a SIGKILL beats every trap; the skill must say so rather than imply "
+            "the hole is closed"
+        )
 
     def test_probe_set_carries_no_answers(self):
         """The tasks ship; the expected answers must NOT — they live only in the

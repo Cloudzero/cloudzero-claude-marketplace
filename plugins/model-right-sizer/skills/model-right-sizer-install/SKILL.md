@@ -146,6 +146,12 @@ scaling by forcing a full report on every micro-edit.
      If a protected marker pair is missing or unbalanced in the existing
      file, do **not** guess where it should go: report it and leave the file
      untouched.
+   - **Sweep any `verify-canary` block** you find in the existing `SKILL.md`
+     and report it. It is a leftover from a `model-right-sizer-verify` run that
+     was interrupted before its own cleanup could fire, and while the artifact
+     is tagged so the agent ignores it, it shouldn't be left lying in the file.
+     Every entry point to the loop sweeps it, so it gets removed on the next
+     touch from any direction rather than waiting on a re-verification.
    - **`ledger.jsonl` absent** → create it empty. Present → leave it alone,
      always. It is append-only; this skill never rewrites it.
    - **`eval/routing-tasks.jsonl` absent** → copy this plugin's

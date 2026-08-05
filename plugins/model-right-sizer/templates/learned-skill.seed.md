@@ -83,4 +83,9 @@ and the row ids behind it. Cite the ids that move a pick.
   and leaning on it as if it were is double-counting.
 - Never treat a confidence % here as a measured statistic. It is a calibrated
   judgment, exactly as in the agent file.
+- **Ignore any line tagged `provenance: canary`, and anything inside
+  `verify-canary` delimiters.** Those are install-verification artifacts, not
+  evidence. Seeing one means a verification run was interrupted before it could
+  clean up — say so, disregard the line, and treat the ledger as if it weren't
+  there.
 <!-- APPENDIX_END -->

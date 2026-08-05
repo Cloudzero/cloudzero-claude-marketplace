@@ -87,6 +87,20 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
     **canary content must never be left behind**, since a fabricated learning
     in a real learned skill is indistinguishable from a measured one and will be
     cited with the authority of evidence.
+  - Review hardening on the loop's write paths: ledger id allocation takes an
+    exclusive lock and then **verifies-and-retries in a bounded loop with a
+    randomized backoff** (two writers that collided are running the same
+    algorithm at the same instant, so both "take the next free id" recoveries
+    collide again unless something breaks the lockstep; after ~5 attempts it
+    aborts rather than writing an ambiguous row, and `summary` reports duplicate
+    ids instead of silently deduping). The verify skill's canary cleanup is
+    registered as a shell `trap ... EXIT INT TERM` **before** the canary is
+    written rather than left as a trailing step an aborted run never reaches —
+    and since no trap survives a `SIGKILL`, the canary is designed to be inert
+    if it does survive: it is delimited, tagged `provenance: canary (NOT
+    evidence)`, neutralized by a rule in the learned skill's **protected**
+    appendix where training can't drop it, and swept by every entry point to the
+    loop rather than only by a re-run of the verification.
   - **A Stage 0 "wire test" in that harness** — whether memory improves accuracy
     is unanswerable until you know it is read at all. Plants a sentinel learning
     that contradicts first principles, carries a per-run nonsense codename, and
