@@ -98,6 +98,19 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
       A lock is now a tidiness nicety on top of the nonce, never the control —
       correctness must not depend on a lock a runtime may not offer. Duplicate
       ids (legacy rows or hand-edits) are **reported, never repaired**.
+    - **A shared writer lock across every writer of the learned `SKILL.md`.**
+      The file has three independent writers — `install` refreshing the
+      protected regions, `calibrate review` adopting a staged learning, and
+      `verify` handling a canary — and none of them coordinated, so an adoption
+      and a refresh landing together already lost one side's work regardless of
+      any probe. A compare-and-swap can't fix that: check-then-act is not
+      atomic, so a writer can always land between the check and the write. All
+      three now take `.skill.lock` (atomic `mkdir`, portable where `flock`
+      isn't) for the read → modify → write, abort rather than write unlocked,
+      and release on failure — held for the write only, never across a probe or
+      an interactive review. `ledger.jsonl` is explicitly exempt: append-only
+      with nonce-bearing ids needs no lock, and saying so stops someone
+      serializing every append.
     - **The discovery probe writes nothing by default.** Five review rounds on
       this check all traced to one root cause: the probe was doing
       read-modify-write against a file *other sessions write*. Lost updates,

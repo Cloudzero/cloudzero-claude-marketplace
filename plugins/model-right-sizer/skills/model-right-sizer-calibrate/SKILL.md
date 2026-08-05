@@ -176,6 +176,14 @@ Review and adopt a SkillOpt-Sleep staged proposal for the learned skill.
 5. **Adopt only on an explicit yes** (`skillopt-sleep adopt`). Never
    auto-adopt — a validation gate is evidence, not consent. On a no, leave the
    proposal staged and say what would need to change.
+6. **Take the writer lock around the adopt.** `SKILL.md` has several
+   independent writers (this skill, `model-right-sizer-install` refreshing the
+   protected regions, `model-right-sizer-verify`), so acquire `.skill.lock` in
+   the skill directory — atomic `mkdir`, released even on failure — for the
+   write itself, and abort rather than writing unlocked. Hold it for the write
+   only, never across the human review. **The ledger needs no lock**: it is
+   append-only and its ids carry a per-writer nonce, so concurrent appends
+   cannot collide.
 
 ## What this skill does not do
 

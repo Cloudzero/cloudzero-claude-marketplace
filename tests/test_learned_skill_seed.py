@@ -183,6 +183,43 @@ class TestSleepConfigTemplate:
         )
 
 
+class TestSharedWriterLock:
+    """SKILL.md has three independent writers — install refreshing protected
+    regions, calibrate adopting a staged learning, verify handling a canary.
+    A compare-and-swap can't serialize them, because check-then-act is not
+    atomic; only a lock every writer honors can."""
+
+    WRITERS = ("model-right-sizer-install", "model-right-sizer-calibrate",
+               "model-right-sizer-verify")
+
+    def test_every_writer_takes_the_lock(self):
+        for name in self.WRITERS:
+            text = (PLUGIN_DIR / "skills" / name / "SKILL.md").read_text()
+            assert ".skill.lock" in text, (
+                f"{name} writes SKILL.md and must take the shared writer lock; "
+                f"a single writer ignoring it defeats the lock for everyone"
+            )
+
+    def test_lock_is_defined_once_with_an_atomic_primitive(self):
+        verify = (PLUGIN_DIR / "skills" / "model-right-sizer-verify" / "SKILL.md").read_text()
+        assert "The writer lock" in verify, "the contract needs one canonical definition"
+        assert "mkdir" in verify and "atomic" in verify, (
+            "flock isn't portable to macOS; mkdir is the atomic primitive here"
+        )
+
+    def test_lock_is_not_held_across_the_probe(self):
+        """Holding it across a multi-minute probe would block every other
+        writer on the machine — worse than the race it prevents."""
+        verify = (PLUGIN_DIR / "skills" / "model-right-sizer-verify" / "SKILL.md").read_text()
+        assert "UNLOCKED" in verify
+
+    def test_ledger_is_explicitly_exempt(self):
+        """Append-only + nonce ids means the ledger needs no lock. Saying so
+        stops someone adding one and serializing every append."""
+        cal = (PLUGIN_DIR / "skills" / "model-right-sizer-calibrate" / "SKILL.md").read_text()
+        assert "ledger needs no lock" in cal
+
+
 class TestPrivacyBoundaryIsStatedHonestly:
     """`additionalProperties: false` rejects unknown KEYS; it does not sanitize
     text inside allowed ones. Docs that blur the two invite a leak, because a
@@ -348,7 +385,7 @@ class TestAuditHarness:
     def test_canary_cleanup_stays_failure_safe(self):
         skill = (PLUGIN_DIR / "skills" / "model-right-sizer-verify" / "SKILL.md").read_text()
         assert "verify-canary:BEGIN" in skill, "canary must be delimited for deterministic removal"
-        assert "trap cleanup EXIT INT TERM" in skill, (
+        assert "EXIT INT TERM" in skill, (
             "cleanup must be registered with the shell, not left as a trailing "
             "step an aborted run never reaches"
         )

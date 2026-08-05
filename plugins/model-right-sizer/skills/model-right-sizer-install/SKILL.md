@@ -133,6 +133,13 @@ scaling by forcing a full report on every micro-edit.
    - **`SKILL.md` absent** → author it from this plugin's
      [`templates/learned-skill.seed.md`](../../templates/learned-skill.seed.md),
      verbatim.
+   - **Take the writer lock** (`.skill.lock` in the skill directory, acquired by
+     atomic `mkdir`) for the whole read → modify → write, and release it even on
+     failure. This directory has several independent writers — this skill, plus
+     `model-right-sizer-calibrate review` adopting a staged learning and
+     `model-right-sizer-verify` — and without the shared lock a refresh and an
+     adoption landing together silently lose one of them. If the lock can't be
+     taken, abort and report; never write unlocked.
    - **`SKILL.md` present** → refresh **only** the YAML frontmatter and the two
      protected regions (`<!-- SLOW_UPDATE_START -->…<!-- SLOW_UPDATE_END -->`
      and `<!-- APPENDIX_START -->…<!-- APPENDIX_END -->`) from the template, and

@@ -89,14 +89,24 @@ for why that matters more than it sounds like it should.
        return 1
      fi
    }
-   trap cleanup EXIT INT TERM
-   # Atomic swap, guarded by a compare-and-swap on the pre-read hash:
-   BEFORE=$(shasum "$SKILL" | cut -d" " -f1)
-   add_canary "$SKILL" > "$SKILL.new"
-   [ "$(shasum "$SKILL" | cut -d" " -f1)" = "$BEFORE" ] \
-     && mv -f "$SKILL.new" "$SKILL" \
-     || { rm -f "$SKILL.new"; echo "concurrent write detected — aborting probe" >&2; exit 1; }
+   trap 'acquire && cleanup; release' EXIT INT TERM
+
+   # INSERT: hold the shared writer lock across read -> modify -> write.
+   # The lock is what makes this safe. The rename keeps the file from ever
+   # being observed half-written by a *reader*, which the lock does not cover.
+   acquire || exit 1
+   add_canary "$SKILL" > "$SKILL.new" && mv -f "$SKILL.new" "$SKILL"
+   release
+
+   # ...run the probe UNLOCKED — it takes minutes, and holding the lock across
+   # it would block every other writer on the machine, which is worse...
    ```
+
+   Both the insert and the cleanup delete take the shared **writer lock** (see
+   below), so they are serialized against a concurrent `install` refresh or
+   `calibrate review` adoption rather than racing them. The probe itself runs
+   **unlocked** — it takes minutes, and holding a lock across it would block
+   every other writer on the machine, which is worse than the problem.
 
    The canary is tagged `provenance: canary (NOT evidence)` inside
    `verify-canary:BEGIN/END` delimiters, so a survivor is inert and removable
@@ -114,6 +124,37 @@ for why that matters more than it sounds like it should.
 
 5. **Confirm the install is untouched.** Whichever probe you ran, end by
    confirming no canary token remains anywhere under the learned skill.
+
+## The writer lock — every writer of the learned skill takes it
+
+`~/.claude/skills/model-right-sizer-learned/` is machine-wide, so it has
+multiple independent writers: `model-right-sizer-install` refreshing the
+protected regions, `model-right-sizer-calibrate review` adopting a staged
+learning, and `model-right-sizer-verify` inserting or removing a canary. Without
+a shared lock, any two of those racing loses one side's work — and a
+compare-and-swap doesn't fix it, because check-then-act is not atomic: another
+writer can land between the check and the write no matter how small the window.
+
+**Contract: take `.skill.lock` in the skill directory for the whole
+read → modify → write of `SKILL.md`, and release it even on failure.** Hold it
+for the write only — never across a long-running probe or an interactive review.
+
+```bash
+LOCKDIR=~/.claude/skills/model-right-sizer-learned/.skill.lock
+acquire() {                       # mkdir is atomic on POSIX; flock is not portable to macOS
+  for _ in $(seq 1 50); do
+    mkdir "$LOCKDIR" 2>/dev/null && { trap 'rmdir "$LOCKDIR" 2>/dev/null' EXIT INT TERM; return 0; }
+    sleep 0.1
+  done
+  echo "could not acquire $LOCKDIR — another writer is active, or a stale lock remains" >&2
+  return 1
+}
+release() { rmdir "$LOCKDIR" 2>/dev/null; }
+```
+
+A writer that cannot take the lock **aborts and reports**; it never proceeds
+unlocked. `ledger.jsonl` is a separate concern — it is append-only with
+nonce-bearing ids, so it needs no lock (see `model-right-sizer-calibrate`).
 
 ### Why the default is read-only
 
