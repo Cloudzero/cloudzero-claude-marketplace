@@ -35,129 +35,104 @@ any time someone asks whether the loop is live.
 ## Check 1 — DISCOVERY (the universal claim)
 
 The only honest test is a session in a repo that has nothing to do with this
-plugin.
+plugin. **The default probe writes nothing at all** — see the design note below
+for why that matters more than it sounds like it should.
 
 1. **Build a throwaway repo** outside your working tree: `git init` a scratch
    directory with a file or two, **no `CLAUDE.md`**, no plugin, no mention of
    model-right-sizer anywhere in it.
-2. **Plant a canary — but make removing it failure-safe first.** The canary is
-   one learning carrying a nonsense codename generated for this run
-   (`HALYARD-31`). Without it you can only prove the skill's *name* was listed;
-   the canary proves its *content* reached the model.
 
-   A trailing "delete it afterwards" step is **not sufficient**, and this is the
-   most dangerous part of the whole skill. If the probe errors, times out, or
-   the session is interrupted between insertion and cleanup, fabricated
-   calibration is left sitting in the real machine-wide skill, where it is
-   indistinguishable from measured evidence and will be cited across every repo
-   on the machine. Order the steps so an abort can't leave it behind:
+2. **Pick the probe based on whether the learned skill has anything to lose.**
 
-   1. **Sweep first.** Before doing anything else, delete any
-      `verify-canary` block already present — a leftover from a previous run
-      that died. Report it if you find one; it means a prior run aborted, and
-      that is worth knowing.
-   2. **Record whether the skill pre-existed at all.** If it did, cleanup is a
-      block delete (below) and the file is otherwise never touched. If it did
-      not, cleanup is removing the directory your run created — after confirming
-      nothing else has written to it in the meantime.
-   3. **Write the canary inside explicit delimiters** so removal is a
-      deterministic delete of a delimited block rather than a fuzzy line match:
-      ```
-      <!-- verify-canary:BEGIN (temporary — delete me; see model-right-sizer-verify) -->
-      - **L-777** · `provenance: canary (NOT evidence)` · discovery canary **HALYARD-31**.
-      <!-- verify-canary:END -->
-      ```
-      Tagging it `provenance: canary (NOT evidence)` is belt-and-braces: if it
-      does survive an abort, the agent's own contract tells it not to treat the
-      line as measured.
-   4. **Install a real exit trap before you write the canary** — an instruction
-      to "restore afterwards" is not a mechanism, and an aborted session never
-      reaches its own last step. Register the cleanup with the shell so it fires
-      on normal exit, error, and interrupt alike:
-      ```bash
-      SKILL=~/.claude/skills/model-right-sizer-learned/SKILL.md
-      cp "$SKILL" "$SKILL.verify-backup"   # diagnostic + manual recovery only
+   | State of the learned skill | Probe | Writes? |
+   |---|---|---|
+   | Has accumulated learnings, or a non-empty ledger | **read-only** (default) | none |
+   | Pristine seed with an empty ledger | canary (below) | yes, but nothing is at risk |
 
-      cleanup() {
-        # Range-delete ONLY when both delimiters are present. An unpaired BEGIN
-        # would make sed cut from there to EOF — taking the learnings and the
-        # protected regions with it.
-        if grep -q 'verify-canary:BEGIN' "$SKILL" && grep -q 'verify-canary:END' "$SKILL"; then
-          sed -i.tmp '/verify-canary:BEGIN/,/verify-canary:END/d' "$SKILL" && rm -f "$SKILL.tmp"
-        elif grep -q 'verify-canary:' "$SKILL"; then
-          echo "UNPAIRED canary delimiter in $SKILL — refusing to range-delete." >&2
-          echo "Recover from $SKILL.verify-backup after checking for concurrent edits." >&2
-          return 1
-        fi
-      }
-      trap cleanup EXIT INT TERM
+3. **The read-only probe.** Ask for facts that exist *only* in the local
+   install and are therefore unavailable to a model reciting the published
+   template — the ledger's row count and its most recent row id:
 
-      # Insert ATOMICALLY: build the canaried copy alongside, then rename over
-      # the target. rename(2) is atomic, so the file is either the original or
-      # the fully-delimited version — never a torn half with an orphan BEGIN.
-      add_canary "$SKILL" > "$SKILL.new" && mv -f "$SKILL.new" "$SKILL"
-      # ...run the probe...
-      ```
-      Then confirm the canary token no longer appears anywhere under the
-      learned skill.
-
-      **Two failure modes are closed here, and both are worth naming.** A
-      non-atomic insert can be interrupted after `BEGIN` is written and before
-      `END` is — and a naive `sed '/BEGIN/,/END/d'` on that file deletes
-      everything from `BEGIN` to end-of-file, destroying the accumulated
-      learnings *and* the protected regions. Writing through a temp file and
-      renaming makes that state unreachable; the paired-delimiter guard means
-      that even if it somehow occurs, cleanup refuses rather than amputating the
-      file. This is the one case where the backup earns its keep — as the
-      recovery path a human reaches for, not as an automatic restore.
-
-      **Cleanup must be a surgical block delete, not a snapshot restore.** The
-      learned skill is machine-wide and other sessions write to it: if one
-      adopts a staged learning or re-runs the installer while your probe is in
-      flight, restoring a backup taken beforehand silently destroys that
-      legitimate update — and leaves its author believing their approved
-      calibration is live. A range delete of the delimiters touches only the
-      lines you added and leaves any concurrent edit intact. This is the reason
-      the canary is delimited at all.
-
-      Keep a backup if you like, but as a diagnostic, never as the restore
-      mechanism. The only case where deleting the directory is right is when the
-      skill **did not exist before** your run — and even then, re-check that no
-      ledger rows appeared meanwhile before removing it.
-
-      Then confirm the canary token no longer appears anywhere under the
-      learned skill.
-
-   **Residual risk, stated plainly:** a `SIGKILL`, a power loss, or a container
-   torn out from under the session beats every trap. No in-session instruction
-   can close that hole, so the canary is designed to be **harmless if it does
-   survive**, and three independent things clean up after it:
-   - it is tagged `provenance: canary (NOT evidence)`, and the learned skill's
-     protected APPENDIX instructs the agent never to treat such a line as
-     evidence — so a survivor is inert, not misleading;
-   - it sits inside `verify-canary` delimiters, so any sweep is a deterministic
-     block delete with no false positives;
-   - **every entry point to the loop sweeps it** — this skill, and
-     `model-right-sizer-install` — so the next touch of the learned skill from
-     any direction removes it, rather than waiting for someone to re-run a
-     verification they have no reason to run.
-3. **Probe non-interactively** from inside that repo:
    ```
    cd /path/to/throwaway-repo
    claude -p --allowedTools "Read,Glob,Skill" <<'EOF'
    Do you have a skill available named model-right-sizer-learned? Answer in exactly this shape and nothing else:
    DISCOVERED: yes|no
    SOURCE: <where it came from, or n/a>
-   CANARY: <the codename token appearing in its Calibration learnings section, or n/a>
    LEDGER_ROWS: <how many rows in its ledger.jsonl, or n/a>
+   LATEST_ROW_ID: <the id of the last row in ledger.jsonl, or n/a>
+   FIRST_LEARNING_ID: <the first learning id listed under Calibration learnings, or n/a>
    EOF
    ```
-4. **Pass = all four lines.** `DISCOVERED: yes`, a `SOURCE` naming the user-level
-   skill directory, the exact canary token, and a correct row count (which also
-   proves the sibling `ledger.jsonl` is reachable, not just `SKILL.md`).
-5. **Restore, then verify the restore.** Delete the delimited canary block (or
-   restore the backup), then grep for the codename under the learned skill and
-   confirm zero hits. An unverified cleanup is not a cleanup.
+
+   **Pass = all five lines correct**, checked against the file yourself. The row
+   count and latest id are local, private, and change over time, so getting them
+   right is only possible by actually reading the install — which is the same
+   thing a canary proves, without touching a shared file.
+
+4. **The canary probe — only for a pristine install.** When the skill is the
+   untouched seed and the ledger is empty, there are no accumulated learnings
+   for a concurrent write to destroy, so planting a canary is safe. Everything
+   in the published seed is also in this repo, so a unique token is the only way
+   to prove content was read rather than recited. Sweep any leftover
+   `verify-canary` block first, then:
+
+   ```bash
+   SKILL=~/.claude/skills/model-right-sizer-learned/SKILL.md
+   cleanup() {
+     # Range-delete ONLY when both delimiters are present. An unpaired BEGIN
+     # would make sed cut from there to EOF.
+     if grep -q 'verify-canary:BEGIN' "$SKILL" && grep -q 'verify-canary:END' "$SKILL"; then
+       sed -i.tmp '/verify-canary:BEGIN/,/verify-canary:END/d' "$SKILL" && rm -f "$SKILL.tmp"
+     elif grep -q 'verify-canary:' "$SKILL"; then
+       echo "UNPAIRED canary delimiter in $SKILL — refusing to range-delete." >&2
+       return 1
+     fi
+   }
+   trap cleanup EXIT INT TERM
+   # Atomic swap, guarded by a compare-and-swap on the pre-read hash:
+   BEFORE=$(shasum "$SKILL" | cut -d" " -f1)
+   add_canary "$SKILL" > "$SKILL.new"
+   [ "$(shasum "$SKILL" | cut -d" " -f1)" = "$BEFORE" ] \
+     && mv -f "$SKILL.new" "$SKILL" \
+     || { rm -f "$SKILL.new"; echo "concurrent write detected — aborting probe" >&2; exit 1; }
+   ```
+
+   The canary is tagged `provenance: canary (NOT evidence)` inside
+   `verify-canary:BEGIN/END` delimiters, so a survivor is inert and removable
+   deterministically.
+
+   > **Never leave canary content behind.** A fabricated learning sitting in a
+   > real learned skill is indistinguishable from a measured one, and the agent
+   > will cite it with the authority of evidence. Cleanup is part of the test,
+   > not an optional step afterwards — which is why it is a shell trap
+   > registered *before* the write, a delete of a delimited block rather than a
+   > snapshot restore, and confirmed by grep rather than assumed. Every entry
+   > point to the loop (`model-right-sizer-install` included) also sweeps a
+   > leftover block, so an aborted run is cleaned up by the next touch from any
+   > direction.
+
+5. **Confirm the install is untouched.** Whichever probe you ran, end by
+   confirming no canary token remains anywhere under the learned skill.
+
+### Why the default is read-only
+
+This check went through five rounds of review, and every finding was a
+different symptom of one root cause: **the probe was mutating a file that other
+sessions write.** Lost updates, torn writes, snapshot rollbacks, orphan
+delimiters — each fix exposed the next layer, because a read-modify-write
+against shared mutable state cannot be made safe by adding more careful writes.
+
+The learned skill is machine-wide **by design**, so a concurrent
+`model-right-sizer-calibrate review` adoption or an installer refresh is normal
+traffic, not an unlucky coincidence. Even a compare-and-swap only narrows the
+window — it can't close it without holding a lock across a multi-minute probe
+session, which would be worse.
+
+So the fix is not a better write. It is **not writing**: derive the proof from
+data the install already has. The canary survives only for the pristine case,
+where by definition there is nothing to lose, and even there it is
+compare-and-swap guarded.
 
 **Two traps worth knowing before you run it:**
 
@@ -165,17 +140,9 @@ plugin.
   directory also relocates authentication away from the OS keychain, and the
   probe fails with `Not logged in` rather than telling you anything about
   discovery. The test has to run against the real config directory.
-- **Therefore it writes into the user's actual environment** — confirm with them
-  first, never clobber an existing install (back it up and restore it, or abort),
-  and treat cleanup as failure-safe rather than best-effort.
-
-> **Never leave canary content behind.** A fabricated learning sitting in a real
-> learned skill is indistinguishable from a measured one, and the agent will
-> cite it with the authority of evidence. Cleanup is part of the test, not an
-> optional step afterwards — which is why it is structured as sweep → back up →
-> delimited insert → restore-on-every-exit-path rather than a trailing
-> "remember to delete this". If the target already held real learnings, restore
-> the backup or remove *only* the delimited block — never the directory.
+- **Therefore it reads the user's actual environment** — confirm with them
+  first. With the read-only probe there is nothing to clean up, which is most of
+  the point.
 
 ## Check 2 — PRESERVATION (the re-install claim)
 

@@ -98,7 +98,7 @@ three claims that each fail **silently**:
 
 | Claim | Silent failure | Check |
 |---|---|---|
-| **Universal** — every session in every repo reads it | written where the runtime doesn't scan; sessions just never mention it | **DISCOVERY** — probe from a throwaway repo with no `CLAUDE.md` and no plugin, using a canary token so you prove the *content* arrived, not just the name |
+| **Universal** — every session in every repo reads it | written where the runtime doesn't scan; sessions just never mention it | **DISCOVERY** — probe from a throwaway repo with no `CLAUDE.md` and no plugin, asking for local-only facts (ledger row count, latest row id) so you prove the *content* arrived, not just the name. **Read-only** — see below |
 | **Preserved** — a re-install keeps learnings | the one unregenerable artifact gets overwritten by a template | **PRESERVATION** — plant a sentinel in the trainable body, re-install twice, confirm it survives byte-for-byte |
 | **Repo-agnostic** — rows are safe anywhere | a row carries a repo name; nothing errors, the evidence is just wrong everywhere else | **INTEGRITY** — validate every row, then *read* the `lesson` prose: the schema rejects unknown keys, not identifying text inside allowed ones |
 
@@ -116,8 +116,19 @@ Corroborated live — the skill also surfaced in a *separate, already-running*
 session's skill list moments after installation, so cross-session propagation was
 observed rather than inferred. The test install was removed afterward.
 
-Two things that cost time and are written into the skill so they don't cost it
-twice: **`CLAUDE_CONFIG_DIR` cannot sandbox this test** (relocating the config
+**The probe writes nothing by default, and that took five rounds of review to
+arrive at.** Every finding was a different symptom of one root cause — the
+original probe planted a canary in the learned skill, i.e. a read-modify-write
+against a file other sessions write. Lost updates, torn writes, snapshot
+rollbacks, orphan delimiters: each fix exposed the next layer, because shared
+mutable state can't be made safe by writing more carefully. The fix was to stop
+writing and derive the proof from data the install already holds (row count,
+latest row id — local, private, unavailable to a model reciting the published
+template). A canary survives only for a pristine install, where by definition
+there is nothing to lose, and even there it is compare-and-swap guarded.
+
+Two other things that cost time and are written into the skill so they don't
+cost it twice: **`CLAUDE_CONFIG_DIR` cannot sandbox this test** (relocating the config
 also relocates auth away from the keychain, and the probe dies with `Not logged
 in` before telling you anything about discovery), so it must run against the real
 config directory with the user's confirmation and be cleaned up after — and

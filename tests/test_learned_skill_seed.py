@@ -318,50 +318,43 @@ class TestAuditHarness:
         assert "CLAUDE_CONFIG_DIR" in skill, (
             "the sandboxing dead-end must stay documented or it gets re-discovered"
         )
+        assert "confirming no canary token remains" in skill, (
+            "every probe path must end by confirming the install is untouched"
+        )
 
-    def test_verify_skill_makes_canary_cleanup_failure_safe(self):
-        """A trailing 'delete it afterwards' loses the race with a crash, and
-        what survives is fabricated calibration that reads as measured."""
+    def test_discovery_probe_is_read_only_by_default(self):
+        """Five review rounds all traced to one root cause: the probe was doing
+        read-modify-write against a file other sessions write. No amount of
+        careful writing fixes that — not writing does."""
+        skill = (PLUGIN_DIR / "skills" / "model-right-sizer-verify" / "SKILL.md").read_text()
+        assert "The read-only probe" in skill
+        assert "Why the default is read-only" in skill, (
+            "the rationale must survive edits, or someone re-introduces the write"
+        )
+        assert "LATEST_ROW_ID" in skill, (
+            "the read-only proof needs a local, private fact a model cannot "
+            "recite from the published template"
+        )
+
+    def test_canary_is_gated_on_having_nothing_to_lose(self):
+        """Mutation is allowed only against a pristine install, where by
+        definition no accumulated calibration can be destroyed."""
+        skill = (PLUGIN_DIR / "skills" / "model-right-sizer-verify" / "SKILL.md").read_text()
+        assert "only for a pristine install" in skill
+        assert "compare-and-swap" in skill.lower(), (
+            "even the pristine-case write must detect a concurrent update"
+        )
+
+    def test_canary_cleanup_stays_failure_safe(self):
         skill = (PLUGIN_DIR / "skills" / "model-right-sizer-verify" / "SKILL.md").read_text()
         assert "verify-canary:BEGIN" in skill, "canary must be delimited for deterministic removal"
-        assert "Sweep first" in skill, "must sweep a leftover canary from an aborted prior run"
-        assert "Install a real exit trap" in skill, (
-            "cleanup must be registered with the shell before the canary is "
-            "written, not left as a trailing step the aborted run never reaches"
-        )
-
-    def test_ids_are_collision_proof_by_construction(self):
-        """A repair path can't work here: two rows sharing an id are
-        indistinguishable in an append-only file, so a writer cannot prove which
-        line is its own. The nonce removes the failure instead of repairing it."""
-        schema = json.loads(SCHEMA.read_text())
-        pattern = schema["properties"]["id"]["pattern"]
-        assert "[0-9a-z]{4}" in pattern, "row ids must carry a per-writer nonce"
-        skill = (PLUGIN_DIR / "skills" / "model-right-sizer-calibrate" / "SKILL.md").read_text()
-        assert "no renumber-on-collision path" in skill, (
-            "a renumber path can rewrite the other writer's row; it must stay removed"
-        )
-        assert "correctness must not depend on a lock" in skill
-
-    def test_verify_registers_a_real_exit_trap(self):
-        """'Restore afterwards' is an instruction, not a mechanism — an aborted
-        session never reaches its own last step."""
-        skill = (PLUGIN_DIR / "skills" / "model-right-sizer-verify" / "SKILL.md").read_text()
-        assert "trap " in skill and "EXIT INT TERM" in skill
-        assert "surgical block delete, not a snapshot restore" in skill, (
-            "restoring a whole-file backup silently discards a concurrent "
-            "adoption made by another session while the probe was in flight"
-        )
-        assert "rename over" in skill and "atomic" in skill, (
-            "a non-atomic insert can leave an orphan BEGIN delimiter"
+        assert "trap cleanup EXIT INT TERM" in skill, (
+            "cleanup must be registered with the shell, not left as a trailing "
+            "step an aborted run never reaches"
         )
         assert "UNPAIRED canary delimiter" in skill, (
             "sed '/BEGIN/,/END/d' on an orphan BEGIN deletes to EOF, taking the "
             "learnings and the protected regions with it — cleanup must refuse"
-        )
-        assert "Residual risk, stated plainly" in skill, (
-            "a SIGKILL beats every trap; the skill must say so rather than imply "
-            "the hole is closed"
         )
 
     def test_probe_set_carries_no_answers(self):

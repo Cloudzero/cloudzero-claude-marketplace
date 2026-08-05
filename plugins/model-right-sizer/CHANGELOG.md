@@ -98,6 +98,18 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
       A lock is now a tidiness nicety on top of the nonce, never the control —
       correctness must not depend on a lock a runtime may not offer. Duplicate
       ids (legacy rows or hand-edits) are **reported, never repaired**.
+    - **The discovery probe writes nothing by default.** Five review rounds on
+      this check all traced to one root cause: the probe was doing
+      read-modify-write against a file *other sessions write*. Lost updates,
+      torn writes, snapshot rollbacks, orphan delimiters — each fix exposed the
+      next layer, because shared mutable state cannot be made safe by writing
+      more carefully. The fix is to stop writing: the probe now proves content
+      reached the model using facts only the local install holds (ledger row
+      count, latest row id) — unavailable to a model reciting the published
+      template, and requiring no mutation. A canary survives only for a
+      **pristine** install, where by definition no accumulated calibration can
+      be lost, and even there it is compare-and-swap guarded against a
+      concurrent write.
     - **Canary cleanup is a surgical delete of the delimited block, registered
       as a shell `trap ... EXIT INT TERM` before the canary is written.** Never
       a whole-file snapshot restore: the learned skill is machine-wide, so a
