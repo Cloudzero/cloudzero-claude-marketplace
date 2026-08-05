@@ -57,11 +57,17 @@ codebase sharpens the pick made on the next.
 
 **The price of that reach is a hard constraint: rows record a task *shape*, not
 a task.** `stage_kind`, `loop_class`, the three signals, recommended-vs-actual,
-rework cycles — never repo names, paths, ticket ids, code, or customer data. The
-[schema](templates/ledger-entry.schema.json) enforces it structurally:
-`additionalProperties: false` everywhere, a closed `stage_kind` vocabulary, and
-a 240-char cap on the one free-text field (prose long enough to narrate a
-specific incident is prose long enough to identify it).
+rework cycles — never repo names, paths, ticket ids, code, or customer data.
+
+The [schema](templates/ledger-entry.schema.json) constrains the *shape*:
+`additionalProperties: false` everywhere rejects unknown keys, a closed
+`stage_kind` vocabulary removes the main place a task could be named, and a
+240-char cap on the one free-text field (prose long enough to narrate a specific
+incident is prose long enough to identify it). **It is not content
+sanitization** — `lesson` and the model fields accept arbitrary strings, so a
+row naming a repo is still schema-valid. Free text is covered by the redaction
+check `model-right-sizer-calibrate` runs on append and by
+`model-right-sizer-verify`'s INTEGRITY read, not by the validator.
 
 ### SkillOpt is optional — the loop works without it
 
@@ -94,7 +100,7 @@ three claims that each fail **silently**:
 |---|---|---|
 | **Universal** — every session in every repo reads it | written where the runtime doesn't scan; sessions just never mention it | **DISCOVERY** — probe from a throwaway repo with no `CLAUDE.md` and no plugin, using a canary token so you prove the *content* arrived, not just the name |
 | **Preserved** — a re-install keeps learnings | the one unregenerable artifact gets overwritten by a template | **PRESERVATION** — plant a sentinel in the trainable body, re-install twice, confirm it survives byte-for-byte |
-| **Repo-agnostic** — rows are safe anywhere | a row carries a repo name; nothing errors, the evidence is just wrong everywhere else | **INTEGRITY** — validate every row against the schema, then read the `lesson` prose, where a name can still hide |
+| **Repo-agnostic** — rows are safe anywhere | a row carries a repo name; nothing errors, the evidence is just wrong everywhere else | **INTEGRITY** — validate every row, then *read* the `lesson` prose: the schema rejects unknown keys, not identifying text inside allowed ones |
 
 **Result, 2026-08-05, plugin 0.2.0 — all three passed.** The discovery probe, run
 from a freshly `git init`-ed scratch repo unrelated to this marketplace:
