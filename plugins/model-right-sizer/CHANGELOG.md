@@ -20,6 +20,15 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   alongside `schemas/blueprint.example.json`, a worked instance that
   validates against it — added because an LLM conforms to a shown example
   more reliably than to a formal schema alone.
+- `scripts/validate_blueprint.py` (wired into CI, plus
+  `tests/test_validate_blueprint.py`) — validates a blueprint instance
+  against `schemas/blueprint.schema.json` in full (every `required` key at
+  every nesting level, not a hand-picked subset) and checks the one thing a
+  JSON Schema can't express: that every `handoff_schema_ref` resolves to a
+  real `message_schemas[].id`. CI runs it against the checked-in worked
+  example; `model-right-sizer-dryrun` step 4 runs the same script against
+  the agent's own output, so there is one implementation of "conformant"
+  instead of a schema plus a separately-maintained prose checklist.
 
 ### Changed
 - **Pass A now emits a single schema-conformant JSON object instead of
@@ -34,13 +43,16 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 - `model-right-sizer-dryrun` now packages that same JSON contract as its
   own deliverable: step 3 points at the schema/example files instead of
   re-describing the shape in a second, hand-written prose list, and step 4
-  sanity-checks the agent's response two levels deep — not just that it
-  parses and carries the required top-level keys, but that every row's
-  nested signals/pick/budget fields are actually populated (not hollow),
-  enum fields hold legal values, and every `handoff_schema_ref` resolves to
-  a real `message_schemas[]` entry — asking the agent to re-emit once if
-  not, before printing the JSON verbatim as "what an orchestrator should
-  parse to route dispatch."
+  now pipes the agent's raw JSON response through `validate_blueprint.py`
+  rather than a hand-picked checklist of fields to eyeball — the checklist
+  approach was tried first and missed that a payload could omit
+  `pick.what_flips_it` and still pass, since a prose list of "the fields
+  that matter" drifts out of sync with the schema it's paraphrasing. The
+  script enforces the schema's full nested contract plus the
+  `handoff_schema_ref` referential check a JSON Schema can't express —
+  asking the agent to re-emit once, quoting the validator's exact error, if
+  it doesn't validate clean, before printing the JSON verbatim as "what an
+  orchestrator should parse to route dispatch."
 - `model-right-sizer-install`'s standing mandate block now runs
   `model-right-sizer-dryrun` directly for the "before" pass — rather than
   generically "consulting the agent for a blueprint" — and hands the

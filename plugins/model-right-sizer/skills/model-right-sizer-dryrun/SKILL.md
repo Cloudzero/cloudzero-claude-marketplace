@@ -80,39 +80,51 @@ real run, not a dry run.
    or prose rendering instead — if the agent returns one, ask it to re-emit
    as the JSON object.
 
-4. **Validate, emit the JSON, and STOP.** Before printing anything,
-   sanity-check the agent's response — top-level shape is necessary but not
-   sufficient, so go one level deeper than "does it parse":
-   - Does it parse as JSON, and are the required top-level keys
-     (`schema_version`, `mode`, `intent`, `price_sheet`, `blueprint_rows`,
-     `work_routing_map`, `message_schemas`, `uncertainty_ledger`) all
-     present?
-   - For every entry in `blueprint_rows[]` (and `work_routing_map[]`):
-     `signals.effectiveness` / `.efficiency` / `.difficulty` each carry a
-     `score` (0–100) and a non-empty `reason`; `pick.primary` and
-     `pick.runner_up` each carry a `model` and a `confidence`; `budget`
-     carries an actual integer `token_ceiling` (never missing, never
-     `null` — `0` is the legitimate value for a row that spends no model
-     tokens, e.g. one routed via `deterministic_query_layer`); any `effort`,
-     `keep_or_override`, or `loop_class` value present is one of the
-     schema's legal enum values, not free text.
-   - Every `handoff_schema_ref` that isn't `"none"` or
-     `"route_via_query_layer"` resolves to an actual entry `id` in
-     `message_schemas[]` — a dangling reference is as broken as a missing
-     key.
+4. **Validate against the schema itself, emit the JSON, and STOP.** Before
+   printing anything, run the agent's raw JSON response through
+   [`../../../../scripts/validate_blueprint.py`](../../../../scripts/validate_blueprint.py)
+   — the same validator CI runs against `blueprint.example.json` — rather
+   than eyeballing a hand-picked list of "the fields that seemed important":
+   that's exactly how an earlier version of this step went stale (it
+   checked `budget.token_ceiling` but not, say, `pick.what_flips_it`, and a
+   payload missing the latter passed silently). Pipe the response's JSON on
+   stdin so nothing is written to disk:
 
-   If it doesn't parse, is missing a required key, or fails one of the
-   nested checks above, ask the agent to re-emit once — a JSON blob with
-   the right top-level shape but a hollow or dangling-reference row is not
-   conformant, and passing it along silently would hand the orchestrator a
-   blueprint it can't actually route by. Once it genuinely checks out,
-   print the JSON verbatim (pretty-printed) to the chat as the whole
-   deliverable — this is what an orchestrator or any downstream tooling
-   should parse to route dispatch, not a paraphrase of it. Do not follow it
-   with a build. Do not write it to a file unless the user explicitly asks.
-   Close by naming, in one line, that this was a dry run — nothing was
-   built, and the actual usage report (Pass B) would only exist if the work
-   were really run.
+   ```bash
+   echo "$BLUEPRINT_JSON" | uv run --no-project --with jsonschema \
+     scripts/validate_blueprint.py -
+   ```
+
+   That one command enforces the *complete* contract — every `required`
+   key at every nesting level, every enum, every type, defined once in
+   [`../../schemas/blueprint.schema.json`](../../schemas/blueprint.schema.json)
+   — plus the one thing a JSON Schema can't express: that every
+   `handoff_schema_ref` which isn't `"none"` or `"route_via_query_layer"`
+   actually resolves to a real `message_schemas[].id`.
+
+   If `scripts/validate_blueprint.py` isn't present in the current checkout
+   (this plugin was copied standalone into a consumer repo rather than
+   installed from the marketplace clone — see
+   [`model-right-sizer-install`](../model-right-sizer-install/SKILL.md)'s
+   fallback path), do not skip validation: read
+   `../../schemas/blueprint.schema.json` directly and confirm every
+   `required` array at every `$defs` level is satisfied, every enum value
+   is legal, and every `handoff_schema_ref` resolves — against the schema
+   itself, not a paraphrase of it kept here.
+
+   If the command doesn't parse the input, or exits non-zero, ask the
+   agent to re-emit once, quoting the validator's error output (it names
+   the exact path and requirement violated) so it knows precisely what's
+   missing or malformed — a JSON blob with the right top-level shape but a
+   hollow field or a dangling reference is not conformant, and passing it
+   along silently would hand the orchestrator a blueprint it can't
+   actually route by. Once it genuinely validates clean, print the JSON
+   verbatim (pretty-printed) to the chat as the whole deliverable — this
+   is what an orchestrator or any downstream tooling should parse to route
+   dispatch, not a paraphrase of it. Do not follow it with a build. Do not
+   write it to a file unless the user explicitly asks. Close by naming, in
+   one line, that this was a dry run — nothing was built, and the actual
+   usage report (Pass B) would only exist if the work were really run.
 
 ## What this does NOT do
 

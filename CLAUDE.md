@@ -19,7 +19,8 @@ CI runs these on every push/PR; run them locally before pushing. Python tooling 
 uv run --no-project --with pyyaml scripts/validate_agent_file.py
 uv run --no-project --with pyyaml scripts/validate_skill_frontmatter.py
 uv run --no-project scripts/validate_plugin_manifest.py
-uv run --no-project --with pyyaml --with pytest -- pytest tests/ -q
+uv run --no-project --with jsonschema scripts/validate_blueprint.py
+uv run --no-project --with pyyaml --with jsonschema --with pytest -- pytest tests/ -q
 ```
 
 `claude plugin validate .` (and per-plugin) is a useful extra check — it uses Claude Code's real parsers.
