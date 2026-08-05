@@ -87,20 +87,27 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
     **canary content must never be left behind**, since a fabricated learning
     in a real learned skill is indistinguishable from a measured one and will be
     cited with the authority of evidence.
-  - Review hardening on the loop's write paths: ledger id allocation takes an
-    exclusive lock and then **verifies-and-retries in a bounded loop with a
-    randomized backoff** (two writers that collided are running the same
-    algorithm at the same instant, so both "take the next free id" recoveries
-    collide again unless something breaks the lockstep; after ~5 attempts it
-    aborts rather than writing an ambiguous row, and `summary` reports duplicate
-    ids instead of silently deduping). The verify skill's canary cleanup is
-    registered as a shell `trap ... EXIT INT TERM` **before** the canary is
-    written rather than left as a trailing step an aborted run never reaches —
-    and since no trap survives a `SIGKILL`, the canary is designed to be inert
-    if it does survive: it is delimited, tagged `provenance: canary (NOT
-    evidence)`, neutralized by a rule in the learned skill's **protected**
-    appendix where training can't drop it, and swept by every entry point to the
-    loop rather than only by a re-run of the verification.
+  - Review hardening on the loop's two write paths, both resolved by removing
+    the failure rather than adding a repair for it:
+    - **Ledger ids carry a per-writer nonce** (`cal-0008-k3x9`), so two sessions
+      allocating at the same instant cannot collide **without coordinating at
+      all**. The renumber-on-collision path was deleted rather than fixed: in an
+      append-only JSONL two rows sharing an id are indistinguishable, so a
+      writer cannot prove which line is its own, and "rewrite my row" can just
+      as easily rewrite the other session's or move both into a fresh collision.
+      A lock is now a tidiness nicety on top of the nonce, never the control —
+      correctness must not depend on a lock a runtime may not offer. Duplicate
+      ids (legacy rows or hand-edits) are **reported, never repaired**.
+    - **Canary cleanup is a surgical delete of the delimited block, registered
+      as a shell `trap ... EXIT INT TERM` before the canary is written.** Never
+      a whole-file snapshot restore: the learned skill is machine-wide, so a
+      restore would silently discard a staged learning another session adopted
+      while the probe was in flight, leaving its author believing their approved
+      calibration was live. Since no trap survives a `SIGKILL`, a survivor is
+      designed to be inert — delimited, tagged `provenance: canary (NOT
+      evidence)`, neutralized by a rule in the learned skill's **protected**
+      appendix where training can't drop it, and swept by every entry point to
+      the loop rather than only by re-running the verification.
   - **A Stage 0 "wire test" in that harness** — whether memory improves accuracy
     is unanswerable until you know it is read at all. Plants a sentinel learning
     that contradicts first principles, carries a per-run nonsense codename, and

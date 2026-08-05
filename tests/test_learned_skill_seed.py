@@ -330,20 +330,28 @@ class TestAuditHarness:
             "written, not left as a trailing step the aborted run never reaches"
         )
 
-    def test_collision_recovery_is_a_bounded_loop_not_one_retry(self):
-        """Two writers that collided are running the same algorithm at the same
-        moment, so both recovering by 'take the next free id' collide again.
-        The randomized backoff is what breaks the lockstep."""
+    def test_ids_are_collision_proof_by_construction(self):
+        """A repair path can't work here: two rows sharing an id are
+        indistinguishable in an append-only file, so a writer cannot prove which
+        line is its own. The nonce removes the failure instead of repairing it."""
+        schema = json.loads(SCHEMA.read_text())
+        pattern = schema["properties"]["id"]["pattern"]
+        assert "[0-9a-z]{4}" in pattern, "row ids must carry a per-writer nonce"
         skill = (PLUGIN_DIR / "skills" / "model-right-sizer-calibrate" / "SKILL.md").read_text()
-        assert "Recovery is a loop, not a single retry" in skill
-        assert "randomized" in skill, "retries in lockstep re-collide without a backoff"
-        assert "abort and report" in skill, "an ambiguous row is worse than no row"
+        assert "no renumber-on-collision path" in skill, (
+            "a renumber path can rewrite the other writer's row; it must stay removed"
+        )
+        assert "correctness must not depend on a lock" in skill
 
     def test_verify_registers_a_real_exit_trap(self):
         """'Restore afterwards' is an instruction, not a mechanism — an aborted
         session never reaches its own last step."""
         skill = (PLUGIN_DIR / "skills" / "model-right-sizer-verify" / "SKILL.md").read_text()
         assert "trap " in skill and "EXIT INT TERM" in skill
+        assert "surgical block delete, not a snapshot restore" in skill, (
+            "restoring a whole-file backup silently discards a concurrent "
+            "adoption made by another session while the probe was in flight"
+        )
         assert "Residual risk, stated plainly" in skill, (
             "a SIGKILL beats every trap; the skill must say so rather than imply "
             "the hole is closed"

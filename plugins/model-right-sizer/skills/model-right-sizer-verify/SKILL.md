@@ -56,10 +56,10 @@ plugin.
       `verify-canary` block already present — a leftover from a previous run
       that died. Report it if you find one; it means a prior run aborted, and
       that is worth knowing.
-   2. **Back up** the existing `SKILL.md` to a sibling
-      `SKILL.md.verify-backup` before writing. Record whether the skill
-      pre-existed at all — if it didn't, cleanup means deleting the whole
-      directory; if it did, cleanup means restoring the backup.
+   2. **Record whether the skill pre-existed at all.** If it did, cleanup is a
+      block delete (below) and the file is otherwise never touched. If it did
+      not, cleanup is removing the directory your run created — after confirming
+      nothing else has written to it in the meantime.
    3. **Write the canary inside explicit delimiters** so removal is a
       deterministic delete of a delimited block rather than a fuzzy line match:
       ```
@@ -76,10 +76,25 @@ plugin.
       on normal exit, error, and interrupt alike:
       ```bash
       SKILL=~/.claude/skills/model-right-sizer-learned/SKILL.md
-      cp "$SKILL" "$SKILL.verify-backup"
-      trap 'mv -f "$SKILL.verify-backup" "$SKILL" 2>/dev/null' EXIT INT TERM
+      # Delete ONLY the delimited block. Never restore a whole-file snapshot.
+      trap 'sed -i.bak "/verify-canary:BEGIN/,/verify-canary:END/d" "$SKILL" \
+            && rm -f "$SKILL.bak"' EXIT INT TERM
       # ...insert canary, run the probe...
       ```
+      **Cleanup must be a surgical block delete, not a snapshot restore.** The
+      learned skill is machine-wide and other sessions write to it: if one
+      adopts a staged learning or re-runs the installer while your probe is in
+      flight, restoring a backup taken beforehand silently destroys that
+      legitimate update — and leaves its author believing their approved
+      calibration is live. A range delete of the delimiters touches only the
+      lines you added and leaves any concurrent edit intact. This is the reason
+      the canary is delimited at all.
+
+      Keep a backup if you like, but as a diagnostic, never as the restore
+      mechanism. The only case where deleting the directory is right is when the
+      skill **did not exist before** your run — and even then, re-check that no
+      ledger rows appeared meanwhile before removing it.
+
       Then confirm the canary token no longer appears anywhere under the
       learned skill.
 
