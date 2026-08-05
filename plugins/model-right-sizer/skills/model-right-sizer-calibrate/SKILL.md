@@ -45,12 +45,19 @@ pick made on the next.
 
 The price of that reach is a hard constraint: **a row records a task shape, not
 a task.** No repo names, file paths, branch/PR/ticket ids, code snippets,
-customer or account data, or workspace proper nouns. The schema enforces most of
-this structurally —
-[`ledger-entry.schema.json`](../../templates/ledger-entry.schema.json) sets
-`additionalProperties: false` everywhere, pins `stage_kind` to a closed
-vocabulary, and caps `lesson` at 240 characters. Prose long enough to narrate a
-specific incident is prose long enough to identify it.
+customer or account data, or workspace proper nouns. [`ledger-entry.schema.json`](../../templates/ledger-entry.schema.json)
+constrains the *shape* — `additionalProperties: false` everywhere rejects
+unknown keys, `stage_kind` is a closed vocabulary, `lesson` is capped at 240
+characters (prose long enough to narrate a specific incident is prose long
+enough to identify it).
+
+**But schema validation is not content sanitization, and conflating the two is
+how a leak ships.** `lesson` and both model fields accept arbitrary strings, so
+a row naming a repo is still perfectly schema-valid. The redaction check in
+step 4 below is the *only* control covering free text on append, and
+`model-right-sizer-verify`'s INTEGRITY pass is the only one covering it after
+the fact. Neither is enforceable by the schema. A green validation means the
+row is well-formed — never that it is repo-agnostic.
 
 If the paths above don't exist, the loop was never installed. Create them and
 proceed — this skill is self-healing — then mention that
@@ -85,10 +92,28 @@ Turn a Pass B usage report into ledger rows.
    into the free-text field to compensate.
 5. **Assign `id` as the next `cal-NNNN`** after the highest already in the
    ledger (starting at `cal-0001`), and set `ts` to today's date.
+
+   **Allocate the id under a lock — concurrent sessions are the normal case
+   here, not an edge case.** This ledger is machine-wide by design, so two
+   sessions in two different repos writing within the same minute is expected
+   behaviour. Read-highest-then-append is a classic race: both read `cal-0006`,
+   both write `cal-0007`, and every later citation of `cal-0007` becomes
+   ambiguous — which quietly corrupts provenance, the one property the ledger
+   exists to provide.
+   - Take an exclusive lock on a sibling lockfile (`ledger.lock`) for the whole
+     read-max → write sequence, and release it even on failure.
+   - **Verify after writing**, always: re-read the tail and confirm your id
+     appears exactly once. If it appears twice, a writer without the lock beat
+     you — rewrite *your* row with the next free id and say so.
+   - If you cannot take a lock in your runtime, still do the post-write
+     verification. Detecting the collision and renumbering is the part that
+     preserves the audit trail; the lock only makes it rare.
 6. **Append, never rewrite.** One JSON object per line, appended to
-   `ledger.jsonl`. Never reformat, reorder, or edit existing rows — the file is
-   an audit trail. If a past row is wrong, append a corrected one and say so in
-   its `lesson`.
+   `ledger.jsonl` in a single atomic write (open in append mode; do not
+   read-modify-write the whole file). Never reformat, reorder, or edit existing
+   rows — the file is an audit trail. If a past row is wrong, append a corrected
+   one and say so in its `lesson`. The one exception is the collision
+   renumbering in step 5, which fixes a row you just wrote in this run.
 7. **Echo what you wrote** and confirm the new row count.
 
 If a row can't be made schema-valid, say why and skip it rather than writing a
@@ -108,7 +133,11 @@ Read `ledger.jsonl` and report, grouped by `stage_kind`:
   signal;
 - mean `cost_delta_usd`, tagged with the weakest `pricing_freshness` in the
   group (a mean over stale prices is a stale mean, and should be labeled one);
-- budget and schema adherence counts.
+- budget and schema adherence counts;
+- **any duplicate `id`** — the signature of a concurrent-append race that beat
+  the lock. Report them explicitly rather than silently deduping: a duplicate id
+  makes every citation of it ambiguous, and the operator needs to know which
+  rows to renumber.
 
 Then state the actionable read in one line per shape — e.g. *"`code-review`:
 6 rows, 4 size-up, 3 with rework ≥ 2 → this shape is being under-powered."*

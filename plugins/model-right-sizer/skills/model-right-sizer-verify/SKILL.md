@@ -40,10 +40,39 @@ plugin.
 1. **Build a throwaway repo** outside your working tree: `git init` a scratch
    directory with a file or two, **no `CLAUDE.md`**, no plugin, no mention of
    model-right-sizer anywhere in it.
-2. **Plant a canary.** Add one learning to the installed skill's trainable body
-   carrying a nonsense codename generated for this run (`HALYARD-31`). Without
-   it you can only prove the skill's *name* was listed — the canary proves its
-   *content* reached the model.
+2. **Plant a canary — but make removing it failure-safe first.** The canary is
+   one learning carrying a nonsense codename generated for this run
+   (`HALYARD-31`). Without it you can only prove the skill's *name* was listed;
+   the canary proves its *content* reached the model.
+
+   A trailing "delete it afterwards" step is **not sufficient**, and this is the
+   most dangerous part of the whole skill. If the probe errors, times out, or
+   the session is interrupted between insertion and cleanup, fabricated
+   calibration is left sitting in the real machine-wide skill, where it is
+   indistinguishable from measured evidence and will be cited across every repo
+   on the machine. Order the steps so an abort can't leave it behind:
+
+   1. **Sweep first.** Before doing anything else, delete any
+      `verify-canary` block already present — a leftover from a previous run
+      that died. Report it if you find one; it means a prior run aborted, and
+      that is worth knowing.
+   2. **Back up** the existing `SKILL.md` to a sibling
+      `SKILL.md.verify-backup` before writing. Record whether the skill
+      pre-existed at all — if it didn't, cleanup means deleting the whole
+      directory; if it did, cleanup means restoring the backup.
+   3. **Write the canary inside explicit delimiters** so removal is a
+      deterministic delete of a delimited block rather than a fuzzy line match:
+      ```
+      <!-- verify-canary:BEGIN (temporary — delete me; see model-right-sizer-verify) -->
+      - **L-777** · `provenance: canary (NOT evidence)` · discovery canary **HALYARD-31**.
+      <!-- verify-canary:END -->
+      ```
+      Tagging it `provenance: canary (NOT evidence)` is belt-and-braces: if it
+      does survive an abort, the agent's own contract tells it not to treat the
+      line as measured.
+   4. **Restore on every exit path** — success, failure, or interrupt. Restore
+      the backup (or delete the directory you created), then confirm the canary
+      token no longer appears anywhere under the learned skill.
 3. **Probe non-interactively** from inside that repo:
    ```
    cd /path/to/throwaway-repo
@@ -58,7 +87,9 @@ plugin.
 4. **Pass = all four lines.** `DISCOVERED: yes`, a `SOURCE` naming the user-level
    skill directory, the exact canary token, and a correct row count (which also
    proves the sibling `ledger.jsonl` is reachable, not just `SKILL.md`).
-5. **Remove the canary.** Non-negotiable — see the warning below.
+5. **Restore, then verify the restore.** Delete the delimited canary block (or
+   restore the backup), then grep for the codename under the learned skill and
+   confirm zero hits. An unverified cleanup is not a cleanup.
 
 **Two traps worth knowing before you run it:**
 
@@ -67,14 +98,16 @@ plugin.
   probe fails with `Not logged in` rather than telling you anything about
   discovery. The test has to run against the real config directory.
 - **Therefore it writes into the user's actual environment** — confirm with them
-  first, check the target directory doesn't already exist (never clobber a real
-  ledger), and clean up afterward.
+  first, never clobber an existing install (back it up and restore it, or abort),
+  and treat cleanup as failure-safe rather than best-effort.
 
 > **Never leave canary content behind.** A fabricated learning sitting in a real
 > learned skill is indistinguishable from a measured one, and the agent will
-> cite it with the authority of evidence. Deleting the test install is part of
-> the test, not cleanup you can skip. If the target already held real learnings,
-> remove *only* the canary line — never the directory.
+> cite it with the authority of evidence. Cleanup is part of the test, not an
+> optional step afterwards — which is why it is structured as sweep → back up →
+> delimited insert → restore-on-every-exit-path rather than a trailing
+> "remember to delete this". If the target already held real learnings, restore
+> the backup or remove *only* the delimited block — never the directory.
 
 ## Check 2 — PRESERVATION (the re-install claim)
 
@@ -97,10 +130,16 @@ rather than trusting it:
 ## Check 3 — INTEGRITY (the repo-agnostic claim)
 
 Validate every row in `ledger.jsonl` against
-[`templates/ledger-entry.schema.json`](../../templates/ledger-entry.schema.json)
-— `additionalProperties: false` and the closed `stage_kind` vocabulary catch
-most leakage structurally. Then read the `lesson` fields yourself, because prose
-is the one place a repo name can still hide inside a schema-valid row.
+[`templates/ledger-entry.schema.json`](../../templates/ledger-entry.schema.json).
+That catches unknown keys and off-vocabulary `stage_kind` values — but be clear
+about the boundary: **schema validation is not content sanitization.** `lesson`
+and both model fields accept arbitrary strings, so a row naming a repo passes
+validation cleanly.
+
+So the automated half cannot finish this check. **Read every `lesson` field
+yourself.** This human/agent read is the *only* control on free-text leakage
+after the fact, which is why INTEGRITY is a check in its own right rather than
+a line item under "run the validator".
 
 Flag any row whose lesson names a repo, path, ticket, service, or person. A
 leaked row isn't just a disclosure problem — it is *wrong evidence* in every

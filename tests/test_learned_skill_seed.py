@@ -172,6 +172,34 @@ class TestSleepConfigTemplate:
         )
 
 
+class TestPrivacyBoundaryIsStatedHonestly:
+    """`additionalProperties: false` rejects unknown KEYS; it does not sanitize
+    text inside allowed ones. Docs that blur the two invite a leak, because a
+    green validation gets read as proof the row is safe to share."""
+
+    def test_schema_disclaims_content_sanitization(self):
+        schema = json.loads(SCHEMA.read_text())
+        desc = schema["description"]
+        assert "NOT content sanitization" in desc or "not content sanitization" in desc.lower()
+        assert "lesson" in desc, "the schema must name which fields remain unsanitized"
+
+    def test_free_text_fields_really_are_unconstrained(self):
+        """Pins the fact the disclaimer describes. If someone later adds a
+        pattern to `lesson`, this fails and the disclaimer should be revisited
+        rather than left understating the guarantee."""
+        schema = json.loads(SCHEMA.read_text())
+        lesson = schema["properties"]["lesson"]
+        assert "pattern" not in lesson and "enum" not in lesson
+
+    def test_calibrate_and_verify_own_the_free_text_control(self):
+        for name in ("model-right-sizer-calibrate", "model-right-sizer-verify"):
+            text = (PLUGIN_DIR / "skills" / name / "SKILL.md").read_text().lower()
+            assert "not content sanitization" in text, (
+                f"{name} must not let a passing schema validation read as proof "
+                f"a row is repo-agnostic"
+            )
+
+
 class TestEvalSet:
     def _rows(self) -> list[dict]:
         return [
@@ -279,6 +307,14 @@ class TestAuditHarness:
         assert "CLAUDE_CONFIG_DIR" in skill, (
             "the sandboxing dead-end must stay documented or it gets re-discovered"
         )
+
+    def test_verify_skill_makes_canary_cleanup_failure_safe(self):
+        """A trailing 'delete it afterwards' loses the race with a crash, and
+        what survives is fabricated calibration that reads as measured."""
+        skill = (PLUGIN_DIR / "skills" / "model-right-sizer-verify" / "SKILL.md").read_text()
+        assert "verify-canary:BEGIN" in skill, "canary must be delimited for deterministic removal"
+        assert "Sweep first" in skill, "must sweep a leftover canary from an aborted prior run"
+        assert "Restore on every exit path" in skill
 
     def test_probe_set_carries_no_answers(self):
         """The tasks ship; the expected answers must NOT — they live only in the

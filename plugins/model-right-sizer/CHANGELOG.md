@@ -29,7 +29,11 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
     and the mechanism that makes machine-wide storage *safe*. A row records a
     task **shape**, never task content: `additionalProperties: false` at every
     level, a closed `stage_kind` vocabulary, and a 240-char cap on the single
-    free-text field. Repo-agnosticism here isn't a nicety — it's the
+    free-text field. The schema constrains shape, **not content** — `lesson` and
+    the model fields take arbitrary strings, so free-text leakage is caught by
+    the calibrate skill's redaction check and the verify skill's INTEGRITY read
+    rather than by validation, and the docs say so rather than implying a
+    validator is a sanitizer. Repo-agnosticism here isn't a nicety — it's the
     precondition for storing the evidence centrally at all, which in turn is
     what lets cost-of-error reach a sample size that means anything.
   - **`eval/routing-tasks.jsonl`** — 16 synthetic, repo-agnostic routing
