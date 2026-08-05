@@ -54,6 +54,35 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
     boundaries and their 3-point scoring) and `eval/probe-set-A.jsonl` (the
     first set, kept as a worked example and marked **burned** — publishing it
     contaminated it).
+  - **`skills/model-right-sizer-verify/`** — proves the install is real rather
+    than merely reported. Three claims sit between "files written" and
+    "working", and each fails **silently**: *universal* (written where the
+    runtime doesn't scan — sessions just never mention it), *preserved* (the one
+    unregenerable artifact overwritten by a template), *repo-agnostic* (a row
+    carrying a repo name is not an error, just wrong evidence everywhere else).
+    DISCOVERY probes a session in a throwaway repo with no `CLAUDE.md` and no
+    plugin, using a canary token so it proves the *content* arrived and not just
+    the skill name; PRESERVATION plants a sentinel in the trainable body and
+    re-installs twice; INTEGRITY validates every row and reads the `lesson`
+    prose, the one place a name can hide inside a schema-valid row.
+
+    **Result 2026-08-05, all three passed.** The discovery probe from a freshly
+    `git init`-ed unrelated repo returned `DISCOVERED: yes`, sourced to
+    `~/.claude/skills/model-right-sizer-learned/`, with the exact canary and a
+    correct ledger row count (proving the sibling `ledger.jsonl` is reachable,
+    not just `SKILL.md`). Corroborated live: the skill surfaced in a *separate,
+    already-running* session's skill list moments after installation, so
+    cross-session propagation was observed rather than inferred. The test
+    install was removed afterward.
+
+    Two findings are written into the skill so they don't cost time twice:
+    **`CLAUDE_CONFIG_DIR` cannot sandbox this test** — relocating the config
+    also relocates auth away from the OS keychain, and the probe dies with
+    `Not logged in` before revealing anything about discovery, so it must run
+    against the real config directory with confirmation and cleanup — and
+    **canary content must never be left behind**, since a fabricated learning
+    in a real learned skill is indistinguishable from a measured one and will be
+    cited with the authority of evidence.
   - **A Stage 0 "wire test" in that harness** — whether memory improves accuracy
     is unanswerable until you know it is read at all. Plants a sentinel learning
     that contradicts first principles, carries a per-run nonsense codename, and
