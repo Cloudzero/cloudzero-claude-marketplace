@@ -102,12 +102,19 @@ Turn a Pass B usage report into ledger rows.
    exists to provide.
    - Take an exclusive lock on a sibling lockfile (`ledger.lock`) for the whole
      read-max → write sequence, and release it even on failure.
-   - **Verify after writing**, always: re-read the tail and confirm your id
-     appears exactly once. If it appears twice, a writer without the lock beat
-     you — rewrite *your* row with the next free id and say so.
-   - If you cannot take a lock in your runtime, still do the post-write
-     verification. Detecting the collision and renumbering is the part that
-     preserves the audit trail; the lock only makes it rare.
+   - **Verify after writing**, always: re-read the ledger and confirm your id
+     appears exactly once.
+   - **Recovery is a loop, not a single retry.** Two writers that collided are,
+     by definition, running the same algorithm at the same moment — so both
+     recovering by "take the next free id" picks the *same* replacement and
+     collides again. Re-verify after every renumber and keep going until your id
+     is unique, and **sleep a short randomized interval before each re-read** so
+     the two writers fall out of lockstep instead of racing in step. Cap it at
+     ~5 attempts; if you still can't get a unique id, **abort and report** —
+     leaving an ambiguous row is worse than leaving no row.
+   - If you cannot take a lock in your runtime, the verify-and-retry loop above
+     is not optional, it is the whole control. The lock only makes a collision
+     rare; the loop is what keeps the audit trail correct when one happens.
 6. **Append, never rewrite.** One JSON object per line, appended to
    `ledger.jsonl` in a single atomic write (open in append mode; do not
    read-modify-write the whole file). Never reformat, reorder, or edit existing

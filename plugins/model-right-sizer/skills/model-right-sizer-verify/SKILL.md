@@ -70,9 +70,32 @@ plugin.
       Tagging it `provenance: canary (NOT evidence)` is belt-and-braces: if it
       does survive an abort, the agent's own contract tells it not to treat the
       line as measured.
-   4. **Restore on every exit path** — success, failure, or interrupt. Restore
-      the backup (or delete the directory you created), then confirm the canary
-      token no longer appears anywhere under the learned skill.
+   4. **Install a real exit trap before you write the canary** — an instruction
+      to "restore afterwards" is not a mechanism, and an aborted session never
+      reaches its own last step. Register the cleanup with the shell so it fires
+      on normal exit, error, and interrupt alike:
+      ```bash
+      SKILL=~/.claude/skills/model-right-sizer-learned/SKILL.md
+      cp "$SKILL" "$SKILL.verify-backup"
+      trap 'mv -f "$SKILL.verify-backup" "$SKILL" 2>/dev/null' EXIT INT TERM
+      # ...insert canary, run the probe...
+      ```
+      Then confirm the canary token no longer appears anywhere under the
+      learned skill.
+
+   **Residual risk, stated plainly:** a `SIGKILL`, a power loss, or a container
+   torn out from under the session beats every trap. No in-session instruction
+   can close that hole, so the canary is designed to be **harmless if it does
+   survive**, and three independent things clean up after it:
+   - it is tagged `provenance: canary (NOT evidence)`, and the learned skill's
+     protected APPENDIX instructs the agent never to treat such a line as
+     evidence — so a survivor is inert, not misleading;
+   - it sits inside `verify-canary` delimiters, so any sweep is a deterministic
+     block delete with no false positives;
+   - **every entry point to the loop sweeps it** — this skill, and
+     `model-right-sizer-install` — so the next touch of the learned skill from
+     any direction removes it, rather than waiting for someone to re-run a
+     verification they have no reason to run.
 3. **Probe non-interactively** from inside that repo:
    ```
    cd /path/to/throwaway-repo
