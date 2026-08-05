@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### Model Right Sizer: a machine-wide learning loop
+
+The `model-right-sizer` agent had no memory: every spawn reasoned from first
+principles, so the cost of a wrong pick was thrown away instead of informing the
+next one. Its Pass A already had the hook ("close the loop, if a calibration
+history exists") — nothing created that history. Now:
+
+- **`model-right-sizer-learned`** — an additive skill seeded into the user-level
+  skill directory, so every session in every repo discovers it. Distilled
+  learnings between two SkillOpt-protected regions, alongside an append-only
+  `ledger.jsonl` of measured recommended-vs-actual evidence.
+- **`model-right-sizer-calibrate`** — a companion skill and the write half
+  the read-only agent can't provide: `append` (usage report → schema-valid
+  rows), `summary` (aggregate by task shape — what makes the loop useful on day
+  one), `review` (diff and adopt a staged proposal, only on an explicit yes).
+- **`model-right-sizer-eval`** — a blind audit of whether that ledger measurably
+  improves routing, built to be able to return "no".
+- **A closed row schema** that keeps a shared ledger safe to read from any repo:
+  rows record a task *shape* (`stage_kind`, `loop_class`, the three signals,
+  recommended-vs-actual, rework cycles), never repo names, paths, ticket ids,
+  code, or customer data — enforced structurally, not by good intentions.
+- **Optional [SkillOpt-Sleep](https://github.com/microsoft/skillopt) wiring** to
+  distill the ledger nightly behind a held-out gate. Optional is load-bearing:
+  the plugin's "Prerequisites: None" still holds, and nothing is ever auto-adopted.
+
+Every write outside the target repo requires explicit confirmation, and a
+re-install never touches accumulated learnings. See
+[plugins/model-right-sizer/CHANGELOG.md](plugins/model-right-sizer/CHANGELOG.md)
+for the full entry.
+
 ### Planned
 
 - Additional specialized skills for Reserved Instance analysis

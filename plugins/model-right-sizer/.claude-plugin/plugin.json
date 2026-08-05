@@ -1,7 +1,7 @@
 {
   "name": "model-right-sizer",
   "displayName": "model-right-sizer",
-  "description": "Model-selection economist agent for Claude Code: decides which Claude model (and effort/token budget) each task in a flow should run on by weighing effectiveness need against efficiency pressure and difficulty, bookended around a build as a right-sizing blueprint and a closing usage report -- with token_ceiling itself computed deterministically from six rated real-work signals, not free-handed. Ships with eleven companion skills: installing the standing before/after mandate in a target repo, previewing the routing map for an intent without building anything, retroactively auditing every real model call already shipped in a target repo, prescribing a minimal output schema for one agent's handoff to its controller, guarding token budgets and the routing-map status ledger while work is in flight, validating candidate real-work signals and studying/tuning the agent's research-grounded layers, and publishing dated release/research reports.",
+  "description": "Model-selection economist agent for Claude Code: decides which Claude model (and effort/token budget) each task in a flow should run on by weighing effectiveness need against efficiency pressure and difficulty, bookended around a build as a right-sizing blueprint and a closing usage report -- with token_ceiling itself computed deterministically from six rated real-work signals, not free-handed. Ships with thirteen companion skills: installing the standing before/after mandate in a target repo, previewing the routing map for an intent without building anything, running a machine-wide calibration ledger that gives the agent a memory across sessions and repos (optionally distilled nightly by SkillOpt-Sleep behind a held-out validation gate) and auditing whether that ledger improves the picks, retroactively auditing every real model call already shipped in a target repo, prescribing a minimal output schema for one agent's handoff to its controller, guarding token budgets and the routing-map status ledger while work is in flight, validating candidate real-work signals and studying/tuning the agent's research-grounded layers, and publishing dated release/research reports.",
   "version": "0.2.0",
   "author": {
     "name": "CloudZero, Inc.",
@@ -15,6 +15,8 @@
     "cost-optimization",
     "agent-routing",
     "llm-cost",
+    "agent-memory",
+    "self-improving",
     "claude-code-plugin"
   ]
 }
