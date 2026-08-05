@@ -90,37 +90,40 @@ Turn a Pass B usage report into ledger rows.
    vocabulary instead — if nothing fits, pick the nearest shape and say so in
    the `lesson`; do not invent an enum value, and do not smuggle specificity
    into the free-text field to compensate.
-5. **Assign `id` as the next `cal-NNNN`** after the highest already in the
-   ledger (starting at `cal-0001`), and set `ts` to today's date.
+5. **Assign a collision-proof `id`: `cal-NNNN-xxxx`.** `NNNN` is the next
+   sequence number after the highest in the ledger (starting at `cal-0001`), and
+   `xxxx` is a fresh 4-character random nonce **you generate per row**. Set `ts`
+   to today's date.
 
-   **Allocate the id under a lock — concurrent sessions are the normal case
-   here, not an edge case.** This ledger is machine-wide by design, so two
-   sessions in two different repos writing within the same minute is expected
-   behaviour. Read-highest-then-append is a classic race: both read `cal-0006`,
-   both write `cal-0007`, and every later citation of `cal-0007` becomes
-   ambiguous — which quietly corrupts provenance, the one property the ledger
-   exists to provide.
-   - Take an exclusive lock on a sibling lockfile (`ledger.lock`) for the whole
-     read-max → write sequence, and release it even on failure.
-   - **Verify after writing**, always: re-read the ledger and confirm your id
-     appears exactly once.
-   - **Recovery is a loop, not a single retry.** Two writers that collided are,
-     by definition, running the same algorithm at the same moment — so both
-     recovering by "take the next free id" picks the *same* replacement and
-     collides again. Re-verify after every renumber and keep going until your id
-     is unique, and **sleep a short randomized interval before each re-read** so
-     the two writers fall out of lockstep instead of racing in step. Cap it at
-     ~5 attempts; if you still can't get a unique id, **abort and report** —
-     leaving an ambiguous row is worse than leaving no row.
-   - If you cannot take a lock in your runtime, the verify-and-retry loop above
-     is not optional, it is the whole control. The lock only makes a collision
-     rare; the loop is what keeps the audit trail correct when one happens.
-6. **Append, never rewrite.** One JSON object per line, appended to
-   `ledger.jsonl` in a single atomic write (open in append mode; do not
-   read-modify-write the whole file). Never reformat, reorder, or edit existing
-   rows — the file is an audit trail. If a past row is wrong, append a corrected
-   one and say so in its `lesson`. The one exception is the collision
-   renumbering in step 5, which fixes a row you just wrote in this run.
+   **The nonce is the whole concurrency design, so don't drop it.** This ledger
+   is machine-wide by intent, so two sessions in two different repos allocating
+   within the same instant is expected traffic, not an edge case. Sequence
+   numbers alone make that a race — both read `cal-0006`, both write
+   `cal-0007` — and every later citation of `cal-0007` becomes ambiguous, which
+   corrupts the one property the ledger exists to provide. The nonce makes two
+   writers produce different ids **without coordinating at all**, so the
+   collision cannot happen rather than having to be detected and undone.
+
+   Take an exclusive lock on a sibling `ledger.lock` for the read-max → write
+   sequence if your runtime offers one, and release it on failure. It keeps the
+   sequence numbers tidy. It is a nicety on top of the nonce, not the control —
+   correctness must not depend on a lock you might not have.
+
+6. **Append, never rewrite — and that includes repairs.** One JSON object per
+   line, appended in a single atomic write (open in append mode; never
+   read-modify-write the whole file). Never reformat, reorder, or edit an
+   existing row.
+
+   **There is deliberately no renumber-on-collision path**, and it is worth
+   saying why it was removed rather than fixed: in an append-only JSONL, two
+   rows sharing an id are indistinguishable — a writer has no way to prove which
+   line is its own, so "rewrite my row" can just as easily rewrite the other
+   session's, leave the duplicate in place, or move both into a fresh collision.
+   That is why the fix is at allocation. If you do observe a duplicate id
+   (rows predating the nonce, or a hand-edit), **report it — do not repair it.**
+   If a past row is substantively wrong, append a corrected one and say so in
+   its `lesson`; the wrong row stays, because the file is an audit trail.
+
 7. **Echo what you wrote** and confirm the new row count.
 
 If a row can't be made schema-valid, say why and skip it rather than writing a
@@ -141,10 +144,10 @@ Read `ledger.jsonl` and report, grouped by `stage_kind`:
 - mean `cost_delta_usd`, tagged with the weakest `pricing_freshness` in the
   group (a mean over stale prices is a stale mean, and should be labeled one);
 - budget and schema adherence counts;
-- **any duplicate `id`** — the signature of a concurrent-append race that beat
-  the lock. Report them explicitly rather than silently deduping: a duplicate id
-  makes every citation of it ambiguous, and the operator needs to know which
-  rows to renumber.
+- **any duplicate `id`** — only possible for rows predating the nonce, or a
+  hand-edit. Report them; never dedupe or renumber. In an append-only file
+  nobody can prove which duplicate belongs to whom, so the honest handling is to
+  surface the ambiguity and let citations of that id be treated as unreliable.
 
 Then state the actionable read in one line per shape — e.g. *"`code-review`:
 6 rows, 4 size-up, 3 with rework ≥ 2 → this shape is being under-powered."*
