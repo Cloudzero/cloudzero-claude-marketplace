@@ -30,7 +30,7 @@ A model-selection economist for Claude Code that keeps AI spend as intentional a
 - The `model-right-sizer` agent scores each task on effectiveness need vs. efficiency pressure vs. difficulty, and recommends the smallest Claude model (plus effort and token budget) that clears the bar
 - Runs as a bookend around work: a right-sizing blueprint before, a model-usage report after
 - Learns from what its picks actually cost: a machine-wide calibration ledger, read by every session in every repo, so the cost of a wrong pick informs the next one instead of being thrown away
-- Companion skills to preview the routing map for an intent (`model-right-sizer-dryrun`), stamp a standing right-sizing mandate onto a repo (`model-right-sizer-install`), feed/read the calibration ledger (`model-right-sizer-calibrate`), and audit whether that ledger is actually improving the picks (`model-right-sizer-eval`)
+- Companion skills to preview the routing map for an intent (`model-right-sizer-dryrun`), stamp a standing right-sizing mandate onto a repo (`model-right-sizer-install`), feed/read the calibration ledger (`model-right-sizer-calibrate`), audit whether that ledger is actually improving the picks (`model-right-sizer-eval`), and verify the memory really is installed and universal (`model-right-sizer-verify`)
 
 See the [Model Right Sizer README](plugins/model-right-sizer/README.md) for full details.
 
@@ -64,7 +64,7 @@ cloudzero-claude-marketplace/
 │       ├── .claude-plugin/
 │       │   └── plugin.json       # Plugin manifest
 │       ├── agents/               # The model-right-sizer agent
-│       ├── skills/               # Companion install/dry-run/calibrate/eval skills
+│       ├── skills/               # Companion install/dry-run/calibrate/eval/verify skills
 │       ├── templates/            # Learned-skill seed, ledger schema, SkillOpt config
 │       ├── eval/                 # Held-out routing tasks + the audit harness rubric
 │       └── README.md             # Plugin documentation
@@ -99,7 +99,7 @@ Adding the marketplace makes every plugin in this repository available. It does 
 /plugin install model-right-sizer@cloudzero
 ```
 
-Installing `cost-analyst@cloudzero` gives you the 11 cost analysis skills and the pre-configured CloudZero MCP server. Installing `model-right-sizer@cloudzero` gives you the model-right-sizer agent and its four companion skills.
+Installing `cost-analyst@cloudzero` gives you the 11 cost analysis skills and the pre-configured CloudZero MCP server. Installing `model-right-sizer@cloudzero` gives you the model-right-sizer agent and its five companion skills.
 
 For platform setup and more installation guidance, see the [CloudZero AI Hub](https://docs.cloudzero.com/docs/ai-getting-started).
 
@@ -263,6 +263,16 @@ Feeds and reads the machine-wide calibration ledger — the memory that keeps ev
 **Example:**
 ```
 "What has the right-sizer learned about code review?"
+```
+
+#### Model Right Sizer Verify
+**Triggered by:** "Is the learning loop actually installed?", "Verify universal preservation", "Does my other repo see this?"
+
+Proves the install is real rather than merely reported: **discovery** (probe a session in a throwaway repo unrelated to the plugin, with a canary token so you prove the content arrived and not just the name), **preservation** (re-install twice and confirm accumulated learnings survive byte-for-byte while the protected regions refresh), and **integrity** (every ledger row schema-clean and free of repo-identifying prose). Run it before the eval harness.
+
+**Example:**
+```
+"Verify the right-sizer memory is discoverable from my other repos"
 ```
 
 #### Model Right Sizer Eval

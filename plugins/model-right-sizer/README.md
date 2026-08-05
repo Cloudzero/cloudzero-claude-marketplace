@@ -21,6 +21,7 @@ This directory is a self-contained **Claude Code plugin** within the CloudZero m
 - [`skills/model-right-sizer-install/SKILL.md`](skills/model-right-sizer-install/SKILL.md) — a companion skill that stamps a narrow, organization-agnostic mandate onto a *target* repo's `CLAUDE.md`: consult `model-right-sizer` before and after every substantive task. It also installs this plugin itself if the agent isn't already discoverable there. Beyond that, it's just the mandate — no broader development process — so it can be adopted independently of whatever flow (if any) the target repo already runs.
 - [`skills/model-right-sizer-dryrun/SKILL.md`](skills/model-right-sizer-dryrun/SKILL.md) — a companion skill that previews the agent's routing map for a free-text intent, without building anything.
 - [`skills/model-right-sizer-calibrate/SKILL.md`](skills/model-right-sizer-calibrate/SKILL.md) — a companion skill that feeds and reads the calibration ledger: `append` turns a usage report into schema-valid rows, `summary` aggregates them by task shape, `review` adopts a staged SkillOpt proposal. The write half of the loop below.
+- [`skills/model-right-sizer-verify/SKILL.md`](skills/model-right-sizer-verify/SKILL.md) — proves the install is real: discoverable from an unrelated repo, learnings preserved across a re-install, ledger rows schema-clean. Run it before the eval harness — an eval against a memory that was never discovered measures nothing.
 - [`skills/model-right-sizer-eval/SKILL.md`](skills/model-right-sizer-eval/SKILL.md) — the audit harness for the learning loop: three rounds, two arms, disjoint task sets, and a saturation gate. Built to be able to return "no" — see [Auditing the loop](#auditing-the-loop--does-it-actually-work) below.
 - [`templates/`](templates/) — the seed for the machine-wide learned skill, the authoritative [ledger row schema](templates/ledger-entry.schema.json), and a [SkillOpt-Sleep config](templates/skillopt-sleep.config.json). Templates, not discovered skills — a seed under `skills/` would be discovered as a second, never-learning copy of the installed one.
 - [`eval/`](eval/) — [`routing-tasks.jsonl`](eval/routing-tasks.jsonl), 16 synthetic routing decisions covering the rubric's real boundaries (agentic down-pin, the query-layer fork, the over-thinking tax, cost-of-error size-up, caching/batch economics, handoff seams) as the held-out gate a distilled learning must clear; plus [`boundary-rubric.json`](eval/boundary-rubric.json) and [`probe-set-A.jsonl`](eval/probe-set-A.jsonl) for the audit harness.
@@ -82,6 +83,41 @@ The seed's protected regions (`<!-- SLOW_UPDATE_START/END -->`,
 `<!-- APPENDIX_START/END -->`) are regions SkillOpt won't edit. They hold the
 contract and the execution reminders, so the learnings can evolve without the
 rules governing them drifting underneath.
+
+## Verifying the install — is the memory actually there?
+
+Before asking whether the loop *helps*, confirm it exists where it claims to.
+[`model-right-sizer-verify`](skills/model-right-sizer-verify/SKILL.md) checks the
+three claims that each fail **silently**:
+
+| Claim | Silent failure | Check |
+|---|---|---|
+| **Universal** — every session in every repo reads it | written where the runtime doesn't scan; sessions just never mention it | **DISCOVERY** — probe from a throwaway repo with no `CLAUDE.md` and no plugin, using a canary token so you prove the *content* arrived, not just the name |
+| **Preserved** — a re-install keeps learnings | the one unregenerable artifact gets overwritten by a template | **PRESERVATION** — plant a sentinel in the trainable body, re-install twice, confirm it survives byte-for-byte |
+| **Repo-agnostic** — rows are safe anywhere | a row carries a repo name; nothing errors, the evidence is just wrong everywhere else | **INTEGRITY** — validate every row against the schema, then read the `lesson` prose, where a name can still hide |
+
+**Result, 2026-08-05, plugin 0.2.0 — all three passed.** The discovery probe, run
+from a freshly `git init`-ed scratch repo unrelated to this marketplace:
+
+```
+DISCOVERED:   yes
+SOURCE:       ~/.claude/skills/model-right-sizer-learned/
+CANARY:       HALYARD-31
+LEDGER_ROWS:  1
+```
+
+Corroborated live — the skill also surfaced in a *separate, already-running*
+session's skill list moments after installation, so cross-session propagation was
+observed rather than inferred. The test install was removed afterward.
+
+Two things that cost time and are written into the skill so they don't cost it
+twice: **`CLAUDE_CONFIG_DIR` cannot sandbox this test** (relocating the config
+also relocates auth away from the keychain, and the probe dies with `Not logged
+in` before telling you anything about discovery), so it must run against the real
+config directory with the user's confirmation and be cleaned up after — and
+**canary content must never be left behind**, because a fabricated learning in a
+real learned skill is indistinguishable from a measured one and will be cited
+with the authority of evidence.
 
 ## Auditing the loop — does it actually work?
 
@@ -199,7 +235,7 @@ Install it from the CloudZero marketplace — add the marketplace once, then ins
 /plugin install model-right-sizer@cloudzero
 ```
 
-That installs the agent (`agents/model-right-sizer.md`) and all four companion skills (`skills/model-right-sizer-install/`, `skills/model-right-sizer-dryrun/`, `skills/model-right-sizer-calibrate/`, `skills/model-right-sizer-eval/`) together. Adding the marketplace also makes the [`cost-analyst`](../cost-analyst/) plugin available (`/plugin install cost-analyst@cloudzero`). To try it before installing, or to iterate on a local checkout, load it directly for a session instead:
+That installs the agent (`agents/model-right-sizer.md`) and all five companion skills (`skills/model-right-sizer-install/`, `skills/model-right-sizer-dryrun/`, `skills/model-right-sizer-calibrate/`, `skills/model-right-sizer-eval/`, `skills/model-right-sizer-verify/`) together. Adding the marketplace also makes the [`cost-analyst`](../cost-analyst/) plugin available (`/plugin install cost-analyst@cloudzero`). To try it before installing, or to iterate on a local checkout, load it directly for a session instead:
 
 ```
 claude --plugin-dir /path/to/cloudzero-claude-marketplace/plugins/model-right-sizer
@@ -230,7 +266,7 @@ See the **"Extending this agent for your own organization"** section at the bott
 
 ## Prerequisites
 
-None. This plugin is an agent definition, four companion skills, and a few
+None. This plugin is an agent definition, five companion skills, and a few
 markdown/JSON templates — no runtime dependencies, no code that calls an LLM or
 CloudZero API directly. It's read by whatever agent runtime loads it (Claude
 Code, or a compatible Claude-Agent-SDK-based runtime), which supplies its own
@@ -294,6 +330,11 @@ never edits or writes files. Its companion skills' blast radius:
   accumulated learnings or the ledger; only the seed's protected regions are
   refreshed.
 - `model-right-sizer-dryrun` writes nothing; it only returns a routing map.
+- `model-right-sizer-verify` is read-only except for the temporary canary its
+  discovery probe plants in the installed learned skill — which it must remove
+  as part of the test, since fabricated calibration left behind is
+  indistinguishable from measured evidence. It asks before touching anything
+  outside the repo and refuses to clobber an existing install.
 - `model-right-sizer-calibrate` appends to the machine-wide `ledger.jsonl`
   (append-only — it never rewrites or reorders existing rows) and, in `review`
   mode and only on an explicit yes, applies a staged SkillOpt proposal to the

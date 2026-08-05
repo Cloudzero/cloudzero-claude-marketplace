@@ -263,6 +263,23 @@ class TestAuditHarness:
         assert "malformed" in skill.lower()
         assert "negative control is not optional" in skill.lower()
 
+    def test_verify_skill_covers_all_three_install_claims(self):
+        """Each of these fails silently — a passing install report is not
+        evidence any of them hold."""
+        skill = (PLUGIN_DIR / "skills" / "model-right-sizer-verify" / "SKILL.md").read_text()
+        for check in ("DISCOVERY", "PRESERVATION", "INTEGRITY"):
+            assert check in skill, f"verify skill must cover the {check} check"
+
+    def test_verify_skill_mandates_canary_cleanup(self):
+        """A fabricated learning left in a real learned skill is
+        indistinguishable from a measured one, and gets cited with the
+        authority of evidence."""
+        skill = (PLUGIN_DIR / "skills" / "model-right-sizer-verify" / "SKILL.md").read_text()
+        assert "Never leave canary content behind" in skill
+        assert "CLAUDE_CONFIG_DIR" in skill, (
+            "the sandboxing dead-end must stay documented or it gets re-discovered"
+        )
+
     def test_probe_set_carries_no_answers(self):
         """The tasks ship; the expected answers must NOT — they live only in the
         rubric, keyed by boundary, so a leaked probe set alone gives nothing."""
