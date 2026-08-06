@@ -6,7 +6,7 @@ Part of [CloudZero](../../README.md), the CloudZero plugin marketplace for Claud
 
 A **model-selection economist** agent definition for [Claude Code](https://docs.claude.com/claude-code) (and any similar Claude-Agent-SDK-based agent runtime that reads a persona from a markdown file with YAML frontmatter).
 
-It doesn't decide *what* to build — it decides *what intelligence budget* to build it with. Given a task or a pipeline of stages, it scores each stage on **effectiveness need** vs **efficiency pressure** vs **difficulty**, and returns a probability-weighted model + effort + token-budget recommendation instead of a single "just use the biggest model" verdict. It runs as a bookend around a unit of work: a **blueprint** pass before the work starts, and a **usage report** pass after it closes.
+It doesn't decide *what* to build — it decides *what intelligence budget* to build it with. Given a task or a pipeline of stages, it scores each stage on **effectiveness need** vs **efficiency pressure** vs **difficulty**, and returns a probability-weighted model + effort + token-budget recommendation instead of a single "just use the biggest model" verdict. It runs as a bookend around a unit of work: a **blueprint** pass before the work starts, emitted as a single JSON object conforming to [`schemas/blueprint.schema.json`](schemas/blueprint.schema.json) rather than prose or a markdown table, and a **usage report** pass after it closes.
 
 Grounded in two published results on adaptive reasoning budgets:
 - IBPO — *Think Smarter, not Harder: Adaptive Reasoning with Inference-Aware Optimization* ([arXiv 2501.17974](https://arxiv.org/abs/2501.17974))
@@ -18,8 +18,9 @@ This directory is a self-contained **Claude Code plugin** within the CloudZero m
 
 - [`.claude-plugin/plugin.json`](.claude-plugin/plugin.json) — the plugin manifest (name, version, metadata). The plugin is registered in the marketplace catalog at the repo root ([`.claude-plugin/marketplace.json`](../../.claude-plugin/marketplace.json)).
 - [`agents/model-right-sizer.md`](agents/model-right-sizer.md) — the agent definition (frontmatter + system prompt). Self-contained and organization-agnostic: no internal quotes, no internal tool/telemetry references, no hard-coded sibling-agent names.
-- [`skills/model-right-sizer-install/SKILL.md`](skills/model-right-sizer-install/SKILL.md) — a companion skill that stamps a narrow, organization-agnostic mandate onto a *target* repo's `CLAUDE.md`, `AGENTS.md`, or both (whichever the repo actually has): consult `model-right-sizer` before and after every substantive task. It also installs this plugin itself if the agent isn't already discoverable there. Beyond that, it's just the mandate — no broader development process — so it can be adopted independently of whatever flow (if any) the target repo already runs.
-- [`skills/model-right-sizer-dryrun/SKILL.md`](skills/model-right-sizer-dryrun/SKILL.md) — a companion skill that previews the agent's routing map for a free-text intent, without building anything.
+- [`schemas/blueprint.schema.json`](schemas/blueprint.schema.json) (+ [`blueprint.example.json`](schemas/blueprint.example.json)) — the strict JSON Schema the agent's Pass A (the right-sizing blueprint) must conform to, and a worked instance. Defined once here; the agent and the `model-right-sizer-dryrun` skill both point at it instead of restating the shape. Enforced, not just documented: [`../../scripts/validate_blueprint.py`](../../scripts/validate_blueprint.py) validates the worked example in CI and is the same validator `model-right-sizer-dryrun` runs against its own output before handing a blueprint to an orchestrator.
+- [`skills/model-right-sizer-install/SKILL.md`](skills/model-right-sizer-install/SKILL.md) — a companion skill that stamps a narrow, organization-agnostic mandate onto a *target* repo's `CLAUDE.md`, `AGENTS.md`, or both (whichever the repo actually has): run `model-right-sizer-dryrun` before every substantive task and hand its JSON blueprint to the orchestrator, then consult `model-right-sizer` directly for a usage report after. It also installs this plugin itself if the agent/skill aren't already discoverable there. Beyond that, it's just the mandate — no broader development process — so it can be adopted independently of whatever flow (if any) the target repo already runs.
+- [`skills/model-right-sizer-dryrun/SKILL.md`](skills/model-right-sizer-dryrun/SKILL.md) — a companion skill that previews the agent's JSON blueprint for a free-text intent, without building anything.
 - [`CHANGELOG.md`](CHANGELOG.md) — dated entries for every change to the agent core or its companion skills. Update this in the same PR as the change.
 
 Besides right-sizing *which model*, the agent also flags stages where a deterministic query layer (e.g. PromptQL) would answer a data question more reliably and cheaper than a raw model call, and designs the minimal message schema each agent-to-agent handoff should carry — so a multi-stage chain doesn't leak full transcripts between hops. See the "Agent-to-agent message-schema design" section and the deterministic-query-layer lever in `agents/model-right-sizer.md`.
@@ -64,8 +65,9 @@ See the **"Extending this agent for your own organization"** section at the bott
 
 ## Prerequisites
 
-None. This plugin is an agent definition and two companion skills — no
-runtime dependencies, no code that calls an LLM or CloudZero API directly.
+None. This plugin is an agent definition, a JSON Schema for its blueprint
+output, and two companion skills — no runtime dependencies, no code that
+calls an LLM or CloudZero API directly.
 It's read by whatever agent runtime loads it (Claude Code, or a compatible
 Claude-Agent-SDK-based runtime), which supplies its own model access. No API
 keys are required by the plugin itself.
@@ -105,13 +107,13 @@ never edits or writes files. Its companion skills' blast radius:
 - `model-right-sizer-install` writes the same marker-delimited mandate block
   into a target repo's `CLAUDE.md`, `AGENTS.md`, or both — whichever exist —
   idempotent, append-only per file, never overwrites existing content
-  outside that block. If the agent itself isn't discoverable in the target
-  repo, it will also — after asking the user to confirm — run
-  `/plugin marketplace add` + `/plugin install` to install this plugin
-  (falling back to printing manual copy/submodule instructions if plugin
-  install isn't available) — the only action it takes outside those
-  marker-delimited blocks.
-- `model-right-sizer-dryrun` writes nothing; it only returns a routing map.
+  outside that block. If the agent or the `model-right-sizer-dryrun` skill
+  isn't discoverable in the target repo, it will also — after asking the
+  user to confirm — run `/plugin marketplace add` + `/plugin install` to
+  install this plugin (falling back to printing manual copy/submodule
+  instructions if plugin install isn't available) — the only action it
+  takes outside those marker-delimited blocks.
+- `model-right-sizer-dryrun` writes nothing; it only returns the JSON blueprint (unless the user explicitly asks it to save one to a file).
 
 See the repo-level [SECURITY.md](../../SECURITY.md) for how to report vulnerabilities.
 
@@ -121,15 +123,18 @@ All examples below use synthetic task descriptions — no real customer or
 account data is involved anywhere in this repo.
 
 - *"Blueprint this PR: refactor a REST endpoint, add tests, update docs."*
-  → returns a task→model table, e.g. "REST refactor → Sonnet 5, `high`
-  effort, 78% confidence (runner-up: Opus 4.8 at 22%, flip condition:
-  cross-service contract ambiguity)."
+  → returns a JSON blueprint (schema: `schemas/blueprint.schema.json`) whose
+  `blueprint_rows` include e.g. `{"name": "REST refactor", "pick": {"primary":
+  {"model": "claude-sonnet-5", "effort": "high", "confidence": 78},
+  "runner_up": {"model": "claude-opus-4-8", "confidence": 22}, "what_flips_it":
+  "cross-service contract ambiguity"}, ...}`.
 - *"We shipped this on Haiku end-to-end — usage report?"* → compares actual
   token spend/latency against the blueprint's prediction and flags any tier
-  that under- or over-shot.
+  that under- or over-shot. (Pass B stays a lean markdown table, unaffected
+  by the Pass A schema change.)
 - *"Dry-run: build a Slack bot that summarizes daily standup threads."* →
-  invokes `model-right-sizer-dryrun`, which returns only the routing map, no
-  build.
+  invokes `model-right-sizer-dryrun`, which returns only the JSON blueprint,
+  no build.
 
 ## Limitations
 
