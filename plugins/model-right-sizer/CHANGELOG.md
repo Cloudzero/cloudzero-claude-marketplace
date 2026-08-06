@@ -270,6 +270,18 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
     audit step is now a runnable `grep` for out-of-sandbox paths and
     answer-key field-name leakage rather than prose describing what to look
     for.
+- **Greptile follow-up on the same push: the canary cleanup trap could
+  release a lock it didn't own.** `trap 'acquire && cleanup; release' EXIT
+  INT TERM` runs `release` unconditionally after the `;` — if the trap's own
+  `acquire` fails because another writer genuinely holds `.skill.lock` right
+  now, cleanup is correctly skipped but `release` still fires next, deleting
+  that live holder's lock and reopening the exact lost-update race the lock
+  exists to prevent. Fixed to `acquire && { cleanup; release; }`, so release
+  is gated behind the same successful acquire as cleanup rather than a
+  separate, unconditional statement. Reproduced the bug and verified the fix
+  empirically (a genuine holder's lock now survives a contending writer's
+  failed acquire-and-exit, and the trap still self-cleans on its own
+  successful path) before adding `test_canary_cleanup_trap_never_releases_an_unowned_lock`.
 
 ### Changed
 - **Moved into CloudZero (the CloudZero plugin marketplace)** — this plugin now lives at

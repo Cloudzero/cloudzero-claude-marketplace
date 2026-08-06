@@ -452,6 +452,24 @@ class TestAuditHarness:
             "even the pristine-case write must detect a concurrent update"
         )
 
+    def test_canary_cleanup_trap_never_releases_an_unowned_lock(self):
+        """`acquire && cleanup; release` is the wrong shape: if this trap's
+        own acquire fails because another writer genuinely holds the lock
+        right now, a bare trailing `; release` still runs next and deletes
+        that live holder's lock — reintroducing the exact lost-update race
+        the lock exists to prevent. release must be gated behind the SAME
+        successful acquire, in one conditional, not a separate statement."""
+        skill = (PLUGIN_DIR / "skills" / "model-right-sizer-verify" / "SKILL.md").read_text()
+        # Check the actual trap statement, not prose that quotes the buggy
+        # shape while explaining why it was replaced.
+        assert "trap 'acquire && cleanup; release'" not in skill, (
+            "release must not run unconditionally after a failed acquire"
+        )
+        assert "acquire && { cleanup; release; }" in skill, (
+            "release must be inside the same && as cleanup, so a failed "
+            "acquire skips both rather than just cleanup"
+        )
+
     def test_canary_cleanup_stays_failure_safe(self):
         skill = (PLUGIN_DIR / "skills" / "model-right-sizer-verify" / "SKILL.md").read_text()
         assert "verify-canary:BEGIN" in skill, "canary must be delimited for deterministic removal"
