@@ -78,7 +78,7 @@ real run, not a dry run.
      schema → confidence → rationale → what-flips-it.
    - **Message-schema spec** — the minimal payload each handoff seam carries.
    - **Uncertainty ledger** — assumptions, price-sheet freshness state, and
-     what it would measure to sharpen the map.
+     what it would measure to improve the map.
    - **The calibration read** — Pass A step 8 applies to a dry run too: the
      agent reads the machine-wide `model-right-sizer-learned` skill and its
      ledger rows matching each stage's shape, and states what the evidence

@@ -54,7 +54,7 @@ split is deliberate:
   **outside every repo, on purpose**. The agent's whole value is pricing the
   cost of error, and that price is only knowable from what past picks actually
   cost — evidence that would be worthless if it were siloed per repo. A
-  calibration measured while working on one codebase should sharpen the pick
+  calibration measured while working on one codebase should improve the pick
   made on the next one, so it is stored once, where every session can read it.
 
 What makes that safe is the same discipline the agent applies to its own

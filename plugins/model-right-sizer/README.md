@@ -53,7 +53,7 @@ Pass B usage report ──emits rows──────┘                    │
 what past picks actually cost, and siloed per repo that evidence never reaches a
 sample size that means anything. Stored once in the user-level skills directory,
 it's discovered by every session in every repo — a calibration measured on one
-codebase sharpens the pick made on the next.
+codebase improves the pick made on the next.
 
 **The price of that reach is a hard constraint: rows record a task *shape*, not
 a task.** `stage_kind`, `loop_class`, the three signals, recommended-vs-actual,
