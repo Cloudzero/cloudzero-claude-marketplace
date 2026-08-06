@@ -40,7 +40,7 @@ write half.** It is the only sanctioned way evidence enters the ledger.
 Machine-wide, not per repo, for one reason: the agent's core job is pricing the
 **cost of error**, and that price is only knowable from what past picks actually
 cost. Siloed per repo, that evidence never reaches the sample size where it
-means anything. Stored once, a calibration measured on one codebase sharpens the
+means anything. Stored once, a calibration measured on one codebase improves the
 pick made on the next.
 
 The price of that reach is a hard constraint: **a row records a task shape, not
