@@ -31,6 +31,14 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   instead of a schema plus a separately-maintained prose checklist.
 
 ### Changed
+- `model-right-sizer-install` now detects whether the target repo has
+  `CLAUDE.md`, `AGENTS.md`, or both, instead of always targeting
+  `CLAUDE.md`: only `AGENTS.md` present → stamp the mandate there alone
+  (no redundant `CLAUDE.md` is created); both present → stamp both,
+  independently; neither present → create `CLAUDE.md`, unchanged from
+  prior behavior. New step 3 makes the detection explicit and requires it
+  to be named in the step 6 report rather than assumed. Steps 4-6
+  renumbered and generalized to "every targeted file" accordingly.
 - **Pass A now emits a single schema-conformant JSON object instead of
   prose/markdown tables.** `agents/model-right-sizer.md`'s "Pass A" section
   now points at `schemas/blueprint.schema.json` (+ the worked example) as

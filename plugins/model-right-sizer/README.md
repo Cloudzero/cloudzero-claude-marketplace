@@ -19,7 +19,7 @@ This directory is a self-contained **Claude Code plugin** within the CloudZero m
 - [`.claude-plugin/plugin.json`](.claude-plugin/plugin.json) — the plugin manifest (name, version, metadata). The plugin is registered in the marketplace catalog at the repo root ([`.claude-plugin/marketplace.json`](../../.claude-plugin/marketplace.json)).
 - [`agents/model-right-sizer.md`](agents/model-right-sizer.md) — the agent definition (frontmatter + system prompt). Self-contained and organization-agnostic: no internal quotes, no internal tool/telemetry references, no hard-coded sibling-agent names.
 - [`schemas/blueprint.schema.json`](schemas/blueprint.schema.json) (+ [`blueprint.example.json`](schemas/blueprint.example.json)) — the strict JSON Schema the agent's Pass A (the right-sizing blueprint) must conform to, and a worked instance. Defined once here; the agent and the `model-right-sizer-dryrun` skill both point at it instead of restating the shape. Enforced, not just documented: [`../../scripts/validate_blueprint.py`](../../scripts/validate_blueprint.py) validates the worked example in CI and is the same validator `model-right-sizer-dryrun` runs against its own output before handing a blueprint to an orchestrator.
-- [`skills/model-right-sizer-install/SKILL.md`](skills/model-right-sizer-install/SKILL.md) — a companion skill that stamps a narrow, organization-agnostic mandate onto a *target* repo's `CLAUDE.md`: run `model-right-sizer-dryrun` before every substantive task and hand its JSON blueprint to the orchestrator, then consult `model-right-sizer` directly for a usage report after. It also installs this plugin itself if the agent/skill aren't already discoverable there. Beyond that, it's just the mandate — no broader development process — so it can be adopted independently of whatever flow (if any) the target repo already runs.
+- [`skills/model-right-sizer-install/SKILL.md`](skills/model-right-sizer-install/SKILL.md) — a companion skill that stamps a narrow, organization-agnostic mandate onto a *target* repo's `CLAUDE.md`, `AGENTS.md`, or both (whichever the repo actually has): run `model-right-sizer-dryrun` before every substantive task and hand its JSON blueprint to the orchestrator, then consult `model-right-sizer` directly for a usage report after. It also installs this plugin itself if the agent/skill aren't already discoverable there. Beyond that, it's just the mandate — no broader development process — so it can be adopted independently of whatever flow (if any) the target repo already runs.
 - [`skills/model-right-sizer-dryrun/SKILL.md`](skills/model-right-sizer-dryrun/SKILL.md) — a companion skill that previews the agent's JSON blueprint for a free-text intent, without building anything.
 - [`CHANGELOG.md`](CHANGELOG.md) — dated entries for every change to the agent core or its companion skills. Update this in the same PR as the change.
 
@@ -42,7 +42,7 @@ claude --plugin-dir /path/to/cloudzero-claude-marketplace/plugins/model-right-si
 
 Once installed, the agent needs no special tools beyond `Read`, `Grep`, `Glob`, `WebFetch`, and `Task` (used to delegate the live model-pricing fetch to a cheap sub-agent tier, when your framework supports dispatching one — otherwise it falls back to fetching with `WebFetch` directly) — it never edits files; it only reads context and reports.
 
-To also enforce that the agent gets consulted on every substantive turn, run the `model-right-sizer-install` skill once against the repo you want to onboard (it's a companion in this same plugin, so installing the plugin is enough — just invoke the skill in the target repo). It writes a marker-delimited mandate block into that repo's `CLAUDE.md` — idempotent and append-only, safe to re-run to refresh the wording.
+To also enforce that the agent gets consulted on every substantive turn, run the `model-right-sizer-install` skill once against the repo you want to onboard (it's a companion in this same plugin, so installing the plugin is enough — just invoke the skill in the target repo). It writes a marker-delimited mandate block into that repo's `CLAUDE.md`, `AGENTS.md`, or both (detected, not assumed — see the skill's step 3) — idempotent and append-only, safe to re-run to refresh the wording.
 
 ### Dropping the files in manually instead
 
@@ -104,14 +104,15 @@ Read-only, by design. The agent's tool grant is `Read, Grep, Glob, WebFetch,
 Task` — `Task` lets it delegate the model-pricing fetch to a sub-agent; it
 never edits or writes files. Its companion skills' blast radius:
 
-- `model-right-sizer-install` writes a single marker-delimited mandate block
-  into a target repo's `CLAUDE.md` — idempotent, append-only, never
-  overwrites existing content outside that block. If the agent itself isn't
-  discoverable in the target repo, it will also — after asking the user to
-  confirm — run `/plugin marketplace add` + `/plugin install` to install this
-  plugin (falling back to printing manual copy/submodule instructions if
-  plugin install isn't available) — the only action it takes outside that
-  one `CLAUDE.md` block.
+- `model-right-sizer-install` writes the same marker-delimited mandate block
+  into a target repo's `CLAUDE.md`, `AGENTS.md`, or both — whichever exist —
+  idempotent, append-only per file, never overwrites existing content
+  outside that block. If the agent or the `model-right-sizer-dryrun` skill
+  isn't discoverable in the target repo, it will also — after asking the
+  user to confirm — run `/plugin marketplace add` + `/plugin install` to
+  install this plugin (falling back to printing manual copy/submodule
+  instructions if plugin install isn't available) — the only action it
+  takes outside those marker-delimited blocks.
 - `model-right-sizer-dryrun` writes nothing; it only returns the JSON blueprint (unless the user explicitly asks it to save one to a file).
 
 See the repo-level [SECURITY.md](../../SECURITY.md) for how to report vulnerabilities.

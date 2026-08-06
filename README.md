@@ -245,7 +245,7 @@ Previews the model-routing map for a free-text intent without building anything 
 #### Model Right Sizer Install
 **Triggered by:** "Install model-right-sizer in this repo", "Add the right-sizer mandate here"
 
-Stamps a standing mandate onto the current repo's `CLAUDE.md` so every substantive task consults the `model-right-sizer` agent before and after the work. Idempotent and append-only.
+Stamps a standing mandate onto the current repo's `CLAUDE.md`, `AGENTS.md`, or both (whichever the repo has) so every substantive task consults the `model-right-sizer` agent before and after the work. Idempotent and append-only.
 
 **Example:**
 ```
