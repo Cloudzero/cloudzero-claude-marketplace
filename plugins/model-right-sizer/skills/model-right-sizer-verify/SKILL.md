@@ -89,7 +89,12 @@ for why that matters more than it sounds like it should.
        return 1
      fi
    }
-   trap 'acquire && cleanup; release' EXIT INT TERM
+   # release must fire ONLY when this trap's own acquire just succeeded — never
+   # unconditionally. `acquire && cleanup; release` is the wrong shape: if
+   # acquire fails here because another writer genuinely holds the lock right
+   # now, `; release` still runs next and deletes that live holder's lock,
+   # reintroducing the exact lost-update race the lock exists to prevent.
+   trap 'acquire && { cleanup; release; }' EXIT INT TERM
 
    # INSERT: hold the shared writer lock across read -> modify -> write.
    # The lock is what makes this safe. The rename keeps the file from ever
