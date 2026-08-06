@@ -104,12 +104,15 @@ already on `main` — it does not merge PRs for you.
    this promotes changelog/version files, so a schema or manifest
    regression here is as real a blocker as any other failing check.
 
-7. **Commit.** `git commit -m "Promote changelog Unreleased to X.Y.Z for
-   release"` (this exact message has shipped both prior releases — keep it
-   traceable). Push directly to `main` — that's the established pattern for
-   this specific administrative commit (see `git log` on the prior two
-   releases; neither went through a PR), not an exception you're
-   introducing.
+7. **Commit and open a PR.** `git commit -m "Promote changelog Unreleased to
+   X.Y.Z for release"` (this exact message has shipped every prior
+   release — keep it traceable), push the branch, and open a PR against
+   `main`. `main` is a protected branch — direct pushes are rejected
+   (confirmed by attempting one; don't assume otherwise from a commit
+   message alone, since a squash-merged administrative PR leaves the same
+   message with no `(#NN)` suffix if the PR title matched the commit).
+   Get it reviewed and merged like any other change before continuing —
+   this is still subject to the standing PR-ownership rule in `CLAUDE.md`.
 
 8. **Tag and publish.** `git tag vX.Y.Z && git push origin vX.Y.Z`, then
    `gh release create vX.Y.Z --title "vX.Y.Z — <short theme>" --notes
