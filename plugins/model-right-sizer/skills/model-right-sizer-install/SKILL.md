@@ -264,9 +264,18 @@ scaling by forcing a full report on every micro-edit.
 
    - **`skillopt-sleep` not on PATH** → print `pip install skillopt` and the
      config below, and **install nothing**. Adding a Python package to the
-     user's machine is theirs to decide.
-   - **On PATH** → offer, and only on a yes, write
-     `~/.skillopt-sleep/config.json` from this plugin's
+     user's machine is theirs to decide. This skill does not pin a version —
+     no released version of SkillOpt has been verified against this
+     integration yet, and printing a specific pin would assert a
+     compatibility check that was never run. **Verify instead of pinning
+     blind:** after any install, run `skillopt-sleep --version`, echo the
+     result in your report, and confirm the config keys below are accepted
+     before relying on the nightly cycle. If the user wants a hard pin in
+     their own environment (a requirements file, a lockfile), that's on the
+     version they just verified — not a number this skill invents.
+   - **On PATH** → run `skillopt-sleep --version` first and report it (so a
+     drifted or unexpected version is visible, not silent), then offer, and
+     only on a yes, write `~/.skillopt-sleep/config.json` from this plugin's
      [`templates/skillopt-sleep.config.json`](../../templates/skillopt-sleep.config.json).
      The load-bearing key is `target_skill_path`, which must point at the
      learned skill seeded in step 3; `transcript_source: "claude"` lets it
@@ -279,9 +288,11 @@ scaling by forcing a full report on every micro-edit.
      nothing — so the user sees what it would do before anything is scheduled.
    - **Say the privacy part out loud, don't bury it.** Sleep reads local
      session transcripts and writes an `evidence.jsonl` under its staging tree.
-     `redact_secrets` defaults on; `"evidence_log": false` disables the log
-     entirely. A user should know their transcripts are being read *before*
-     they agree to a nightly job, not discover it later.
+     `redact_secrets` defaults on. The shipped template ships `"evidence_log":
+     false` — the log is **off by default**; turning it on is a separate,
+     explicit opt-in you offer only after saying plainly what it persists
+     (transcript-derived evidence, to disk, under Sleep's staging tree), never
+     something that gets enabled as a byproduct of saying yes to scheduling.
    - **Nothing is ever auto-adopted.** Sleep *stages* a proposal; applying it
      goes through `model-right-sizer-calibrate review`, with a human looking at
      the diff.

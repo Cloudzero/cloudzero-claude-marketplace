@@ -139,18 +139,54 @@ writer can land between the check and the write no matter how small the window.
 read → modify → write of `SKILL.md`, and release it even on failure.** Hold it
 for the write only — never across a long-running probe or an interactive review.
 
+A bare `mkdir` lock has no way to tell "another writer is active right now"
+from "a writer got SIGKILLed mid-write and left the directory behind" — both
+look identical to the next `acquire`, and the second case would otherwise
+block every writer on the machine until someone finds and runs the manual
+`rmdir`. So the lock directory carries a PID file, and a failed acquire checks
+liveness before giving up:
+
 ```bash
 LOCKDIR=~/.claude/skills/model-right-sizer-learned/.skill.lock
 acquire() {                       # mkdir is atomic on POSIX; flock is not portable to macOS
   for _ in $(seq 1 50); do
-    mkdir "$LOCKDIR" 2>/dev/null && { trap 'rmdir "$LOCKDIR" 2>/dev/null' EXIT INT TERM; return 0; }
+    if mkdir "$LOCKDIR" 2>/dev/null; then
+      echo $$ > "$LOCKDIR/pid"
+      return 0
+    fi
+    # Liveness check: a lock left by a killed writer has a dead PID. Reclaim
+    # it once rather than burning the whole retry budget on a lock nobody
+    # holds — this is what makes a SIGKILL self-healing instead of a manual
+    # incident.
+    if [ -f "$LOCKDIR/pid" ] && ! kill -0 "$(cat "$LOCKDIR/pid" 2>/dev/null)" 2>/dev/null; then
+      rm -rf "$LOCKDIR" && continue
+    fi
     sleep 0.1
   done
-  echo "could not acquire $LOCKDIR — another writer is active, or a stale lock remains" >&2
+  echo "could not acquire $LOCKDIR — another writer is active, or the lock is stale." >&2
+  echo "Recovery, once you've confirmed no writer actually holds it: rm -rf $LOCKDIR" >&2
   return 1
 }
-release() { rmdir "$LOCKDIR" 2>/dev/null; }
+release() { rm -rf "$LOCKDIR" 2>/dev/null; }
+
+# Register the release trap at the CALL SITE, never inside acquire() itself:
+# zsh — the macOS default shell, and therefore a likely runtime for this
+# exact snippet — runs a function-scoped EXIT trap the instant that FUNCTION
+# returns, not when the shell does. A trap set inside acquire() would then
+# release the lock the moment acquire() returns, before the write it was
+# meant to guard ever happens; bash does not share that behavior, which is
+# what makes it easy to miss on one machine and ship broken on another.
+acquire || exit 1
+trap 'release' EXIT INT TERM
 ```
+
+The liveness check only reclaims a lock whose owning PID is provably dead
+(`kill -0` fails); it never guesses based on age alone, because a slow but
+live writer and a dead one are not the same failure. **If liveness can't
+settle it** — the PID file is missing, or `kill -0` isn't meaningful in this
+environment — the loop still exhausts its retry budget and then prints the
+exact recovery command rather than hanging silently forever; a human still
+has to confirm no writer holds it before running it.
 
 A writer that cannot take the lock **aborts and reports**; it never proceeds
 unlocked. `ledger.jsonl` is a separate concern — it is append-only with
@@ -212,10 +248,19 @@ about the boundary: **schema validation is not content sanitization.** `lesson`
 and both model fields accept arbitrary strings, so a row naming a repo passes
 validation cleanly.
 
-So the automated half cannot finish this check. **Read every `lesson` field
-yourself.** This human/agent read is the *only* control on free-text leakage
-after the fact, which is why INTEGRITY is a check in its own right rather than
-a line item under "run the validator".
+Run [`scripts/content_gate.py`](../../scripts/content_gate.py) against every
+row's `lesson`, `recommended.model`, and `actual.model` as a mechanical
+pre-filter — the same deterministic floor `model-right-sizer-calibrate` runs
+before writing. It catches the mechanical shapes (a path, a ticket ref, a
+URL) with no discretion, so anything it flags is a leak, full stop.
+
+But a clean gate is not a clean row: it doesn't prove a string is
+repo-agnostic — a repo name spelled in plain prose with no slash, no ticket
+digits, and no URL in it sails straight through. **So the automated half still
+cannot finish this check. Read every `lesson` field yourself,** after the
+gate, not instead of it. This human/agent read is the *only* control on that
+remaining category of free-text leakage, which is why INTEGRITY is a check in
+its own right rather than a line item under "run the validator".
 
 Flag any row whose lesson names a repo, path, ticket, service, or person. A
 leaked row isn't just a disclosure problem — it is *wrong evidence* in every

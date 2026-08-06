@@ -211,6 +211,66 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   explicit that a dry run never appends to it (nothing ran, so there's nothing
   to measure).
 
+### Fixed
+- **Security review of the learning loop — two Medium findings, both closed
+  with a deterministic control instead of a stronger judgment call:**
+  - **`scripts/content_gate.py`** — a new, stdlib-only mechanical floor
+    beneath both machine-wide judgment calls: `model-right-sizer-calibrate`
+    `append`'s redaction check (free-text ledger fields — `lesson`,
+    `recommended.model`, `actual.model`) and `review`'s sanity-check (a
+    SkillOpt-Sleep-staged proposal, before it's a machine-wide prompt-injection
+    surface). Flags URLs, path-like strings, `.git`, ticket refs (`#1234`,
+    `CP-1234`), shell/tool-directive shapes, classic injection phrasing, and
+    imperative verbs outside the loop's own routing vocabulary — a hit is a
+    hard reject, no discretion. `model-right-sizer-verify`'s INTEGRITY check
+    now runs it as a pre-filter ahead of the human `lesson` read. Explicitly
+    documented as a floor, not a ceiling: a clean scan doesn't prove a string
+    is repo-agnostic, so the judgment call above it still owns everything the
+    mechanical shapes don't cover. Regression-tested against every learning
+    already shipped in `templates/learned-skill.seed.md` (zero false
+    positives) plus a battery of adversarial inputs (zero false negatives) in
+    `tests/test_content_gate.py`.
+  - `SECURITY.md` — added the machine-wide write targets this loop introduces
+    (`~/.claude/skills/model-right-sizer-learned/`, `~/.claude/CLAUDE.md`,
+    `~/.skillopt-sleep/config.json`) and named the learned skill's `SKILL.md`
+    as a security-sensitive artifact on the same footing as
+    `~/.claude/CLAUDE.md`, since it is read by every session on the machine
+    and partially machine-writable.
+  - **The shared writer lock had two independent bugs, both real, neither
+    flagged by the earlier review rounds:** the `mkdir`-based `.skill.lock`
+    had no way to tell a live writer from one a `SIGKILL` left behind — a
+    dead lock would wedge every future writer until a manual `rmdir` — so it
+    now carries a PID file and a liveness check (`kill -0`) that reclaims a
+    provably-dead lock and prints the exact recovery command on a genuine
+    contention timeout. Separately, discovered while implementing that fix:
+    the existing `acquire()` set its release `trap ... EXIT INT TERM`
+    *inside the function*, and on zsh (the macOS default shell) a
+    function-scoped `EXIT` trap fires the instant that function *returns* —
+    releasing the lock before the write it was meant to guard ever ran. Bash
+    doesn't share that behavior, which is exactly what let it ship. The trap
+    is now registered at the call site, after `acquire` returns, matching the
+    pattern the canary insert/cleanup block already used correctly.
+    Empirically verified on zsh 5.9 before and after.
+  - `templates/skillopt-sleep.config.json` — `evidence_log` now defaults to
+    `false`. Persisting transcript-derived evidence to disk is a separate
+    decision from turning Sleep on at all, and the shipped template
+    shouldn't make it silently; `model-right-sizer-install` now offers it as
+    an explicit opt-in with the same privacy framing `redact_secrets` already
+    got, and pins the new default with a test mirroring the existing
+    `redact_secrets` one.
+  - `model-right-sizer-install` step 6 no longer prints an unverified
+    `pip install skillopt` pin — no released version has been checked against
+    this integration — and instead runs and reports `skillopt-sleep --version`
+    after install, so a drifted version is visible rather than silently
+    trusted.
+  - `model-right-sizer-eval`'s isolation protocol now restricts the sandboxed
+    subagent's tools at the CLI boundary (`--allowedTools "Read,Glob,WebFetch"`,
+    matching the pattern `model-right-sizer-verify`'s read-only probe already
+    used) instead of only instructing it not to wander, and the transcript
+    audit step is now a runnable `grep` for out-of-sandbox paths and
+    answer-key field-name leakage rather than prose describing what to look
+    for.
+
 ### Changed
 - **Moved into CloudZero (the CloudZero plugin marketplace)** — this plugin now lives at
   `plugins/model-right-sizer/` in
