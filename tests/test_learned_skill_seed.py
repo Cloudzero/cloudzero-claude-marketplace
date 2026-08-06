@@ -33,6 +33,7 @@ SEED = PLUGIN_DIR / "templates" / "learned-skill.seed.md"
 SCHEMA = PLUGIN_DIR / "templates" / "ledger-entry.schema.json"
 SLEEP_CONFIG = PLUGIN_DIR / "templates" / "skillopt-sleep.config.json"
 EVAL_SET = PLUGIN_DIR / "eval" / "routing-tasks.jsonl"
+SECURITY_MD = REPO_ROOT / "SECURITY.md"
 
 # The directory the seed is installed into; frontmatter `name` must match it.
 INSTALLED_SKILL_NAME = "model-right-sizer-learned"
@@ -182,6 +183,17 @@ class TestSleepConfigTemplate:
             "the shipped template must not weaken secret redaction on transcripts"
         )
 
+    def test_evidence_log_defaults_off(self):
+        """Persisting transcript-derived evidence to disk is a separate
+        opt-in from turning Sleep on at all — the shipped template must not
+        make that decision for the user by defaulting it on."""
+        config = json.loads(SLEEP_CONFIG.read_text())
+        assert config.get("evidence_log") is False, (
+            "the shipped template must default evidence_log off; enabling it "
+            "is a decision the install skill offers explicitly, never a "
+            "byproduct of agreeing to scheduling"
+        )
+
 
 class TestSharedWriterLock:
     """SKILL.md has three independent writers — install refreshing protected
@@ -219,6 +231,44 @@ class TestSharedWriterLock:
         cal = (PLUGIN_DIR / "skills" / "model-right-sizer-calibrate" / "SKILL.md").read_text()
         assert "ledger needs no lock" in cal
 
+    def test_lock_has_a_liveness_check_and_a_documented_recovery_command(self):
+        """A bare mkdir lock can't tell 'another writer is active' from 'a
+        writer got SIGKILLed and left the directory behind' — the second
+        case would otherwise wedge every writer on the machine until someone
+        finds and runs a manual rmdir."""
+        verify = (PLUGIN_DIR / "skills" / "model-right-sizer-verify" / "SKILL.md").read_text()
+        assert "kill -0" in verify, (
+            "acquiring the lock must check whether the PID that holds it is "
+            "still alive, or a killed writer wedges every future writer"
+        )
+        assert "Recovery" in verify and "rm -rf $LOCKDIR" in verify, (
+            "a failed acquire must print the exact manual recovery command, "
+            "not just report failure"
+        )
+
+    def test_release_trap_is_registered_at_the_call_site_not_inside_acquire(self):
+        """zsh — the macOS default shell — runs a function-scoped EXIT trap
+        the instant that function returns, not when the shell exits. A trap
+        set inside acquire() would release the lock the moment acquire()
+        returns, before the write it's meant to guard ever happens; bash
+        does not share that behavior, which is exactly what makes this easy
+        to ship broken on one machine and never notice on another."""
+        verify = (PLUGIN_DIR / "skills" / "model-right-sizer-verify" / "SKILL.md").read_text()
+        writer_lock_section = verify[verify.index("The writer lock"):]
+        acquire_fn = writer_lock_section[
+            writer_lock_section.index("acquire() {"):writer_lock_section.index("release() {")
+        ]
+        assert "trap" not in acquire_fn, (
+            "acquire() must not set the release trap itself on zsh-compatible "
+            "shells; register it at the call site after acquire() returns"
+        )
+        assert "acquire || exit 1" in writer_lock_section
+        assert "trap 'release' EXIT INT TERM" in writer_lock_section
+        assert "zsh" in writer_lock_section.lower(), (
+            "the cross-shell reason must stay documented or someone "
+            "re-introduces the trap inside acquire() as a 'simplification'"
+        )
+
 
 class TestPrivacyBoundaryIsStatedHonestly:
     """`additionalProperties: false` rejects unknown KEYS; it does not sanitize
@@ -246,6 +296,26 @@ class TestPrivacyBoundaryIsStatedHonestly:
                 f"{name} must not let a passing schema validation read as proof "
                 f"a row is repo-agnostic"
             )
+
+    def test_calibrate_and_verify_run_the_deterministic_gate_before_judgment(self):
+        """The AI redaction/sanity-check calls are the layer a poisoned input
+        is designed to slip past. Both write paths, plus the after-the-fact
+        integrity read, must run the mechanical gate first."""
+        for name in ("model-right-sizer-calibrate", "model-right-sizer-verify"):
+            text = (PLUGIN_DIR / "skills" / name / "SKILL.md").read_text()
+            assert "content_gate.py" in text, (
+                f"{name} must invoke the deterministic content gate, not just "
+                f"describe a judgment call"
+            )
+
+    def test_calibrate_review_gates_the_proposal_before_adopting(self):
+        cal = (PLUGIN_DIR / "skills" / "model-right-sizer-calibrate" / "SKILL.md").read_text()
+        review = cal[cal.index("## Mode: `review`"):]
+        gate_idx = review.index("content_gate.py")
+        adopt_idx = review.index("skillopt-sleep adopt")
+        assert gate_idx < adopt_idx, (
+            "review must run the content gate before adopting, not after"
+        )
 
 
 class TestEvalSet:
@@ -394,9 +464,50 @@ class TestAuditHarness:
             "learnings and the protected regions with it — cleanup must refuse"
         )
 
+    def test_eval_sandbox_restricts_tools_at_the_cli_boundary(self):
+        """A prompt instruction not to wander is exactly the kind of
+        restriction a wandering read doesn't feel bound by — the runtime has
+        to refuse it, the same way the verify probe's allowlist already
+        does."""
+        skill = (PLUGIN_DIR / "skills" / "model-right-sizer-eval" / "SKILL.md").read_text()
+        assert "--allowedTools" in skill, (
+            "the eval sandbox must restrict tools at the CLI boundary, not "
+            "just describe the restriction in the task prompt"
+        )
+
+    def test_eval_audits_transcripts_with_a_mechanical_check(self):
+        """'Audit the transcripts' without a runnable check is a skim, and a
+        skim is how contamination survives to a reported score."""
+        skill = (PLUGIN_DIR / "skills" / "model-right-sizer-eval" / "SKILL.md").read_text()
+        assert "grep" in skill.lower()
+        assert "WANDERED" in skill and "LEAKED" in skill, (
+            "the contamination check must be a command that names the two "
+            "failure modes (wandered outside sandbox, leaked an answer-key "
+            "field name), not prose describing them"
+        )
+
     def test_probe_set_carries_no_answers(self):
         """The tasks ship; the expected answers must NOT — they live only in the
         rubric, keyed by boundary, so a leaked probe set alone gives nothing."""
         for row in self._probe_rows():
             leaked = set(row) & {"reference_text", "expected", "answer", "expect_tier"}
             assert not leaked, f"{row['id']}: probe set leaks answer fields {leaked}"
+
+
+class TestSecurityScopeCoversTheLearningLoop:
+    """SECURITY.md's scope notes are a promise about what this repo can touch
+    outside itself. A PR that adds a new machine-wide write target without
+    updating that promise is a doc-drift defect, not a nit."""
+
+    def test_security_md_names_the_machine_wide_write_targets(self):
+        text = SECURITY_MD.read_text()
+        assert "model-right-sizer-learned" in text
+        assert ".skillopt-sleep" in text or "skillopt-sleep" in text
+
+    def test_security_md_flags_the_learned_skill_as_sensitive(self):
+        """It is read by every session on the machine and partially
+        machine-writable — the same footing as ~/.claude/CLAUDE.md, and the
+        scope notes must say so explicitly rather than leave it implied."""
+        text = SECURITY_MD.read_text()
+        assert "security-sensitive" in text.lower()
+        assert "CLAUDE.md" in text

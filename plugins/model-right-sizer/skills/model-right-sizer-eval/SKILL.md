@@ -51,13 +51,48 @@ Design against all three or don't bother running it.
    `agents/model-right-sizer.md`, and — treatment arm only — the learned
    `SKILL.md` and `ledger.jsonl`. Point the agent at those absolute paths and
    forbid all other filesystem access. **Never let the agent read the repo.**
+
+   Enforce that at the CLI boundary, not just by instruction — a prompt that
+   says "don't wander" is exactly the kind of restriction a wandering read
+   doesn't feel bound by. Restrict the tool set the same way
+   `model-right-sizer-verify`'s read-only probe already does:
+
+   ```bash
+   cd "$SCRATCH"
+   claude -p --allowedTools "Read,Glob,WebFetch" <<'EOF'
+   ...task prompt...
+   EOF
+   ```
+
+   `Read,Glob` covers the sandboxed files; `WebFetch` covers step 5's live
+   pricing fetch and nothing else — no `Bash`, no broader `Grep`, no `Skill`.
+   If the agent's own pricing lookup needs a different tool, add exactly that
+   one and no more; every tool grant beyond what the task needs is filesystem
+   surface the runtime, not the prompt, has to refuse.
 4. **Answer key written before the first run**, at a path never named in any
    prompt. Pre-committing it is what stops the rubric drifting toward whatever
    the agent happened to produce.
 5. **Bar sub-agent dispatch** in both arms (have it WebFetch pricing itself), so
    the two arms differ in exactly one variable: the memory.
-6. **Audit the transcripts afterward** for filesystem wandering. A run that
-   explored beyond its sandbox is void, not a data point.
+6. **Audit the transcripts afterward** for filesystem wandering — mechanically,
+   not by skimming. A run that explored beyond its sandbox, or that surfaced
+   the rubric's own key names, is void, not a data point:
+
+   ```bash
+   # Any absolute path outside the scratch dir the transcript ever touched?
+   grep -oE '(/[[:alnum:]_.-]+){2,}' "$TRANSCRIPT" \
+     | grep -v "^$SCRATCH" && echo "WANDERED outside sandbox — void this run"
+
+   # Did the transcript ever surface the rubric's own field names? Their
+   # presence means the agent read the answer key, not just the tasks.
+   grep -Eq 'reference_text|expect_tier|expect_effort|expect_boundary' "$TRANSCRIPT" \
+     && echo "LEAKED an answer-key field name — void this run"
+   ```
+
+   Run both checks against every transcript from every arm, every round —
+   this is the automated half of contamination auditing, not a substitute for
+   reading the transcript, since a wandering read that never touched a path
+   pattern (e.g. an `ls` with no argument) wouldn't trip the first grep.
 
 ## Stage 0 — the wire test (run this before anything else)
 
