@@ -2,7 +2,7 @@
 
 All notable changes to `model-right-sizer.md` are documented here, most recent first. This project doesn't cut version tags — entries are dated. Loosely follows [Keep a Changelog](https://keepachangelog.com/) conventions (Added / Changed / Fixed).
 
-## Unreleased
+## 2026-08-06
 
 ### Added
 - `schemas/blueprint.schema.json` — a strict JSON Schema (draft 2020-12,

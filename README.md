@@ -225,7 +225,7 @@ The Model Right Sizer plugin includes one agent and two skills:
 #### The `model-right-sizer` Agent
 **Triggered by:** "Blueprint this task", "Which model should this run on?", "Give me a usage report"
 
-A read-only model-selection economist. Before work starts it produces a right-sizing blueprint — a task→model→effort→budget→confidence routing table biased toward the smallest Claude model that clears the bar. After work closes it produces a usage report comparing recommended vs. actual model spend.
+A read-only model-selection economist. Before work starts it produces a right-sizing blueprint — a schema-conformant JSON object (task→model→effort→budget→confidence per stage) biased toward the smallest Claude model that clears the bar. After work closes it produces a usage report comparing recommended vs. actual model spend.
 
 **Example:**
 ```
