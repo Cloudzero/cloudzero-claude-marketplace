@@ -5,6 +5,34 @@ All notable changes to CloudZero (the CloudZero plugin marketplace) and its plug
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Planned
+
+- Additional specialized skills for Reserved Instance analysis
+- Savings Plan optimization skill
+- Budget tracking and alerting integration
+- Cost allocation rule recommendations
+- Interactive cost report generation
+- Integration with additional CloudZero features
+
+---
+
+## [1.3.0] - 2026-08-06
+
+### Added
+
+**Release tooling**
+- Added `.claude/skills/release/SKILL.md` — a repo-local maintainer skill (not a distributed plugin skill) that packages this repo's release process: promote each touched plugin's own `Unreleased` changelog, synthesize a new root `CHANGELOG.md` version section, bump `.claude-plugin/marketplace.json`, validate, tag, publish a GitHub Release, and open the companion docs PR against `cloudzero-documentation`'s `v2.0` branch. This release was cut using it.
+
+### Changed
+
+**Model Right Sizer Plugin**
+- **Pass A (the right-sizing blueprint) is now a strict, schema-conformant JSON object** instead of prose/markdown tables — see [`plugins/model-right-sizer/schemas/blueprint.schema.json`](plugins/model-right-sizer/schemas/blueprint.schema.json) (+ worked example) and the new `scripts/validate_blueprint.py`, wired into CI and into the `model-right-sizer-dryrun` skill's own step 4 so there is one implementation of "conformant" instead of a schema plus a hand-maintained checklist. `model-right-sizer-install`'s mandate now runs `model-right-sizer-dryrun` directly for the "before" pass and hands the resulting JSON blueprint to the orchestrator. Pass B (the usage report) is unchanged.
+- `model-right-sizer-install` now detects whether the target repo has `CLAUDE.md`, `AGENTS.md`, or both, and stamps the mandate into whichever exist (creating `CLAUDE.md` only when neither is present) — previously it always targeted `CLAUDE.md`.
+
+---
+
 ## [1.1.0] - 2026-04-10
 
 ### Added
@@ -163,19 +191,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
-
-### Planned
-
-- Additional specialized skills for Reserved Instance analysis
-- Savings Plan optimization skill
-- Budget tracking and alerting integration
-- Cost allocation rule recommendations
-- Interactive cost report generation
-- Integration with additional CloudZero features
-
----
-
 ## [1.2.0] - 2026-07-29
 
 ### Added
@@ -241,7 +256,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.0.0...v1.2.0
 [1.0.1]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/cloudzero/cloudzero-claude-marketplace/releases/tag/v1.0.0
