@@ -4,7 +4,65 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 
 ## Unreleased
 
+### Added
+- `schemas/blueprint.schema.json` — a strict JSON Schema (draft 2020-12,
+  `additionalProperties: false` throughout) for Pass A, the right-sizing
+  blueprint. Requires every `blueprint_rows[]` entry to carry all
+  **three signals** (effectiveness, efficiency, difficulty), each as a
+  `{score, reason}` pair — a row can no longer omit a pillar or give a bare
+  number with no reason. Also defines `work_routing_map[]` (the build-unit
+  translation of the blueprint), `message_schemas[]` (deduplicated handoff
+  shapes referenced by id), `price_sheet`, and `uncertainty_ledger`
+  (including calibration-history adjustments). `budget.token_ceiling` is
+  `required` and always an actual integer (`0` for a row that spends no
+  model tokens at all, e.g. one routed via `deterministic_query_layer`) —
+  an empty or all-null `budget` object cannot satisfy the schema. Shipped
+  alongside `schemas/blueprint.example.json`, a worked instance that
+  validates against it — added because an LLM conforms to a shown example
+  more reliably than to a formal schema alone.
+- `scripts/validate_blueprint.py` (wired into CI, plus
+  `tests/test_validate_blueprint.py`) — validates a blueprint instance
+  against `schemas/blueprint.schema.json` in full (every `required` key at
+  every nesting level, not a hand-picked subset) and checks the one thing a
+  JSON Schema can't express: that every `handoff_schema_ref` resolves to a
+  real `message_schemas[].id`. CI runs it against the checked-in worked
+  example; `model-right-sizer-dryrun` step 4 runs the same script against
+  the agent's own output, so there is one implementation of "conformant"
+  instead of a schema plus a separately-maintained prose checklist.
+
 ### Changed
+- **Pass A now emits a single schema-conformant JSON object instead of
+  prose/markdown tables.** `agents/model-right-sizer.md`'s "Pass A" section
+  now points at `schemas/blueprint.schema.json` (+ the worked example) as
+  the output contract; the former "blueprint table" and "work-routing map"
+  deliverables are now named as the JSON's `blueprint_rows[]` and
+  `work_routing_map[]` fields respectively, populated as data, never
+  re-rendered as a table. Added a matching "bounce from" condition and two
+  vocabulary terms. Pass B (the closing usage report) is unchanged — it
+  stays a lean markdown table printed to chat.
+- `model-right-sizer-dryrun` now packages that same JSON contract as its
+  own deliverable: step 3 points at the schema/example files instead of
+  re-describing the shape in a second, hand-written prose list, and step 4
+  now pipes the agent's raw JSON response through `validate_blueprint.py`
+  rather than a hand-picked checklist of fields to eyeball — the checklist
+  approach was tried first and missed that a payload could omit
+  `pick.what_flips_it` and still pass, since a prose list of "the fields
+  that matter" drifts out of sync with the schema it's paraphrasing. The
+  script enforces the schema's full nested contract plus the
+  `handoff_schema_ref` referential check a JSON Schema can't express —
+  asking the agent to re-emit once, quoting the validator's exact error, if
+  it doesn't validate clean, before printing the JSON verbatim as "what an
+  orchestrator should parse to route dispatch."
+- `model-right-sizer-install`'s standing mandate block now runs
+  `model-right-sizer-dryrun` directly for the "before" pass — rather than
+  generically "consulting the agent for a blueprint" — and hands the
+  resulting JSON blueprint to the orchestrating session/agent to route
+  sub-agent/model dispatch by its `blueprint_rows` / `work_routing_map`
+  picks. The "after" pass is unchanged: it still consults `model-right-sizer`
+  directly for Pass B, never through the dry-run skill, since a dry run has
+  no "actual" to reconcile against. Step 2's discoverability check now also
+  verifies `model-right-sizer-dryrun` resolves (not just the agent file),
+  since the mandate depends on both.
 - **Moved into CloudZero (the CloudZero plugin marketplace)** — this plugin now lives at
   `plugins/model-right-sizer/` in
   [cloudzero/cloudzero-claude-marketplace](https://github.com/cloudzero/cloudzero-claude-marketplace),
