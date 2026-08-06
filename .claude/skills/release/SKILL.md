@@ -114,10 +114,16 @@ already on `main` — it does not merge PRs for you.
    Get it reviewed and merged like any other change before continuing —
    this is still subject to the standing PR-ownership rule in `CLAUDE.md`.
 
-8. **Tag and publish.** `git tag vX.Y.Z && git push origin vX.Y.Z`, then
-   `gh release create vX.Y.Z --title "vX.Y.Z — <short theme>" --notes
-   "<summary + link to CHANGELOG section>"` (mirror the title style of the
-   existing `v1.2.0 — Model Right Sizer plugin` release).
+8. **Tag and publish — from `main` after the merge, never from the release
+   branch.** Once step 7's PR is merged, `git fetch origin main && git tag
+   vX.Y.Z origin/main && git push origin vX.Y.Z`. Tagging the release
+   branch's own local HEAD instead is a bug: a squash or merge commit gives
+   `main` a *different* SHA than your branch tip, so the tag would point at
+   a commit that was never actually merged, and every future
+   `vPREV...vX.Y.Z` comparison link would be wrong. Then `gh release create
+   vX.Y.Z --title "vX.Y.Z — <short theme>" --notes "<summary + link to
+   CHANGELOG section>"` (mirror the title style of the existing `v1.2.0 —
+   Model Right Sizer plugin` release).
 
 9. **Open the docs PR.** Customer docs for CloudZero's AI Hub live in
    `Cloudzero/cloudzero-documentation`, default branch `v2.0` — branch from
