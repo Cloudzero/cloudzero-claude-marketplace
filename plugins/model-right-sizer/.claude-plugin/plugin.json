@@ -1,8 +1,8 @@
 {
   "name": "model-right-sizer",
   "displayName": "model-right-sizer",
-  "description": "Model-selection economist agent for Claude Code: decides which Claude model (and effort/token budget) each task in a flow should run on by weighing effectiveness need against efficiency pressure and difficulty, bookended around a build as a right-sizing blueprint and a closing usage report. Ships with companion skills to install the standing before/after mandate in a target repo and to preview the routing map for an intent without building anything.",
-  "version": "0.1.0",
+  "description": "Model-selection economist agent for Claude Code: decides which Claude model (and effort/token budget) each task in a flow should run on by weighing effectiveness need against efficiency pressure and difficulty, bookended around a build as a right-sizing blueprint and a closing usage report. Ships with companion skills to install the standing before/after mandate in a target repo, to preview the routing map for an intent without building anything, and to run a machine-wide calibration ledger that gives the agent a memory across sessions and repos — optionally distilled nightly by SkillOpt-Sleep behind a held-out validation gate.",
+  "version": "0.2.0",
   "author": {
     "name": "CloudZero, Inc.",
     "url": "https://www.cloudzero.com"
@@ -15,6 +15,8 @@
     "cost-optimization",
     "agent-routing",
     "llm-cost",
+    "agent-memory",
+    "self-improving",
     "claude-code-plugin"
   ]
 }

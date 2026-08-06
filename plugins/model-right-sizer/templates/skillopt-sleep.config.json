@@ -1,0 +1,9 @@
+{
+  "transcript_source": "claude",
+  "target_skill_path": "~/.claude/skills/model-right-sizer-learned/SKILL.md",
+  "redact_secrets": true,
+  "evidence_log": false,
+  "dream_rollouts": 1,
+  "recall_k": 0,
+  "dream_factor": 0
+}

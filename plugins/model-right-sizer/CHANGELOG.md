@@ -4,6 +4,285 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 
 ## Unreleased
 
+### Added
+- **A machine-wide learning loop — the agent now has a memory across sessions
+  and repos.** Pass A step 8 has always said "close the loop, if a calibration
+  history exists," but nothing created that history: every spawn reasoned from
+  first principles, and the README listed "no memory across spawns" as a
+  limitation. The loop that fills it:
+  - **`model-right-sizer-learned`** — an additive skill seeded into the
+    user-level skill directory (`~/.claude/skills/model-right-sizer-learned/`),
+    so *every* session in *every* repo discovers it. Carries distilled
+    learnings between two protected regions
+    (`<!-- SLOW_UPDATE_START/END -->`, `<!-- APPENDIX_START/END -->`) that hold
+    the contract and execution reminders, alongside an append-only
+    `ledger.jsonl` of measured evidence. Shipped as
+    `templates/learned-skill.seed.md` — deliberately *outside* `skills/`, since
+    a seed under `skills/` would be discovered as a second, never-learning copy
+    of the installed skill.
+  - **`skills/model-right-sizer-calibrate/`** — the write half the read-only
+    agent can't provide. `append` turns a Pass B usage report into
+    schema-valid rows; `summary` aggregates the ledger by task shape (what Pass
+    A reads on day one, before any distillation has run); `review` diffs a
+    staged SkillOpt proposal and adopts it only on an explicit yes.
+  - **`templates/ledger-entry.schema.json`** — the authoritative row schema,
+    and the mechanism that makes machine-wide storage *safe*. A row records a
+    task **shape**, never task content: `additionalProperties: false` at every
+    level, a closed `stage_kind` vocabulary, and a 240-char cap on the single
+    free-text field. The schema constrains shape, **not content** — `lesson` and
+    the model fields take arbitrary strings, so free-text leakage is caught by
+    the calibrate skill's redaction check and the verify skill's INTEGRITY read
+    rather than by validation, and the docs say so rather than implying a
+    validator is a sanitizer. Repo-agnosticism here isn't a nicety — it's the
+    precondition for storing the evidence centrally at all, which in turn is
+    what lets cost-of-error reach a sample size that means anything.
+  - **`eval/routing-tasks.jsonl`** — 16 synthetic, repo-agnostic routing
+    decisions covering the rubric's real boundaries (agentic down-pin, the
+    deterministic-query-layer fork, the over-thinking tax, cost-of-error
+    size-up, caching/batch economics, handoff seams, no-false-certainty), as
+    the held-out gate a distilled learning must clear.
+  - **Optional [SkillOpt-Sleep](https://github.com/microsoft/skillopt)
+    integration** (`templates/skillopt-sleep.config.json`) to distill the
+    ledger nightly behind that gate. Deliberately optional — the plugin's
+    "Prerequisites: None" still holds, because the ledger, the summary, and the
+    agent reading both work with nothing installed. Sleep stages proposals; it
+    never auto-adopts, and the install skill surfaces the transcript-harvesting
+    privacy note before anyone agrees to a nightly job.
+  - **`skills/model-right-sizer-eval/`** — the audit harness that answers
+    "does the loop actually work," built to be able to return *no*. Three
+    rounds × two arms over **disjoint** task sets, so a gain is transfer rather
+    than recall; a **no-memory control arm every round**, so set difficulty
+    can't masquerade as improvement; and **sandbox isolation** keeping the agent
+    out of this repo, whose own `eval/routing-tasks.jsonl` spells the answers
+    out in its `reference_text`. Plus `eval/boundary-rubric.json` (the eight
+    boundaries and their 3-point scoring) and `eval/probe-set-A.jsonl` (the
+    first set, kept as a worked example and marked **burned** — publishing it
+    contaminated it).
+  - **`skills/model-right-sizer-verify/`** — proves the install is real rather
+    than merely reported. Three claims sit between "files written" and
+    "working", and each fails **silently**: *universal* (written where the
+    runtime doesn't scan — sessions just never mention it), *preserved* (the one
+    unregenerable artifact overwritten by a template), *repo-agnostic* (a row
+    carrying a repo name is not an error, just wrong evidence everywhere else).
+    DISCOVERY probes a session in a throwaway repo with no `CLAUDE.md` and no
+    plugin, using a canary token so it proves the *content* arrived and not just
+    the skill name; PRESERVATION plants a sentinel in the trainable body and
+    re-installs twice; INTEGRITY validates every row and reads the `lesson`
+    prose, the one place a name can hide inside a schema-valid row.
+
+    **Result 2026-08-05, all three passed.** The discovery probe from a freshly
+    `git init`-ed unrelated repo returned `DISCOVERED: yes`, sourced to
+    `~/.claude/skills/model-right-sizer-learned/`, with the exact canary and a
+    correct ledger row count (proving the sibling `ledger.jsonl` is reachable,
+    not just `SKILL.md`). Corroborated live: the skill surfaced in a *separate,
+    already-running* session's skill list moments after installation, so
+    cross-session propagation was observed rather than inferred. The test
+    install was removed afterward.
+
+    Two findings are written into the skill so they don't cost time twice:
+    **`CLAUDE_CONFIG_DIR` cannot sandbox this test** — relocating the config
+    also relocates auth away from the OS keychain, and the probe dies with
+    `Not logged in` before revealing anything about discovery, so it must run
+    against the real config directory with confirmation and cleanup — and
+    **canary content must never be left behind**, since a fabricated learning
+    in a real learned skill is indistinguishable from a measured one and will be
+    cited with the authority of evidence.
+  - Review hardening on the loop's two write paths, both resolved by removing
+    the failure rather than adding a repair for it:
+    - **Ledger ids carry a per-writer nonce** (`cal-0008-k3x9`), so two sessions
+      allocating at the same instant cannot collide **without coordinating at
+      all**. The renumber-on-collision path was deleted rather than fixed: in an
+      append-only JSONL two rows sharing an id are indistinguishable, so a
+      writer cannot prove which line is its own, and "rewrite my row" can just
+      as easily rewrite the other session's or move both into a fresh collision.
+      A lock is now a tidiness nicety on top of the nonce, never the control —
+      correctness must not depend on a lock a runtime may not offer. Duplicate
+      ids (legacy rows or hand-edits) are **reported, never repaired**.
+    - **A shared writer lock across every writer of the learned `SKILL.md`.**
+      The file has three independent writers — `install` refreshing the
+      protected regions, `calibrate review` adopting a staged learning, and
+      `verify` handling a canary — and none of them coordinated, so an adoption
+      and a refresh landing together already lost one side's work regardless of
+      any probe. A compare-and-swap can't fix that: check-then-act is not
+      atomic, so a writer can always land between the check and the write. All
+      three now take `.skill.lock` (atomic `mkdir`, portable where `flock`
+      isn't) for the read → modify → write, abort rather than write unlocked,
+      and release on failure — held for the write only, never across a probe or
+      an interactive review. `ledger.jsonl` is explicitly exempt: append-only
+      with nonce-bearing ids needs no lock, and saying so stops someone
+      serializing every append.
+    - **The discovery probe writes nothing by default.** Five review rounds on
+      this check all traced to one root cause: the probe was doing
+      read-modify-write against a file *other sessions write*. Lost updates,
+      torn writes, snapshot rollbacks, orphan delimiters — each fix exposed the
+      next layer, because shared mutable state cannot be made safe by writing
+      more carefully. The fix is to stop writing: the probe now proves content
+      reached the model using facts only the local install holds (ledger row
+      count, latest row id) — unavailable to a model reciting the published
+      template, and requiring no mutation. A canary survives only for a
+      **pristine** install, where by definition no accumulated calibration can
+      be lost, and even there it is compare-and-swap guarded against a
+      concurrent write.
+    - **Canary cleanup is a surgical delete of the delimited block, registered
+      as a shell `trap ... EXIT INT TERM` before the canary is written.** Never
+      a whole-file snapshot restore: the learned skill is machine-wide, so a
+      restore would silently discard a staged learning another session adopted
+      while the probe was in flight, leaving its author believing their approved
+      calibration was live. Since no trap survives a `SIGKILL`, a survivor is
+      designed to be inert — delimited, tagged `provenance: canary (NOT
+      evidence)`, neutralized by a rule in the learned skill's **protected**
+      appendix where training can't drop it, and swept by every entry point to
+      the loop rather than only by re-running the verification. The insert is
+      **atomic** (write alongside, then `mv` — `rename(2)` can't leave a torn
+      half with an orphan `BEGIN`), and cleanup **refuses to range-delete unless
+      both delimiters are present**, because `sed '/BEGIN/,/END/d'` over an
+      orphan `BEGIN` cuts to end-of-file and would take the accumulated
+      learnings and both protected regions with it. Verified empirically: the
+      paired case round-trips byte-identical, the orphan case is refused with
+      the file untouched, and the unguarded form destroys 44 of 93 lines.
+  - **A Stage 0 "wire test" in that harness** — whether memory improves accuracy
+    is unanswerable until you know it is read at all. Plants a sentinel learning
+    that contradicts first principles, carries a per-run nonsense codename, and
+    ships with matching ledger rows; runs the agent blind alongside a no-memory
+    control; and runs **twice** — once with rows that support the sentinel's
+    claim, once with rows that contradict it. Four pass criteria: read · scoped ·
+    responsive · **resistant**. The last is the one that matters most: an agent
+    that obeys any text in its memory file is suggestible rather than
+    calibrated, and one bad distillation would poison every later pick.
+
+    **Result 2026-08-05, all four passed.** Control picked Haiku 4.5 @ `none`
+    (conf 0.68). The malformed sentinel was **rejected** — the agent noticed its
+    rows recorded the *top* tier reworking, so a claim about the cheapest tier
+    rested on a model with zero measured runs in its own evidence, and it
+    flagged the synthetic numeric signature besides. The valid sentinel was
+    **followed**: pick moved to Sonnet 5 @ `low` (conf 0.62), with the agent
+    volunteering the counterfactual ("without the ledger I would have picked
+    Haiku 4.5 @ none, ~$32, confidence ~0.75") that the control run
+    independently confirms. Rows were cited individually — two of seven
+    discounted as possibly mitigated by the task's conditions, which is why
+    confidence landed at 0.62 rather than higher. A second task with no matching
+    `stage_kind` was reported unmatched with its pick untouched, in every arm.
+
+    Same agent, same task, same sentinel id; the only variable was whether the
+    rows supported their claim. The loop is **live and discriminating** — it
+    responds to evidence quality, not to the presence of text in a file. It does
+    **not** yet show that accumulation over rounds raises accuracy.
+  - **A `saturation_gate` in that harness, added because its own first run
+    failed it.** Run 2026-08-05, Set A, both arms on Opus: control **24/24**,
+    treatment **24/24**. Rounds 2 and 3 were not run — continuing would have
+    cost ~200k tokens to confirm a ceiling already reached, and any reported
+    trend would have been noise. The result does not show the loop works; it
+    shows the eval couldn't tell, because every boundary tested is one the agent
+    file teaches explicitly. The rule it produced is now the harness's spine:
+    *a calibration ledger can only pay for itself on questions first principles
+    cannot settle* — so discriminating sets test environment-specific
+    economics, genuinely contested calls, local threshold calibration, and
+    anti-learning (a stale learning must lose to a fresh price sheet).
+  - **`tests/test_learned_skill_seed.py`** — the loop's artifacts live outside
+    `plugins/*/skills/*/SKILL.md`, so no existing validator sees them. Pins the
+    seed's frontmatter `name` to its install directory (a drift there silently
+    breaks every cross-reference), checks the protected regions are present,
+    balanced, and bracketing the trainable section, and asserts the schema
+    stays closed. Also covers the audit harness: the rubric keeps all three
+    scoring criteria and its saturation gate, a probe set exercises every scored
+    boundary exactly once, and a shipped probe set stays marked burned and
+    carries **no** answer fields — so a leaked set alone gives an agent nothing.
+
+### Changed
+- `agents/model-right-sizer.md` — Pass A step 8 now names the discovery
+  convention (the learned skill + ledger, and the task-shape contract) instead
+  of an abstract "if a ledger exists"; Pass B emits calibration rows for the
+  session to persist, with an explicit "omit what you didn't measure, never
+  estimate into the ledger" rule — an invented token count is indistinguishable
+  from a measurement afterward and poisons every future pick that reads it. The
+  agent stays **read-only**: it emits rows, it never writes them. The
+  "Extending this agent" section now draws the line between the two overlay
+  kinds: rubric reasoned from first principles stays in the agent file,
+  anything true only *because of past runs* belongs in the learned skill.
+- `model-right-sizer-install` (0.1.0 → 0.2.0) — seeds the learned skill (never
+  clobbering accumulated learnings on re-run; only the protected regions
+  refresh), stamps a `model-right-sizer-learning-loop` block into the
+  user-level `CLAUDE.md`, extends the repo mandate to honor the loop, and
+  offers to wire SkillOpt-Sleep. Every write outside the target repo requires
+  explicit confirmation first — the same bar the skill already applied to
+  plugin installs — and the closing report says per artifact what was created,
+  refreshed, skipped, or declined, including what a declined write costs.
+- `model-right-sizer-dryrun` — reads the ledger as part of Pass A, and is
+  explicit that a dry run never appends to it (nothing ran, so there's nothing
+  to measure).
+
+### Fixed
+- **Security review of the learning loop — two Medium findings, both closed
+  with a deterministic control instead of a stronger judgment call:**
+  - **`scripts/content_gate.py`** — a new, stdlib-only mechanical floor
+    beneath both machine-wide judgment calls: `model-right-sizer-calibrate`
+    `append`'s redaction check (free-text ledger fields — `lesson`,
+    `recommended.model`, `actual.model`) and `review`'s sanity-check (a
+    SkillOpt-Sleep-staged proposal, before it's a machine-wide prompt-injection
+    surface). Flags URLs, path-like strings, `.git`, ticket refs (`#1234`,
+    `CP-1234`), shell/tool-directive shapes, classic injection phrasing, and
+    imperative verbs outside the loop's own routing vocabulary — a hit is a
+    hard reject, no discretion. `model-right-sizer-verify`'s INTEGRITY check
+    now runs it as a pre-filter ahead of the human `lesson` read. Explicitly
+    documented as a floor, not a ceiling: a clean scan doesn't prove a string
+    is repo-agnostic, so the judgment call above it still owns everything the
+    mechanical shapes don't cover. Regression-tested against every learning
+    already shipped in `templates/learned-skill.seed.md` (zero false
+    positives) plus a battery of adversarial inputs (zero false negatives) in
+    `tests/test_content_gate.py`.
+  - `SECURITY.md` — added the machine-wide write targets this loop introduces
+    (`~/.claude/skills/model-right-sizer-learned/`, `~/.claude/CLAUDE.md`,
+    `~/.skillopt-sleep/config.json`) and named the learned skill's `SKILL.md`
+    as a security-sensitive artifact on the same footing as
+    `~/.claude/CLAUDE.md`, since it is read by every session on the machine
+    and partially machine-writable.
+  - **The shared writer lock had two independent bugs, both real, neither
+    flagged by the earlier review rounds:** the `mkdir`-based `.skill.lock`
+    had no way to tell a live writer from one a `SIGKILL` left behind — a
+    dead lock would wedge every future writer until a manual `rmdir` — so it
+    now carries a PID file and a liveness check (`kill -0`) that reclaims a
+    provably-dead lock and prints the exact recovery command on a genuine
+    contention timeout. Separately, discovered while implementing that fix:
+    the existing `acquire()` set its release `trap ... EXIT INT TERM`
+    *inside the function*, and on zsh (the macOS default shell) a
+    function-scoped `EXIT` trap fires the instant that function *returns* —
+    releasing the lock before the write it was meant to guard ever ran. Bash
+    doesn't share that behavior, which is exactly what let it ship. The trap
+    is now registered at the call site, after `acquire` returns, matching the
+    pattern the canary insert/cleanup block already used correctly.
+    Empirically verified on zsh 5.9 before and after.
+  - `templates/skillopt-sleep.config.json` — `evidence_log` now defaults to
+    `false`. Persisting transcript-derived evidence to disk is a separate
+    decision from turning Sleep on at all, and the shipped template
+    shouldn't make it silently; `model-right-sizer-install` now offers it as
+    an explicit opt-in with the same privacy framing `redact_secrets` already
+    got, and pins the new default with a test mirroring the existing
+    `redact_secrets` one.
+  - `model-right-sizer-install` step 6 no longer prints an unverified
+    `pip install skillopt` pin — no released version has been checked against
+    this integration — and instead runs and reports `skillopt-sleep --version`
+    after install, so a drifted version is visible rather than silently
+    trusted.
+  - `model-right-sizer-eval`'s isolation protocol now restricts the sandboxed
+    subagent's tools at the CLI boundary (`--allowedTools "Read,Glob,WebFetch"`,
+    matching the pattern `model-right-sizer-verify`'s read-only probe already
+    used) instead of only instructing it not to wander, and the transcript
+    audit step is now a runnable `grep` for out-of-sandbox paths and
+    answer-key field-name leakage rather than prose describing what to look
+    for.
+- **Greptile follow-up on the same push: the canary cleanup trap could
+  release a lock it didn't own.** `trap 'acquire && cleanup; release' EXIT
+  INT TERM` runs `release` unconditionally after the `;` — if the trap's own
+  `acquire` fails because another writer genuinely holds `.skill.lock` right
+  now, cleanup is correctly skipped but `release` still fires next, deleting
+  that live holder's lock and reopening the exact lost-update race the lock
+  exists to prevent. Fixed to `acquire && { cleanup; release; }`, so release
+  is gated behind the same successful acquire as cleanup rather than a
+  separate, unconditional statement. Reproduced the bug and verified the fix
+  empirically (a genuine holder's lock now survives a contending writer's
+  failed acquire-and-exit, and the trap still self-cleans on its own
+  successful path) before adding `test_canary_cleanup_trap_never_releases_an_unowned_lock`.
+
 ### Changed
 - **Moved into CloudZero (the CloudZero plugin marketplace)** — this plugin now lives at
   `plugins/model-right-sizer/` in
