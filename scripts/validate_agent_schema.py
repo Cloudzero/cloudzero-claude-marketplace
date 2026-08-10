@@ -112,20 +112,69 @@ FAMILY_REQUIRED_FIELDS = {
     "candidate-set": {"frame", "candidates"},
 }
 
-# Nested-member invariants agent-schema-families.md states explicitly and
-# unconditionally for specific array-shaped fields within a family -- not
-# every plausible nested shape, only the ones the catalogue itself calls a
-# hard violation (scored-review: "A findings[] entry with no fix is a schema
-# violation"; action-log: "never a removed entry without proof", "never an
-# actions_taken entry without result"). out_fields[].type is free text (an
-# agent-authored shape description, e.g. "[{id, dimension, ..., fix}]"), not
-# structured JSON, so this is checked the same way stamp_markdown restatement
-# is: a whole-word/whole-phrase mention inside that field's own `type` (and
-# `description`, if present) text -- not a fully generic nested-schema
-# validator, which out_fields[].type's free-text shape doesn't support.
+# Nested-member requirements, one entry per array/object-shaped out_field
+# per family, transcribed directly from that family's shape block in
+# agent-schema-families.md -- e.g. scored-review's `findings: [{id,
+# dimension, severity, location, claim, fix}]` becomes the six-name set
+# below. This is deliberately the family's FULL documented nested shape, not
+# just the one member the catalogue calls out with "is a schema violation"
+# language (scored-review's `fix`, action-log's `proof`/`result`) -- an
+# earlier version of this table covered only those three named invariants,
+# and a Greptile review correctly pointed out that a prescription could keep
+# the one checked member while dropping every other documented one (e.g. a
+# `findings[]` entry with `fix` but no `location` or `claim`). Each
+# family's nested shape is finite and already fully written out in the
+# catalogue, so this is a closed, exhaustive transcription, not an
+# open-ended validator -- there's nothing further to chase once every
+# family's shape block here matches its catalogue entry.
+#
+# `sections_written` (drafted-unit) and `built`/`assumptions` (build-report)
+# are lists of plain strings in the catalogue, not objects, so they carry no
+# entry here. Optional nested members the catalogue itself marks with `?`
+# (watch-report's `observed.value?`) are excluded, same discipline as
+# FAMILY_REQUIRED_FIELDS's own optional exclusions.
+#
+# out_fields[].type is free text (an agent-authored shape description, e.g.
+# "[{id, dimension, ..., fix}]"), not structured JSON, so this is checked
+# the same way stamp_markdown restatement is: a whole-word/whole-phrase
+# mention inside that field's own `type` (and `description`, if present)
+# text -- not a fully generic nested-JSON-schema validator, which
+# out_fields[].type's free-text shape doesn't support.
 FAMILY_NESTED_REQUIRED = {
-    "scored-review": {"findings": {"fix"}},
-    "action-log": {"removed": {"proof"}, "actions_taken": {"result"}},
+    "scored-review": {
+        "scorecard": {"dimension", "score", "ten_looks_like"},
+        "findings": {"id", "dimension", "severity", "location", "claim", "fix"},
+        "leave_alone": {"location", "reason"},
+    },
+    "verdict-set": {
+        "rows": {"subject", "verdict", "reason", "evidence_ref"},
+        "unresolved": {"subject", "why_unverifiable"},
+    },
+    "graded-claim": {
+        "evidence": {"source_ref", "quote", "stance"},
+    },
+    "build-report": {
+        "files_changed": {"path", "kind", "summary"},
+        "deferred": {"item", "why"},
+        "verification": {"command", "result"},
+    },
+    "drafted-unit": {
+        "deferred": {"item", "why"},
+    },
+    "data-payload": {
+        "provenance": {"source", "as_of"},
+    },
+    "watch-report": {
+        "observed": {"last_seen"},
+    },
+    "action-log": {
+        "actions_taken": {"action", "subject", "result", "reversible"},
+        "deferred": {"action", "subject", "why"},
+        "removed": {"subject", "proof"},
+    },
+    "candidate-set": {
+        "candidates": {"text", "rationale"},
+    },
 }
 
 # Families agent-schema-families.md documents as structurally carrying no

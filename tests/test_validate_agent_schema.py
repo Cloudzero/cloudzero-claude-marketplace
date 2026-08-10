@@ -203,6 +203,26 @@ def test_findings_entry_missing_fix_is_rejected():
     assert any("findings" in e and "fix" in e for e in errors)
 
 
+def test_findings_entry_missing_other_documented_members_is_still_rejected():
+    """Greptile issue 1 (round 4): the round-3 fix checked only the ONE
+    member the catalogue calls out with 'is a schema violation' language
+    (`fix`), so a findings[] entry could keep `fix` and drop every other
+    documented member (`id`, `dimension`, `severity`, `location`, `claim`)
+    and still pass. FAMILY_NESTED_REQUIRED now transcribes each family's
+    FULL nested shape, not just its one flagged member."""
+    instance = copy.deepcopy(EXAMPLE)
+    for f in instance["out_fields"]:
+        if f["name"] == "findings":
+            f["description"] = "[{fix}]"  # keeps `fix`, drops id/dimension/severity/location/claim
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    findings_errors = " | ".join(e for e in errors if "findings" in e)
+    assert findings_errors
+    for name in ("id", "dimension", "severity", "location", "claim"):
+        assert name in findings_errors
+
+
 def test_removed_entry_missing_proof_is_rejected():
     """Same class as above, for action-log: 'never a removed entry without proof'."""
     instance = copy.deepcopy(EXAMPLE)
