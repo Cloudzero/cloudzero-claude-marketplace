@@ -271,6 +271,26 @@ def test_data_payload_query_missing_params_is_rejected():
     assert any("query" in e and "params" in e for e in errors)
 
 
+def test_nested_member_present_in_field_but_missing_from_stamp_is_rejected():
+    """Greptile issue (round 6): a nested member can be fully present in the
+    out_field's own type/description (satisfying the round-4/5 checks) while
+    the STAMP -- the actual prose contract a controller reads -- drops it on
+    restatement. Checking only the field's own text, never the stamp itself,
+    missed exactly this."""
+    instance = copy.deepcopy(EXAMPLE)
+    # findings' description carries `fix` (checked above), but the stamp's
+    # own restatement of the findings shape never mentions it.
+    instance["stamp_markdown"] = instance["stamp_markdown"].replace(
+        'findings: [{id, dimension, severity: enum[P1, P2, hygiene], location: "service:line", claim: string, fix: string}]',
+        'findings: [{id, dimension, severity: enum[P1, P2, hygiene], location: "service:line", claim: string}]',
+    )
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("findings" in e and "fix" in e and "does not restate" in e for e in errors)
+
+
 def test_removed_entry_missing_proof_is_rejected():
     """Same class as above, for action-log: 'never a removed entry without proof'."""
     instance = copy.deepcopy(EXAMPLE)

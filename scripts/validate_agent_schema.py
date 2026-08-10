@@ -327,6 +327,18 @@ def validate(schema: dict, instance: dict) -> list[str]:
                         f"hard violation if missing), but its type/description text doesn't mention it: "
                         f"{shape_text!r}"
                     )
+                elif not _contains_phrase(stamp, nested_name):
+                    # The typed field (checked above) carries the nested member, but the
+                    # STAMP -- the actual prose contract a controller/agent reads -- dropped
+                    # it on restatement. Checking only out_fields[].type/description (as an
+                    # earlier version of this loop did) missed exactly this: a prescription
+                    # can be internally complete while the one artifact that matters at
+                    # runtime, the stamp, is not.
+                    errors.append(
+                        f"stamp_markdown: does not restate out_fields[name={array_field_name!r}]'s "
+                        f"required nested member {nested_name!r}, even though the field's own "
+                        f"type/description carries it"
+                    )
 
     return errors
 

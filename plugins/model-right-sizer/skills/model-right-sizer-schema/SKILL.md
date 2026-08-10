@@ -158,21 +158,30 @@ once, that's `model-right-sizer-dryrun`, not this skill.
    `## Agent-to-agent schema` heading not already bounded by a marker pair.
    Only then pick the one case below whose counts actually match — **the
    single-pair case requires the counts to be exactly one begin, one end, in
-   that order, and zero unmarked headings elsewhere; any other combination
-   is one of the anomaly cases, even when a clean pair is also present.**
-   Never guess past an ambiguous state — every case that isn't the exact
-   clean single-pair match stops for a human rather than picking a placement
-   on the agent's own judgment, because a wrong guess here writes into a
-   file another session or a human may be relying on:
+   that order, the SAME marker style on both (see below), and zero unmarked
+   headings elsewhere; any other combination is one of the anomaly cases,
+   even when something that looks like a pair is also present.** Never
+   guess past an ambiguous state — every case that isn't the exact clean
+   single-pair match stops for a human rather than picking a placement on
+   the agent's own judgment, because a wrong guess here writes into a file
+   another session or a human may be relying on:
 
-   - **Exactly one begin marker, one end marker (matched, in order), and no
-     unmarked heading anywhere else in the file** (this skill's own
-     `<!-- model-right-sizer-schema:begin -->`/`:end`, *or* a pre-existing
-     `<!-- xdp-agent-schema:begin -->`/`:end`-style pair from a repo's own
-     convention). The clean case, and the *only* case that proceeds without
-     asking: **replace only the text between those two markers**, keep
-     whichever marker naming was already there, and stop — never stand up a
-     second, competing section alongside a clean one.
+   - **Exactly one begin marker and one end marker, matched — same style,
+     same convention, in order — with no unmarked heading anywhere else in
+     the file.** "Matched" means the begin and end marker are from the
+     *identical* convention: this skill's own
+     `<!-- model-right-sizer-schema:begin -->` paired with its own `:end`,
+     *or* a pre-existing `<!-- xdp-agent-schema:begin -->` paired with its
+     own `:end` — never one style's begin with the other style's end. A
+     `model-right-sizer-schema:begin` followed later by an `xdp-agent-schema:end`
+     (or vice versa) is NOT a pair, however adjacent or well-ordered it
+     looks — it's two mismatched marker halves from two different
+     conventions that happen to sit in begin/end order, and belongs in the
+     unmatched-marker case below, not this one. The true clean case is the
+     *only* one that proceeds without asking: **replace only the text
+     between those two markers**, keep whichever marker naming was already
+     there, and stop — never stand up a second, competing section alongside
+     a clean one.
    - **No markers of either style anywhere, but at least one unmarked
      `## Agent-to-agent schema` heading exists.** Don't blindly append a
      duplicate section under a new heading — that produces two headings with
@@ -182,11 +191,15 @@ once, that's `model-right-sizer-dryrun`, not this skill.
      wrap the (or one specific) existing section in this skill's markers and
      replace it, or leave the file untouched and abandon the stamp for this
      run.
-   - **An unmatched marker** — a `:begin` with no corresponding `:end`, or
-     vice versa, anywhere in the file, *regardless of whether a separate
-     clean pair also exists elsewhere*. This is a corrupted or
-     partially-applied prior stamp, not a state this skill invented a rule
-     for. Stop, report the exact line the orphaned marker is on (and the
+   - **An unmatched marker** — a `:begin` with no corresponding `:end` of
+     the *same style*, or vice versa, anywhere in the file. This includes a
+     begin from one convention followed by an end from the other (a
+     `model-right-sizer-schema:begin` … `xdp-agent-schema:end`, or the
+     reverse) — that is two orphaned halves, not a pair, whatever order they
+     appear in. Applies *regardless of whether a separate, genuinely clean
+     pair also exists elsewhere*. This is a corrupted or partially-applied
+     prior stamp, not a state this skill invented a rule for. Stop, report
+     the exact line the orphaned marker is on (and the
      clean pair's location too, if one is also present, so the human isn't
      left guessing which is which), and ask a human to repair or remove it
      before re-running — do not attempt to infer where the missing half
