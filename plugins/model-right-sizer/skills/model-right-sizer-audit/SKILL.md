@@ -130,6 +130,8 @@ audited.
     echo "$1" | sed -E 's#^(https?://[^/]+/|git@[^:]+:)##; s#\.git$##'
   }
   target_slug=$(normalize_slug "$target")
+  repo_name=$(basename "$target_slug")
+  scratch_dir=$(mktemp -d)
   candidate=$(find ~ -maxdepth 4 -type d -name "$repo_name" 2>/dev/null | head -1)
   candidate_slug=$(normalize_slug "$(git -C "$candidate" remote get-url origin 2>/dev/null)")
   if [ -n "$candidate" ] \
