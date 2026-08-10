@@ -123,6 +123,90 @@ def test_stamp_not_mentioning_an_exclusion_is_rejected():
     assert any("customer PII" in e for e in errors)
 
 
+def test_family_id_not_in_catalogue_and_not_new_is_rejected():
+    """Greptile issue 1 (partial): family.id must resolve to a real catalogue
+    entry unless the instance says explicitly it's coining a new one."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["family"]["id"] = "made-up-family"
+    instance["family"]["is_new_family"] = False
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("made-up-family" in e and "catalogue" in e for e in errors)
+
+
+def test_new_family_bypasses_catalogue_membership_check():
+    """A genuinely new, coined family is a valid answer -- is_new_family: true
+    is exactly the escape hatch agent-schema-families.md describes."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["family"]["id"] = "genuinely-new-shape"
+    instance["family"]["is_new_family"] = True
+    instance["stamp_markdown"] = instance["stamp_markdown"].replace("scored-review", "genuinely-new-shape")
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors == []
+
+
+def test_family_missing_its_definitional_field_is_rejected():
+    """Greptile issue 1: a prescription can't claim a catalogue family while
+    omitting the one out_fields[] entry that makes it that family -- e.g.
+    `build-report` with no `files_changed` isn't a build-report."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["family"]["id"] = "build-report"
+    instance["family"]["is_new_family"] = False
+    # out_fields (scorecard/findings/leave_alone/target) has no files_changed.
+    instance["stamp_markdown"] = instance["stamp_markdown"].replace("scored-review", "build-report")
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("files_changed" in e for e in errors)
+
+
+def test_no_prose_family_with_non_null_prose_field_is_rejected():
+    """Greptile issue 1: watch-report/candidate-set are documented as
+    carrying no prose slot at all -- pairing either with a non-null
+    prose_field contradicts the family the instance itself claims."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["family"]["id"] = "watch-report"
+    instance["family"]["is_new_family"] = False
+    instance["out_fields"].append({"name": "state", "type": "string"})
+    instance["stamp_markdown"] = instance["stamp_markdown"].replace("scored-review", "watch-report") + " state"
+    # prose_field stays non-null from EXAMPLE -- that's the violation.
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("watch-report" in e and "prose" in e for e in errors)
+
+
+def test_substring_collision_is_not_mistaken_for_a_real_mention():
+    """Greptile issue 2: an exclude[] entry like 'logs' must not be satisfied
+    by an unrelated field name like `logs_ref` sitting elsewhere in the stamp
+    -- the check has to be whole-phrase, not a bare substring test."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["exclude"] = ["logs"]
+    instance["stamp_markdown"] = instance["stamp_markdown"] + "\n\n**In** -- `logs_ref: string`."
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("logs" in e for e in errors)
+
+
+def test_whole_word_match_still_passes():
+    """The word-boundary fix must not reject a genuine, standalone mention."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["exclude"] = ["logs"]
+    instance["stamp_markdown"] = instance["stamp_markdown"] + "\n\n**Never inline:** logs."
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors == []
+
+
 def test_main_validates_default_example(monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", ["validate_agent_schema.py"])
 

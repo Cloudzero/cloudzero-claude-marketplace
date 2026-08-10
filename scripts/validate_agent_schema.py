@@ -17,12 +17,22 @@ Checks:
     a hand-picked subset of fields
   - the one thing a JSON Schema can't express: `stamp_markdown` actually
     restates what the typed fields say it prescribes -- every `out_fields[].name`
-    and every `exclude[]` entry appears somewhere in `stamp_markdown`, and the
-    stamp carries the `## Agent-to-agent schema` heading. Without this check, an
-    instance could pass the schema with a `stamp_markdown` that's internally
-    consistent-looking prose but doesn't actually match the typed fields sitting
-    right next to it -- the same class of drift the referential check in
-    `validate_blueprint.py` exists to catch for `handoff_schema_ref`.
+    and every `exclude[]` entry appears, as a whole-word phrase (not merely a
+    substring -- `logs` must not be satisfied by `logs_ref`), somewhere in
+    `stamp_markdown`, and the stamp carries the `## Agent-to-agent schema`
+    heading. Without this check, an instance could pass the schema with a
+    `stamp_markdown` that's internally consistent-looking prose but doesn't
+    actually match the typed fields sitting right next to it -- the same class
+    of drift the referential check in `validate_blueprint.py` exists to catch
+    for `handoff_schema_ref`.
+  - family invariants a generic JSON Schema can't express either: `family.id`
+    resolves to a real entry in the portable catalogue (agent-schema-families.md)
+    unless `family.is_new_family` is true, the family's own definitional
+    out-field is actually present (e.g. picking `build-report` with no
+    `files_changed` field is a contradiction, not a valid instance of that
+    family), and a family the catalogue documents as carrying no prose slot
+    (`watch-report`, `candidate-set`) is not paired with a non-null
+    `prose_field`.
 
 Usage:
   uv run --no-project --with jsonschema scripts/validate_agent_schema.py                  # validate the checked-in worked example
@@ -58,9 +68,56 @@ REQUIRED_HEADING = "## Agent-to-agent schema"
 _STRIP_CHARS = re.compile(r"[`'‘’\"“”]")
 _WHITESPACE = re.compile(r"\s+")
 
+# The portable catalogue's nine families, mirrored here as constants -- same
+# pattern as validate_blueprint.py's NON_REFERENCE_HANDOFFS: a referential
+# check a JSON Schema can't express needs the real values to check against,
+# and this repo's convention is to hardcode that small a set rather than
+# parse it out of the markdown catalogue at validation time. Keep in sync
+# with agent-schema-families.md if a family is added, renamed, or its
+# definitional field changes.
+#
+# `definitional_out_field` is the ONE out_fields[].name that is structurally
+# what makes an instance THAT family and not another -- e.g. `verdict-set`
+# without a `rows` field isn't a verdict-set, whatever else it contains. This
+# is deliberately narrower than validating the family's entire field list:
+# individual agents legitimately extend a family with extra fields (a closed
+# `confidence` enum, a `recommended_action` enum) the catalogue's minimal
+# shape doesn't itself require, and enforcing the full list would reject
+# exactly the kind of reasonable per-agent fit the catalogue's own "reuse a
+# family, fill its fields" instruction invites.
+FAMILY_CATALOGUE = {
+    "scored-review": "scorecard",
+    "verdict-set": "rows",
+    "graded-claim": "counter_case",
+    "build-report": "files_changed",
+    "drafted-unit": "artifact_ref",
+    "data-payload": "rows_ref",
+    "watch-report": "state",
+    "action-log": "actions_taken",
+    "candidate-set": "candidates",
+}
+
+# Families agent-schema-families.md documents as structurally carrying no
+# prose slot at all (not merely "usually null") -- pairing either with a
+# non-null prose_field contradicts the catalogue entry the instance itself
+# claims to be using.
+NO_PROSE_FAMILIES = {"watch-report", "candidate-set"}
+
 
 def _normalize(text: str) -> str:
     return _WHITESPACE.sub(" ", _STRIP_CHARS.sub("", text)).strip()
+
+
+def _contains_phrase(haystack: str, needle: str) -> bool:
+    """Whole-word/whole-phrase containment: `logs` must not match inside
+    `logs_ref` or `catalogs`. Both sides are normalized first so hard-wrap
+    newlines, backticks, and quote-style differences don't cause a false
+    negative the way a raw `in` check would (see _normalize's docstring-ish
+    comment above) -- this only tightens the check against false POSITIVES
+    from an unanchored substring collision, the class of bug Greptile flagged
+    on `logs` vs `logs_ref` in the first version of this function."""
+    pattern = r"(?<!\w)" + re.escape(_normalize(needle)) + r"(?!\w)"
+    return re.search(pattern, _normalize(haystack)) is not None
 
 
 def fail(msg: str) -> None:
@@ -92,25 +149,52 @@ def validate(schema: dict, instance: dict) -> list[str]:
 
     errors: list[str] = []
     stamp = instance.get("stamp_markdown", "")
-    normalized_stamp = _normalize(stamp)
 
     if REQUIRED_HEADING not in stamp:
         errors.append(f"stamp_markdown: missing the {REQUIRED_HEADING!r} heading")
 
     for out_field in instance.get("out_fields", []):
         name = out_field.get("name")
-        if name and _normalize(name) not in normalized_stamp:
+        if name and not _contains_phrase(stamp, name):
             errors.append(f"stamp_markdown: does not mention out_fields[].name {name!r}")
 
     for excluded in instance.get("exclude", []):
-        if _normalize(excluded) not in normalized_stamp:
+        if not _contains_phrase(stamp, excluded):
             errors.append(f"stamp_markdown: does not mention exclude[] entry {excluded!r}")
 
     prose_field = instance.get("prose_field")
     if prose_field is not None:
         name = prose_field.get("name")
-        if name and _normalize(name) not in normalized_stamp:
+        if name and not _contains_phrase(stamp, name):
             errors.append(f"stamp_markdown: does not mention prose_field.name {name!r}")
+
+    # Family invariants -- referential/structural checks a generic JSON
+    # Schema can't express, the same class of gap NON_REFERENCE_HANDOFFS
+    # closes for validate_blueprint.py's handoff_schema_ref.
+    family = instance.get("family", {})
+    family_id = family.get("id")
+    is_new_family = family.get("is_new_family")
+    out_field_names = {f.get("name") for f in instance.get("out_fields", [])}
+
+    if not is_new_family and family_id not in FAMILY_CATALOGUE:
+        errors.append(
+            f"family.id: {family_id!r} is not in the portable catalogue "
+            f"({sorted(FAMILY_CATALOGUE)}) and family.is_new_family is not true -- "
+            "either pick a real family or say explicitly that this one is newly coined"
+        )
+    elif family_id in FAMILY_CATALOGUE:
+        definitional_field = FAMILY_CATALOGUE[family_id]
+        if definitional_field not in out_field_names:
+            errors.append(
+                f"family.id: {family_id!r} requires an out_fields[] entry named "
+                f"{definitional_field!r} (its definitional field per "
+                f"agent-schema-families.md) but out_fields only has {sorted(out_field_names)}"
+            )
+        if family_id in NO_PROSE_FAMILIES and prose_field is not None:
+            errors.append(
+                f"family.id: {family_id!r} is documented as carrying no prose slot "
+                f"(agent-schema-families.md), but prose_field is non-null: {prose_field!r}"
+            )
 
     return errors
 

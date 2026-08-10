@@ -41,13 +41,26 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   fields, consistent with this plugin's existing "organization-agnostic
   core" discipline.
 - `scripts/validate_agent_schema.py` (wired into CI, plus
-  `tests/test_validate_agent_schema.py`) — validates an agent-schema
-  prescription instance against `schemas/agent-schema.schema.json` in full,
-  and checks the one thing a JSON Schema can't express: that
+  `tests/test_validate_agent_schema.py`, 20 tests) — validates an
+  agent-schema prescription instance against `schemas/agent-schema.schema.json`
+  in full, plus two referential checks a JSON Schema can't express: (1)
   `stamp_markdown` actually restates every `out_fields[].name` and
-  `exclude[]` entry sitting next to it, rather than drifting into
-  internally-consistent-looking prose that no longer matches the typed
-  fields. Mirrors `validate_blueprint.py`'s role for its sibling schema.
+  `exclude[]` entry sitting next to it, matched as a whole-word/whole-phrase
+  containment (not a bare substring — `logs` does not match inside
+  `logs_ref`) so hard-wrapped, backticked, or differently-quoted markdown
+  still passes without a false positive on an unrelated field name; (2)
+  `family.id` resolves to a real entry in `agent-schema-families.md`'s
+  catalogue (or `family.is_new_family` says explicitly it's coining a new
+  one), the family's own definitional out-field is actually present (e.g.
+  `verdict-set` requires a `rows` field), and a family the catalogue
+  documents as carrying no prose slot (`watch-report`, `candidate-set`)
+  isn't paired with a non-null `prose_field`. Both classes of check were
+  added in response to a Greptile review on the introducing PR that found
+  the containment check could accept a substring collision and that nothing
+  validated a prescription's family choice against its own fields —
+  mirrors `validate_blueprint.py`'s role for its sibling schema, and
+  `handoff_schema_ref`'s referential-check pattern, applied to the family
+  catalogue.
 - `schemas/blueprint.schema.json` — a strict JSON Schema (draft 2020-12,
   `additionalProperties: false` throughout) for Pass A, the right-sizing
   blueprint. Requires every `blueprint_rows[]` entry to carry all

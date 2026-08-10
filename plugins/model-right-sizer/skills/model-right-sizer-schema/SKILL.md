@@ -145,21 +145,49 @@ once, that's `model-right-sizer-dryrun`, not this skill.
 
    Then, **only if the target agent exists as a file** (`target.file_ref`
    is non-null) and the user confirms, insert or refresh that block in the
-   agent's `.md` file:
-   - If the file already carries an `## Agent-to-agent schema` section
-     (under *either* this skill's own
-     `<!-- model-right-sizer-schema:begin -->`/`:end` markers *or* a
-     pre-existing `<!-- xdp-agent-schema:begin -->`/`:end`-style marker
-     from a repo's own convention), **replace only the text between
-     whichever markers are already there** — refresh in place, keep the
-     repo's existing marker naming, never stand up a second, competing
-     section.
-   - Otherwise, append a new section (with this skill's own
-     `model-right-sizer-schema:begin`/`:end` markers) directly after the
-     frontmatter, or at the end of the file if that placement doesn't fit
+   agent's `.md` file. First, scan the file for the marker states below —
+   in this order, since a later case can only be diagnosed once the earlier
+   ones are ruled out — and take the one safe, deterministic action each
+   state allows. **Never guess past an ambiguous state**; every case that
+   isn't the clean single-pair match stops for a human rather than picking
+   a placement on the agent's own judgment, because a wrong guess here
+   writes into a file another session or a human may be relying on:
+
+   - **Exactly one matched marker pair** (this skill's own
+     `<!-- model-right-sizer-schema:begin -->`/`:end`, *or* a pre-existing
+     `<!-- xdp-agent-schema:begin -->`/`:end`-style pair from a repo's own
+     convention). The clean case: **replace only the text between those two
+     markers**, keep whichever marker naming was already there, and stop —
+     never stand up a second, competing section alongside a clean one.
+   - **No markers of either style, but an unmarked `## Agent-to-agent
+     schema` heading already exists.** Don't blindly append a duplicate
+     section under a new heading — that produces two headings with the same
+     name and no marker distinguishing which is current. Show the user the
+     existing unmarked section's full extent (heading through the next `##`
+     or end of file) alongside the new prescription, and ask whether to wrap
+     it in this skill's markers and replace it, or leave it untouched and
+     abandon the stamp for this run.
+   - **An unmatched marker** — a `:begin` with no corresponding `:end`, or
+     vice versa, anywhere in the file. This is a corrupted or partially-applied
+     prior stamp, not a state this skill invented a rule for. Stop, report the
+     exact line the orphaned marker is on, and ask a human to repair or remove
+     it before re-running — do not attempt to infer where the missing half
+     belongs.
+   - **More than one marker pair already present** (from either marker
+     style, or a mix). An existing anomaly, not something this run created —
+     stop, report all pairs found (with line numbers), and ask a human to
+     consolidate to one before this skill writes anything. Picking one pair
+     to update and silently ignoring the rest would hide the anomaly rather
+     than surface it.
+   - **No markers and no `## Agent-to-agent schema` heading at all** (the
+     ordinary first-time case). Append a new section, with this skill's own
+     `model-right-sizer-schema:begin`/`:end` markers, directly after the
+     frontmatter — or at the end of the file if that placement doesn't fit
      the agent file's existing structure.
-   - Re-read the file afterward and confirm the block landed as written —
-     don't declare success on the strength of the write call alone.
+
+   Whichever action was taken, **re-read the file afterward and confirm the
+   block landed as written** — don't declare success on the strength of the
+   write call alone.
 
    If the target agent doesn't exist as a file yet (`target.file_ref` is
    null), there's nothing to stamp — just hand over the `stamp_markdown` for
