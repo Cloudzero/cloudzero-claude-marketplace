@@ -223,6 +223,54 @@ def test_findings_entry_missing_other_documented_members_is_still_rejected():
         assert name in findings_errors
 
 
+def test_graded_claim_grade_missing_confidence_is_rejected():
+    """Greptile issue (round 5): an initial FAMILY_NESTED_REQUIRED pass only
+    covered array-of-object fields and missed two OBJECT-shaped fields
+    entirely -- graded-claim's `grade: {score, confidence}` and
+    data-payload's `query: {what, params}`. This covers the first."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["family"]["id"] = "graded-claim"
+    instance["family"]["is_new_family"] = False
+    instance["out_fields"] = [
+        {"name": "subject", "type": "string"},
+        {"name": "grade", "type": "object", "description": "{score: number}"},  # missing `confidence`
+        {"name": "evidence", "type": "array", "description": "[{source_ref, quote, stance}]"},
+        {"name": "counter_case", "type": "string"},
+    ]
+    instance["stamp_markdown"] = (
+        instance["stamp_markdown"].replace("scored-review", "graded-claim").replace("scorecard", "grade")
+        + " subject evidence counter_case"
+    )
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("grade" in e and "confidence" in e for e in errors)
+
+
+def test_data_payload_query_missing_params_is_rejected():
+    """Second half of the round-5 fix: data-payload's `query: {what, params}`."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["family"]["id"] = "data-payload"
+    instance["family"]["is_new_family"] = False
+    instance["out_fields"] = [
+        {"name": "query", "type": "object", "description": "{what: string}"},  # missing `params`
+        {"name": "rows_ref", "type": "string"},
+        {"name": "row_count", "type": "number"},
+        {"name": "provenance", "type": "array", "description": "[{source, as_of}]"},
+        {"name": "trust", "type": "string"},
+    ]
+    instance["stamp_markdown"] = (
+        instance["stamp_markdown"].replace("scored-review", "data-payload").replace("scorecard", "query")
+        + " rows_ref row_count provenance trust"
+    )
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("query" in e and "params" in e for e in errors)
+
+
 def test_removed_entry_missing_proof_is_rejected():
     """Same class as above, for action-log: 'never a removed entry without proof'."""
     instance = copy.deepcopy(EXAMPLE)

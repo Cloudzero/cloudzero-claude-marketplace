@@ -132,7 +132,18 @@ FAMILY_REQUIRED_FIELDS = {
 # are lists of plain strings in the catalogue, not objects, so they carry no
 # entry here. Optional nested members the catalogue itself marks with `?`
 # (watch-report's `observed.value?`) are excluded, same discipline as
-# FAMILY_REQUIRED_FIELDS's own optional exclusions.
+# FAMILY_REQUIRED_FIELDS's own optional exclusions. `gate` (verdict-set) has
+# no entry either, for the same reason: it's `+ optional` per the catalogue,
+# so its own presence isn't required and neither is its shape when absent.
+#
+# Audited field-by-field against every one of the 9 families' shape blocks
+# (not just the array-shaped ones) after an initial pass missed two
+# object-shaped fields entirely -- `graded-claim.grade` and
+# `data-payload.query` -- which a Greptile review caught. Every
+# out_field across every family in agent-schema-families.md that has ANY
+# internal structure (object or array-of-object) now has an entry here;
+# every field left out is verified to be a plain string/number/enum with
+# nothing nested to check.
 #
 # out_fields[].type is free text (an agent-authored shape description, e.g.
 # "[{id, dimension, ..., fix}]"), not structured JSON, so this is checked
@@ -151,6 +162,7 @@ FAMILY_NESTED_REQUIRED = {
         "unresolved": {"subject", "why_unverifiable"},
     },
     "graded-claim": {
+        "grade": {"score", "confidence"},
         "evidence": {"source_ref", "quote", "stance"},
     },
     "build-report": {
@@ -162,6 +174,7 @@ FAMILY_NESTED_REQUIRED = {
         "deferred": {"item", "why"},
     },
     "data-payload": {
+        "query": {"what", "params"},
         "provenance": {"source", "as_of"},
     },
     "watch-report": {
