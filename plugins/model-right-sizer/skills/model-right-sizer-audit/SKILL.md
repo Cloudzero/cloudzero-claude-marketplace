@@ -111,13 +111,38 @@ unquoted interpolation here means a crafted target or ref alters the
 command actually run on the machine doing the audit, not just the one being
 audited.
 
-- Local path or current repo → use it directly, no clone.
-- GitHub slug/URL → check for an existing local clone first:
-  `find ~ -maxdepth 4 -type d -name "$repo_name" 2>/dev/null`; reuse it
-  (`git fetch && git checkout "$default_branch" && git pull`) rather than
-  re-cloning. Otherwise `gh repo clone "$target" "$scratch_dir/$repo_name"`.
-- Detect the default branch — `gh repo view "$target" --json
-  defaultBranchRef` — and record it — this is the PR's base.
+- **Local path or current repo** (`<target>` is a filesystem path, or was
+  omitted) → use it directly, no clone. `cd` into it (or stay put if
+  omitted) and detect the default branch with **no repo argument**:
+  `gh repo view --json defaultBranchRef` — passing the local path or an
+  empty string as `gh repo view`'s argument fails outright, since that
+  argument must be an `OWNER/REPO` slug or a URL, never a filesystem path;
+  omitting the argument entirely is what makes `gh` read the *current
+  directory's own* git remote instead.
+- **GitHub slug/URL** (`<target>` is `org/repo` or a full URL) → detect the
+  default branch first — `gh repo view "$target" --json defaultBranchRef`
+  is correct here, since `$target` really is a resolvable identifier — then
+  look for an existing local clone, but **verify it before reusing it**: a
+  directory that merely matches the repo's basename is not proof it's the
+  same repo, or that it's safe to touch.
+  ```bash
+  candidate=$(find ~ -maxdepth 4 -type d -name "$repo_name" 2>/dev/null | head -1)
+  if [ -n "$candidate" ] \
+    && git -C "$candidate" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
+    && git -C "$candidate" remote get-url origin 2>/dev/null | grep -qi "$target" \
+    && [ -z "$(git -C "$candidate" status --porcelain)" ]; then
+    ( cd "$candidate" && git fetch && git checkout "$default_branch" && git pull )
+  else
+    gh repo clone "$target" "$scratch_dir/$repo_name"
+  fi
+  ```
+  All three checks matter, not just the first: a same-named but *unrelated*
+  repo (wrong `origin` remote) and a genuinely-matching checkout with
+  uncommitted work in it are both real, distinct ways a bare basename match
+  can go wrong — the first silently audits the wrong project, the second
+  clobbers someone's in-progress edits the moment `checkout`/`pull` runs.
+  Neither is proven safe by "a directory with this name exists"; clone
+  fresh into the scratch dir instead of guessing.
 - Unless `--no-pr`, create the working branch now:
   `craft/model-right-sizing-audit-$(date +%Y-%m-%d)` off `"$default_branch"`,
   checked out. Don't share this branch with unrelated work already sitting
