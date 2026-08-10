@@ -126,23 +126,38 @@ audited.
   directory that merely matches the repo's basename is not proof it's the
   same repo, or that it's safe to touch.
   ```bash
+  normalize_slug() {
+    echo "$1" | sed -E 's#^(https?://[^/]+/|git@[^:]+:)##; s#\.git$##'
+  }
+  target_slug=$(normalize_slug "$target")
   candidate=$(find ~ -maxdepth 4 -type d -name "$repo_name" 2>/dev/null | head -1)
+  candidate_slug=$(normalize_slug "$(git -C "$candidate" remote get-url origin 2>/dev/null)")
   if [ -n "$candidate" ] \
     && git -C "$candidate" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
-    && git -C "$candidate" remote get-url origin 2>/dev/null | grep -qi "$target" \
+    && [ -n "$candidate_slug" ] \
+    && [ "$(echo "$candidate_slug" | tr '[:upper:]' '[:lower:]')" \
+       = "$(echo "$target_slug" | tr '[:upper:]' '[:lower:]')" ] \
     && [ -z "$(git -C "$candidate" status --porcelain)" ]; then
     ( cd "$candidate" && git fetch && git checkout "$default_branch" && git pull )
   else
     gh repo clone "$target" "$scratch_dir/$repo_name"
   fi
   ```
-  All three checks matter, not just the first: a same-named but *unrelated*
-  repo (wrong `origin` remote) and a genuinely-matching checkout with
-  uncommitted work in it are both real, distinct ways a bare basename match
-  can go wrong — the first silently audits the wrong project, the second
-  clobbers someone's in-progress edits the moment `checkout`/`pull` runs.
-  Neither is proven safe by "a directory with this name exists"; clone
-  fresh into the scratch dir instead of guessing.
+  Compare the **normalized, exact `owner/repo` slug**, never a raw
+  substring match — `grep -qi "$target"` against the remote URL would
+  wrongly accept `acme/foobar` as a match for a target of `acme/foo`,
+  since `foo` is literally a substring of `foobar`. `normalize_slug`
+  strips a URL scheme/host or `git@host:` prefix and a trailing `.git`
+  from either side, so a bare slug and a full URL pointing at the same
+  repo compare equal without needing an extra network round-trip. All
+  three checks matter, not just the first: a same-named but *unrelated*
+  repo (wrong `origin` remote — including one that merely shares a
+  substring) and a genuinely-matching checkout with uncommitted work in
+  it are both real, distinct ways a basename match can go wrong — the
+  first silently audits the wrong project, the second clobbers someone's
+  in-progress edits the moment `checkout`/`pull` runs. Neither is proven
+  safe by "a directory with this name exists"; clone fresh into the
+  scratch dir instead of guessing.
 - Unless `--no-pr`, create the working branch now:
   `craft/model-right-sizing-audit-$(date +%Y-%m-%d)` off `"$default_branch"`,
   checked out. Don't share this branch with unrelated work already sitting
