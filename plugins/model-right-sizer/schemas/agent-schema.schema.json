@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cloudzero/cloudzero-claude-marketplace/blob/main/plugins/model-right-sizer/schemas/agent-schema.schema.json",
+  "title": "model-right-sizer Agent Output-Schema Prescription",
+  "description": "Strict output contract for the model-right-sizer agent's per-agent schema-prescription lever (the 'Agent-to-agent message-schema design' lever, scoped to one agent-to-controller seam instead of a whole flow's blueprint). The agent emits exactly one JSON object conforming to this schema instead of prose. See agent-schema.example.json for a worked instance, and agent-schema-families.md for the family catalogue `family.id` is picked from. additionalProperties is false at every level on purpose -- an agent cannot reintroduce free-form fields.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "target",
+    "controller",
+    "current_shape",
+    "family",
+    "task_type",
+    "in_fields",
+    "out_fields",
+    "prose_field",
+    "exclude",
+    "stamp_markdown",
+    "savings_note",
+    "rationale"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "description": "Bump alongside this file when the shape changes."
+    },
+    "target": { "$ref": "#/$defs/target" },
+    "controller": { "$ref": "#/$defs/controller" },
+    "current_shape": { "$ref": "#/$defs/currentShape" },
+    "family": { "$ref": "#/$defs/familyPick" },
+    "task_type": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The target agent's own task-type identifier, stamped into its schema block (e.g. 'log_triage', 'code_review')."
+    },
+    "in_fields": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/field" },
+      "description": "The typed brief the target agent receives. Anything large must arrive as a reference (path, id, state key), never inlined -- see current_shape/exclude."
+    },
+    "out_fields": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/field" },
+      "description": "The typed payload the target agent hands its controller. This is the whole point of the prescription: name every field the controller actually consumes, and nothing else."
+    },
+    "prose_field": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "max_words"],
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "max_words": { "type": "integer", "minimum": 1 }
+          }
+        }
+      ],
+      "description": "The ONE bounded prose slot this family allows, if any. null means the family (e.g. watch-report, candidate-set) structurally carries no prose slot -- that is a valid, often deliberate, answer, not an omission."
+    },
+    "exclude": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" },
+      "description": "This agent's exclusion list, beyond the universal list in agent-schema-families.md -- what this handoff must NOT carry (e.g. 'raw log lines', 'the full diff body', 'stack traces')."
+    },
+    "stamp_markdown": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The literal, ready-to-insert '## Agent-to-agent schema' block (with its begin/end marker comments) for the target agent's file. Must restate family/task_type/in/out/exclude as prose -- never just a pointer to the other fields on this object."
+    },
+    "savings_note": { "$ref": "#/$defs/savingsNote" },
+    "rationale": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Why this family and this field set -- not just 'because the catalogue has it'."
+    }
+  },
+  "$defs": {
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "file_ref", "role_summary"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "file_ref": {
+          "type": ["string", "null"],
+          "description": "Path to the target agent's .md file, or null if it doesn't exist as a file yet (a schema prescribed ahead of writing the agent)."
+        },
+        "role_summary": { "type": "string", "minLength": 1 }
+      }
+    },
+    "controller": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "needs"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The orchestrator, skill, or parent agent that dispatches the target agent and consumes its reply."
+        },
+        "needs": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" },
+          "description": "What the controller actually acts on from the reply -- the thing the whole prescription is sized against."
+        }
+      }
+    },
+    "currentShape": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "note"],
+      "properties": {
+        "kind": {
+          "enum": ["unscoped_prose", "ad_hoc_json", "partial_schema", "none_yet"],
+          "description": "none_yet = the target agent doesn't exist as a file yet, so there is nothing to compare against; the prescription is the agent's first schema, not a tightening of an existing one."
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "description": "One or two clauses on what today's shape actually looks like (or would default to)."
+        }
+      }
+    },
+    "familyPick": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "is_new_family", "catalogue_source", "shape_summary"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A family id from the chosen catalogue (e.g. 'scored-review'), or a newly-coined id when none fits."
+        },
+        "is_new_family": {
+          "type": "boolean",
+          "description": "True only when no existing family in the chosen catalogue fits this seam's shape."
+        },
+        "catalogue_source": {
+          "enum": ["repo_catalogue", "plugin_portable_catalogue"],
+          "description": "repo_catalogue = the target repo already has its own family catalogue and this pick came from there; plugin_portable_catalogue = agent-schema-families.md, this plugin's fallback."
+        },
+        "shape_summary": {
+          "type": "string",
+          "minLength": 1,
+          "description": "One clause naming the family's shape, e.g. 'scorecard + findings + leave_alone'."
+        }
+      }
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "type"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "type": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" }
+      }
+    },
+    "savingsNote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseline", "prescribed", "rationale"],
+      "properties": {
+        "baseline": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What the target agent would otherwise hand its controller, e.g. 'unscoped prose reply, ~400-800 words typical'."
+        },
+        "prescribed": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The size/shape of the prescribed payload, e.g. '6 typed fields + one <=150-word prose slot'."
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Why the prescribed shape is smaller and still sufficient for the controller's stated needs."
+        }
+      }
+    }
+  }
+}

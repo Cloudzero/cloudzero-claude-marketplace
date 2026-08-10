@@ -5,6 +5,49 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 ## Unreleased
 
 ### Added
+- `skills/model-right-sizer-schema` — a companion skill that applies the
+  agent's existing "Agent-to-agent message-schema design" lever to a
+  single agent-to-controller seam instead of a whole flow: given a target
+  agent (a path to an existing `agents/*.md` file, or a plain description
+  of one not yet written), it dispatches `model-right-sizer` to prescribe
+  the smallest typed output contract that still carries everything the
+  named controller acts on, shows the before/after size delta, and — on
+  confirmation — stamps a marker-delimited `## Agent-to-agent schema`
+  section directly into the target agent's file. Defers to a target repo's
+  own seam-shape catalogue when one exists (e.g. a
+  `context/agent-schemas.md`-shaped file); otherwise falls back to the new
+  portable catalogue below. Detects and refreshes an existing schema
+  section under either this skill's own markers or a repo's pre-existing
+  marker convention, rather than stamping a second, competing section.
+- `schemas/agent-schema.schema.json` (+ `agent-schema.example.json`) — the
+  strict JSON Schema (draft 2020-12, `additionalProperties: false`
+  throughout) `model-right-sizer-schema`'s agent dispatch must conform to:
+  the target agent + its controller's stated needs, the family picked (and
+  whether it's newly coined), typed `in_fields`/`out_fields`, the bounded
+  `prose_field` (or `null` for a family that structurally carries none),
+  the `exclude` list, the literal `stamp_markdown` block, and a
+  `savings_note` naming the concrete baseline-vs-prescribed size delta —
+  the thing this whole lever exists to produce.
+- `schemas/agent-schema-families.md` — a portable, organization-agnostic
+  catalogue of nine reusable agent-reply shapes (`scored-review`,
+  `verdict-set`, `graded-claim`, `build-report`, `drafted-unit`,
+  `data-payload`, `watch-report`, `action-log`, `candidate-set`), the
+  shared minimal envelope, and the universal exclusion list —
+  `model-right-sizer-schema`'s fallback catalogue for a repo that doesn't
+  already maintain its own. A generic, clean-room distillation of the same
+  family-catalogue-plus-per-agent-stamp convention some internal
+  multi-agent codebases at CloudZero already enforce; reproduced here
+  without any internal tool names, agent names, or organization-specific
+  fields, consistent with this plugin's existing "organization-agnostic
+  core" discipline.
+- `scripts/validate_agent_schema.py` (wired into CI, plus
+  `tests/test_validate_agent_schema.py`) — validates an agent-schema
+  prescription instance against `schemas/agent-schema.schema.json` in full,
+  and checks the one thing a JSON Schema can't express: that
+  `stamp_markdown` actually restates every `out_fields[].name` and
+  `exclude[]` entry sitting next to it, rather than drifting into
+  internally-consistent-looking prose that no longer matches the typed
+  fields. Mirrors `validate_blueprint.py`'s role for its sibling schema.
 - `schemas/blueprint.schema.json` — a strict JSON Schema (draft 2020-12,
   `additionalProperties: false` throughout) for Pass A, the right-sizing
   blueprint. Requires every `blueprint_rows[]` entry to carry all

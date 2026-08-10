@@ -21,6 +21,9 @@ This directory is a self-contained **Claude Code plugin** within the CloudZero m
 - [`schemas/blueprint.schema.json`](schemas/blueprint.schema.json) (+ [`blueprint.example.json`](schemas/blueprint.example.json)) — the strict JSON Schema the agent's Pass A (the right-sizing blueprint) must conform to, and a worked instance. Defined once here; the agent and the `model-right-sizer-dryrun` skill both point at it instead of restating the shape. Enforced, not just documented: [`../../scripts/validate_blueprint.py`](../../scripts/validate_blueprint.py) validates the worked example in CI and is the same validator `model-right-sizer-dryrun` runs against its own output before handing a blueprint to an orchestrator.
 - [`skills/model-right-sizer-install/SKILL.md`](skills/model-right-sizer-install/SKILL.md) — a companion skill that stamps a narrow, organization-agnostic mandate onto a *target* repo's `CLAUDE.md`, `AGENTS.md`, or both (whichever the repo actually has): run `model-right-sizer-dryrun` before every substantive task and hand its JSON blueprint to the orchestrator, then consult `model-right-sizer` directly for a usage report after. It also installs this plugin itself if the agent/skill aren't already discoverable there. Beyond that, it's just the mandate — no broader development process — so it can be adopted independently of whatever flow (if any) the target repo already runs.
 - [`skills/model-right-sizer-dryrun/SKILL.md`](skills/model-right-sizer-dryrun/SKILL.md) — a companion skill that previews the agent's JSON blueprint for a free-text intent, without building anything.
+- [`skills/model-right-sizer-schema/SKILL.md`](skills/model-right-sizer-schema/SKILL.md) — a companion skill that prescribes a minimal output schema for **one** agent's handoff to its controller (the agent's "Agent-to-agent message-schema design" lever, scoped to a single seam) and, on confirmation, stamps it into the target agent's file as a marker-delimited `## Agent-to-agent schema` section.
+- [`schemas/agent-schema.schema.json`](schemas/agent-schema.schema.json) (+ [`agent-schema.example.json`](schemas/agent-schema.example.json)) — the strict JSON Schema `model-right-sizer-schema`'s agent dispatch must conform to, and a worked instance. Enforced by [`../../scripts/validate_agent_schema.py`](../../scripts/validate_agent_schema.py), the same way `blueprint.schema.json` is enforced by `validate_blueprint.py`.
+- [`schemas/agent-schema-families.md`](schemas/agent-schema-families.md) — a portable, organization-agnostic catalogue of reusable agent-reply shapes (`scored-review`, `build-report`, `data-payload`, …) that `model-right-sizer-schema` picks from when the target repo doesn't already have its own.
 - [`CHANGELOG.md`](CHANGELOG.md) — dated entries for every change to the agent core or its companion skills. Update this in the same PR as the change.
 
 Besides right-sizing *which model*, the agent also flags stages where a deterministic query layer (e.g. PromptQL) would answer a data question more reliably and cheaper than a raw model call, and designs the minimal message schema each agent-to-agent handoff should carry — so a multi-stage chain doesn't leak full transcripts between hops. See the "Agent-to-agent message-schema design" section and the deterministic-query-layer lever in `agents/model-right-sizer.md`.
@@ -34,7 +37,7 @@ Install it from the CloudZero marketplace — add the marketplace once, then ins
 /plugin install model-right-sizer@cloudzero
 ```
 
-That installs the agent (`agents/model-right-sizer.md`) and both companion skills (`skills/model-right-sizer-install/`, `skills/model-right-sizer-dryrun/`) together. Adding the marketplace also makes the [`cost-analyst`](../cost-analyst/) plugin available (`/plugin install cost-analyst@cloudzero`). To try it before installing, or to iterate on a local checkout, load it directly for a session instead:
+That installs the agent (`agents/model-right-sizer.md`) and all three companion skills (`skills/model-right-sizer-install/`, `skills/model-right-sizer-dryrun/`, `skills/model-right-sizer-schema/`) together. Adding the marketplace also makes the [`cost-analyst`](../cost-analyst/) plugin available (`/plugin install cost-analyst@cloudzero`). To try it before installing, or to iterate on a local checkout, load it directly for a session instead:
 
 ```
 claude --plugin-dir /path/to/cloudzero-claude-marketplace/plugins/model-right-sizer
@@ -65,9 +68,9 @@ See the **"Extending this agent for your own organization"** section at the bott
 
 ## Prerequisites
 
-None. This plugin is an agent definition, a JSON Schema for its blueprint
-output, and two companion skills — no runtime dependencies, no code that
-calls an LLM or CloudZero API directly.
+None. This plugin is an agent definition, JSON Schemas for its blueprint
+and agent-schema-prescription outputs, and three companion skills — no
+runtime dependencies, no code that calls an LLM or CloudZero API directly.
 It's read by whatever agent runtime loads it (Claude Code, or a compatible
 Claude-Agent-SDK-based runtime), which supplies its own model access. No API
 keys are required by the plugin itself.
@@ -114,6 +117,12 @@ never edits or writes files. Its companion skills' blast radius:
   instructions if plugin install isn't available) — the only action it
   takes outside those marker-delimited blocks.
 - `model-right-sizer-dryrun` writes nothing; it only returns the JSON blueprint (unless the user explicitly asks it to save one to a file).
+- `model-right-sizer-schema` writes nothing until the user confirms a specific
+  stamp — it only returns the JSON prescription and the proposed markdown
+  block by default. On confirmation, its one write is a marker-delimited
+  `## Agent-to-agent schema` section in the *target* agent's own file
+  (inserted or refreshed in place); everything else in that file is
+  untouched, and it never edits an agent file the user didn't name.
 
 See the repo-level [SECURITY.md](../../SECURITY.md) for how to report vulnerabilities.
 
@@ -135,6 +144,14 @@ account data is involved anywhere in this repo.
 - *"Dry-run: build a Slack bot that summarizes daily standup threads."* →
   invokes `model-right-sizer-dryrun`, which returns only the JSON blueprint,
   no build.
+- *"This log-triage agent just replies with a paragraph — give it an output
+  schema for the on-call digest skill that calls it."* → invokes
+  `model-right-sizer-schema`, which returns a JSON prescription (schema:
+  `schemas/agent-schema.schema.json`) naming the `scored-review` family, the
+  typed `out_fields` (`scorecard`, `findings`, `leave_alone`), an exclusion
+  list (raw log lines, stack traces), and a ready-to-insert
+  `## Agent-to-agent schema` stamp — then offers to write that stamp into
+  the agent's file.
 
 ## Limitations
 
@@ -165,7 +182,11 @@ required frontmatter and its name matches its directory) and
 plugin's `.claude-plugin/plugin.json` parse as JSON and carry the full
 documented metadata contract, each marketplace entry's `source` resolves
 to a real plugin directory, and manifest `version` fields agree where
-both are declared.
+both are declared. `scripts/validate_blueprint.py` and
+`scripts/validate_agent_schema.py` each validate their schema's checked-in
+worked example in full, plus the one check a JSON Schema alone can't
+express (a dangling `handoff_schema_ref`; a `stamp_markdown` that drifts
+from the typed fields next to it).
 
 ## License
 
