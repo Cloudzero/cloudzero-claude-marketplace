@@ -186,6 +186,44 @@ def test_family_with_only_its_one_identifying_field_is_still_rejected():
     assert any("scope" in e and "unresolved" in e for e in errors)
 
 
+def test_findings_entry_missing_fix_is_rejected():
+    """Greptile issue 1 (round 3): a family's own required fields can all be
+    present by NAME while a mandatory NESTED member is missing --
+    agent-schema-families.md states outright that a scored-review
+    `findings[]` entry with no `fix` is a schema violation, not a soft
+    finding. Top-level field-name presence alone doesn't catch this."""
+    instance = copy.deepcopy(EXAMPLE)
+    for f in instance["out_fields"]:
+        if f["name"] == "findings":
+            f["description"] = f["description"].replace("fix", "")
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("findings" in e and "fix" in e for e in errors)
+
+
+def test_removed_entry_missing_proof_is_rejected():
+    """Same class as above, for action-log: 'never a removed entry without proof'."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["family"]["id"] = "action-log"
+    instance["family"]["is_new_family"] = False
+    instance["out_fields"] = [
+        {"name": "actions_taken", "type": "array", "description": "[{action, subject, result}]"},
+        {"name": "deferred", "type": "array", "description": "[{action, subject, why}]"},
+        {"name": "removed", "type": "array", "description": "[{subject}]"},  # missing `proof`
+    ]
+    instance["stamp_markdown"] = (
+        instance["stamp_markdown"].replace("scored-review", "action-log").replace("scorecard", "actions_taken")
+        + " deferred removed"
+    )
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("removed" in e and "proof" in e for e in errors)
+
+
 def test_no_prose_family_with_non_null_prose_field_is_rejected():
     """Greptile issue 1: watch-report/candidate-set are documented as
     carrying no prose slot at all -- pairing either with a non-null

@@ -60,7 +60,17 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   validated a prescription's family choice against its own fields —
   mirrors `validate_blueprint.py`'s role for its sibling schema, and
   `handoff_schema_ref`'s referential-check pattern, applied to the family
-  catalogue.
+  catalogue. Two further review rounds on the same PR tightened both checks
+  further: family completeness now checks a family's FULL required field
+  set (not just one identifying field — `FAMILY_REQUIRED_FIELDS`, was
+  `FAMILY_CATALOGUE`), plus nested-member invariants the catalogue states
+  as hard violations (`scored-review` `findings[]` entries must mention
+  `fix`; `action-log` `removed[]`/`actions_taken[]` entries must mention
+  `proof`/`result`); the containment check's word-boundary logic now
+  rejects hyphen/period/colon-joined compounds (`logs-ref`, `logs.ref`,
+  `logs:source`), not just underscore-joined ones, while still accepting a
+  genuine mention followed by ordinary sentence-ending punctuation. 88
+  tests total.
 - `schemas/blueprint.schema.json` — a strict JSON Schema (draft 2020-12,
   `additionalProperties: false` throughout) for Pass A, the right-sizing
   blueprint. Requires every `blueprint_rows[]` entry to carry all

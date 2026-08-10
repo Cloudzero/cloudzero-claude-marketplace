@@ -145,40 +145,60 @@ once, that's `model-right-sizer-dryrun`, not this skill.
 
    Then, **only if the target agent exists as a file** (`target.file_ref`
    is non-null) and the user confirms, insert or refresh that block in the
-   agent's `.md` file. First, scan the file for the marker states below —
-   in this order, since a later case can only be diagnosed once the earlier
-   ones are ruled out — and take the one safe, deterministic action each
-   state allows. **Never guess past an ambiguous state**; every case that
-   isn't the clean single-pair match stops for a human rather than picking
-   a placement on the agent's own judgment, because a wrong guess here
-   writes into a file another session or a human may be relying on:
+   agent's `.md` file.
 
-   - **Exactly one matched marker pair** (this skill's own
+   **First, scan the WHOLE file and count, before branching on any single
+   case.** A file can satisfy more than one of the states below at once — a
+   clean matched pair sitting in the file does not rule out an orphaned
+   marker or a second, unmarked heading elsewhere — so counting only enough
+   to confirm the *first* matching case (the mistake an earlier version of
+   this skill made) can refresh a legitimate pair while silently leaving a
+   second anomaly untouched. Count, across the entire file: every begin
+   marker (either style), every end marker (either style), and every
+   `## Agent-to-agent schema` heading not already bounded by a marker pair.
+   Only then pick the one case below whose counts actually match — **the
+   single-pair case requires the counts to be exactly one begin, one end, in
+   that order, and zero unmarked headings elsewhere; any other combination
+   is one of the anomaly cases, even when a clean pair is also present.**
+   Never guess past an ambiguous state — every case that isn't the exact
+   clean single-pair match stops for a human rather than picking a placement
+   on the agent's own judgment, because a wrong guess here writes into a
+   file another session or a human may be relying on:
+
+   - **Exactly one begin marker, one end marker (matched, in order), and no
+     unmarked heading anywhere else in the file** (this skill's own
      `<!-- model-right-sizer-schema:begin -->`/`:end`, *or* a pre-existing
      `<!-- xdp-agent-schema:begin -->`/`:end`-style pair from a repo's own
-     convention). The clean case: **replace only the text between those two
-     markers**, keep whichever marker naming was already there, and stop —
-     never stand up a second, competing section alongside a clean one.
-   - **No markers of either style, but an unmarked `## Agent-to-agent
-     schema` heading already exists.** Don't blindly append a duplicate
-     section under a new heading — that produces two headings with the same
-     name and no marker distinguishing which is current. Show the user the
-     existing unmarked section's full extent (heading through the next `##`
-     or end of file) alongside the new prescription, and ask whether to wrap
-     it in this skill's markers and replace it, or leave it untouched and
-     abandon the stamp for this run.
+     convention). The clean case, and the *only* case that proceeds without
+     asking: **replace only the text between those two markers**, keep
+     whichever marker naming was already there, and stop — never stand up a
+     second, competing section alongside a clean one.
+   - **No markers of either style anywhere, but at least one unmarked
+     `## Agent-to-agent schema` heading exists.** Don't blindly append a
+     duplicate section under a new heading — that produces two headings with
+     the same name and no marker distinguishing which is current. Show the
+     user every unmarked section's full extent (heading through the next
+     `##` or end of file) alongside the new prescription, and ask whether to
+     wrap the (or one specific) existing section in this skill's markers and
+     replace it, or leave the file untouched and abandon the stamp for this
+     run.
    - **An unmatched marker** — a `:begin` with no corresponding `:end`, or
-     vice versa, anywhere in the file. This is a corrupted or partially-applied
-     prior stamp, not a state this skill invented a rule for. Stop, report the
-     exact line the orphaned marker is on, and ask a human to repair or remove
-     it before re-running — do not attempt to infer where the missing half
-     belongs.
-   - **More than one marker pair already present** (from either marker
-     style, or a mix). An existing anomaly, not something this run created —
-     stop, report all pairs found (with line numbers), and ask a human to
-     consolidate to one before this skill writes anything. Picking one pair
-     to update and silently ignoring the rest would hide the anomaly rather
-     than surface it.
+     vice versa, anywhere in the file, *regardless of whether a separate
+     clean pair also exists elsewhere*. This is a corrupted or
+     partially-applied prior stamp, not a state this skill invented a rule
+     for. Stop, report the exact line the orphaned marker is on (and the
+     clean pair's location too, if one is also present, so the human isn't
+     left guessing which is which), and ask a human to repair or remove it
+     before re-running — do not attempt to infer where the missing half
+     belongs, and do not refresh the clean pair in the same run without the
+     human's go-ahead once an orphan is known to exist.
+   - **More than one complete marker pair present** (from either marker
+     style, or a mix), or **a complete pair coexisting with an unmarked
+     heading elsewhere.** An existing anomaly, not something this run
+     created — stop, report every pair and every unmarked heading found
+     (with line numbers), and ask a human to consolidate to one before this
+     skill writes anything. Picking one location to update and silently
+     ignoring the rest would hide the anomaly rather than surface it.
    - **No markers and no `## Agent-to-agent schema` heading at all** (the
      ordinary first-time case). Append a new section, with this skill's own
      `model-right-sizer-schema:begin`/`:end` markers, directly after the

@@ -35,6 +35,15 @@ Checks:
     letting an otherwise-incomplete contract pass -- and a family the
     catalogue documents as carrying no prose slot (`watch-report`,
     `candidate-set`) is not paired with a non-null `prose_field`.
+  - nested-member invariants the catalogue states as a hard violation, not
+    just a top-level field-name check: `scored-review`'s `findings[]`
+    entries must mention `fix`, `action-log`'s `removed[]` entries must
+    mention `proof` and its `actions_taken[]` entries must mention `result`
+    (agent-schema-families.md calls each of these out explicitly). Checked
+    against the out_field's free-text `type`/`description`, the same way
+    `stamp_markdown` restatement is checked -- `out_fields[].type` is an
+    agent-authored shape description, not structured JSON, so there's no
+    deeper schema to validate against.
 
 Usage:
   uv run --no-project --with jsonschema scripts/validate_agent_schema.py                  # validate the checked-in worked example
@@ -101,6 +110,22 @@ FAMILY_REQUIRED_FIELDS = {
     "watch-report": {"condition", "state", "observed", "elapsed_s"},
     "action-log": {"actions_taken", "deferred", "removed"},
     "candidate-set": {"frame", "candidates"},
+}
+
+# Nested-member invariants agent-schema-families.md states explicitly and
+# unconditionally for specific array-shaped fields within a family -- not
+# every plausible nested shape, only the ones the catalogue itself calls a
+# hard violation (scored-review: "A findings[] entry with no fix is a schema
+# violation"; action-log: "never a removed entry without proof", "never an
+# actions_taken entry without result"). out_fields[].type is free text (an
+# agent-authored shape description, e.g. "[{id, dimension, ..., fix}]"), not
+# structured JSON, so this is checked the same way stamp_markdown restatement
+# is: a whole-word/whole-phrase mention inside that field's own `type` (and
+# `description`, if present) text -- not a fully generic nested-schema
+# validator, which out_fields[].type's free-text shape doesn't support.
+FAMILY_NESTED_REQUIRED = {
+    "scored-review": {"findings": {"fix"}},
+    "action-log": {"removed": {"proof"}, "actions_taken": {"result"}},
 }
 
 # Families agent-schema-families.md documents as structurally carrying no
@@ -227,6 +252,19 @@ def validate(schema: dict, instance: dict) -> list[str]:
                 f"family.id: {family_id!r} is documented as carrying no prose slot "
                 f"(agent-schema-families.md), but prose_field is non-null: {prose_field!r}"
             )
+        for array_field_name, required_nested in FAMILY_NESTED_REQUIRED.get(family_id, {}).items():
+            out_field = next((f for f in instance.get("out_fields", []) if f.get("name") == array_field_name), None)
+            if out_field is None:
+                continue  # already reported above as a missing required field
+            shape_text = f"{out_field.get('type', '')} {out_field.get('description', '')}"
+            for nested_name in required_nested:
+                if not _contains_phrase(shape_text, nested_name):
+                    errors.append(
+                        f"family.id: {family_id!r} requires out_fields[name={array_field_name!r}] "
+                        f"entries to carry {nested_name!r} (agent-schema-families.md states this as a "
+                        f"hard violation if missing), but its type/description text doesn't mention it: "
+                        f"{shape_text!r}"
+                    )
 
     return errors
 
