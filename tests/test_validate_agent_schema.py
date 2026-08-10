@@ -8,6 +8,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 # Make the scripts directory importable.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 import validate_agent_schema  # noqa: E402
@@ -150,19 +152,38 @@ def test_new_family_bypasses_catalogue_membership_check():
 
 
 def test_family_missing_its_definitional_field_is_rejected():
-    """Greptile issue 1: a prescription can't claim a catalogue family while
-    omitting the one out_fields[] entry that makes it that family -- e.g.
+    """Greptile issue 1 (round 1): a prescription can't claim a catalogue
+    family while omitting the field that makes it that family -- e.g.
     `build-report` with no `files_changed` isn't a build-report."""
     instance = copy.deepcopy(EXAMPLE)
     instance["family"]["id"] = "build-report"
     instance["family"]["is_new_family"] = False
-    # out_fields (scorecard/findings/leave_alone/target) has no files_changed.
+    # out_fields (scorecard/findings/leave_alone/target) has none of build-report's fields.
     instance["stamp_markdown"] = instance["stamp_markdown"].replace("scored-review", "build-report")
 
     errors = validate_agent_schema.validate(SCHEMA, instance)
 
     assert errors
     assert any("files_changed" in e for e in errors)
+
+
+def test_family_with_only_its_one_identifying_field_is_still_rejected():
+    """Greptile issue 1 (round 2): the round-1 fix checked only ONE field per
+    family, so a prescription carrying just that one field (and none of the
+    family's other required fields) incorrectly passed. `verdict-set` needs
+    `scope` and `unresolved` too, not just `rows`."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["family"]["id"] = "verdict-set"
+    instance["family"]["is_new_family"] = False
+    instance["out_fields"] = [{"name": "rows", "type": "array"}]
+    instance["stamp_markdown"] = instance["stamp_markdown"].replace("scored-review", "verdict-set").replace(
+        "scorecard", "rows"
+    )
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("scope" in e and "unresolved" in e for e in errors)
 
 
 def test_no_prose_family_with_non_null_prose_field_is_rejected():
@@ -197,7 +218,8 @@ def test_substring_collision_is_not_mistaken_for_a_real_mention():
 
 
 def test_whole_word_match_still_passes():
-    """The word-boundary fix must not reject a genuine, standalone mention."""
+    """The word-boundary fix must not reject a genuine, standalone mention --
+    including one immediately followed by sentence-ending punctuation."""
     instance = copy.deepcopy(EXAMPLE)
     instance["exclude"] = ["logs"]
     instance["stamp_markdown"] = instance["stamp_markdown"] + "\n\n**Never inline:** logs."
@@ -205,6 +227,22 @@ def test_whole_word_match_still_passes():
     errors = validate_agent_schema.validate(SCHEMA, instance)
 
     assert errors == []
+
+
+@pytest.mark.parametrize("compound", ["logs-ref", "logs.ref", "logs:source"])
+def test_punctuation_joined_compound_is_not_mistaken_for_a_real_mention(compound):
+    """Greptile issue 2 (round 2): the round-1 word-boundary fix only covered
+    underscore-joined compounds (\\w already includes '_'). Hyphen/period/
+    colon-joined compounds aren't \\w characters, so a plain \\b sits happily
+    between `logs` and `-ref`/`.ref`/`:source` -- this must still reject."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["exclude"] = ["logs"]
+    instance["stamp_markdown"] = instance["stamp_markdown"] + f"\n\n**In** -- `{compound}: string`."
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("logs" in e for e in errors)
 
 
 def test_main_validates_default_example(monkeypatch, capsys):
