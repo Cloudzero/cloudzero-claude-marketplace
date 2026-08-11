@@ -206,6 +206,21 @@ _CONNECTOR_THEN_WORD = re.compile(r"^[\-.:]\w")
 _WORD_THEN_CONNECTOR = re.compile(r"\w[\-.:]$")
 
 
+def _find_positions(haystack: str, needle: str) -> list[int]:
+    """Start indices of every whole-word/whole-phrase match of (already
+    normalized) `needle` in (already normalized) `haystack` -- glued-neighbor
+    check factored out of _contains_phrase so _field_restatement_segment can
+    reuse the exact same matching rule instead of a second, looser one."""
+    positions = []
+    for m in re.finditer(re.escape(needle), haystack):
+        before, after = haystack[: m.start()], haystack[m.end() :]
+        glued_before = bool(_WORD_CHAR.search(before[-1:])) or bool(_WORD_THEN_CONNECTOR.search(before[-2:]))
+        glued_after = bool(_WORD_CHAR.match(after[:1])) or bool(_CONNECTOR_THEN_WORD.match(after[:2]))
+        if not glued_before and not glued_after:
+            positions.append(m.start())
+    return positions
+
+
 def _contains_phrase(haystack: str, needle: str) -> bool:
     """Whole-word/whole-phrase containment, resistant to TWO distinct false-
     positive shapes Greptile flagged across two review rounds on this exact
@@ -230,13 +245,37 @@ def _contains_phrase(haystack: str, needle: str) -> bool:
     needle = _normalize(needle)
     if not needle:
         return True
-    for m in re.finditer(re.escape(needle), haystack):
-        before, after = haystack[: m.start()], haystack[m.end() :]
-        glued_before = bool(_WORD_CHAR.search(before[-1:])) or bool(_WORD_THEN_CONNECTOR.search(before[-2:]))
-        glued_after = bool(_WORD_CHAR.match(after[:1])) or bool(_CONNECTOR_THEN_WORD.match(after[:2]))
-        if not glued_before and not glued_after:
-            return True
-    return False
+    return bool(_find_positions(haystack, needle))
+
+
+def _field_restatement_segment(stamp: str, field_name: str, all_field_names) -> str:
+    """The slice of the stamp that actually restates `field_name` -- from its
+    own first mention up to whichever OTHER out_fields[] name is mentioned
+    next (or end of string) -- not the whole stamp.
+
+    Greptile round 7: checking a nested member against the WHOLE stamp let it
+    be credited off a completely different field's own restatement (or off
+    unrelated prose elsewhere in the stamp) while the target field's actual
+    restatement was incomplete. Scoping to this field's own segment is what
+    the check was supposed to mean all along. Relies on the same convention
+    every worked stamp in this repo already follows -- fields restated
+    sequentially, each as its own clause -- which is exactly what lets "next
+    field-name mention" stand in for "end of this field's clause" without a
+    full markdown parse."""
+    normalized = _normalize(stamp)
+    own_positions = _find_positions(normalized, _normalize(field_name))
+    if not own_positions:
+        return ""  # field itself isn't mentioned at all -- already reported by the out_fields[].name check
+    start = own_positions[0]
+    other_starts = [
+        p
+        for other in all_field_names
+        if other != field_name
+        for p in _find_positions(normalized, _normalize(other))
+        if p > start
+    ]
+    end = min(other_starts) if other_starts else len(normalized)
+    return normalized[start:end]
 
 
 def fail(msg: str) -> None:
@@ -319,6 +358,7 @@ def validate(schema: dict, instance: dict) -> list[str]:
             if out_field is None:
                 continue  # already reported above as a missing required field
             shape_text = f"{out_field.get('type', '')} {out_field.get('description', '')}"
+            stamp_segment = _field_restatement_segment(stamp, array_field_name, list(out_field_names))
             for nested_name in required_nested:
                 if not _contains_phrase(shape_text, nested_name):
                     errors.append(
@@ -327,13 +367,14 @@ def validate(schema: dict, instance: dict) -> list[str]:
                         f"hard violation if missing), but its type/description text doesn't mention it: "
                         f"{shape_text!r}"
                     )
-                elif not _contains_phrase(stamp, nested_name):
+                elif not _contains_phrase(stamp_segment, nested_name):
                     # The typed field (checked above) carries the nested member, but the
                     # STAMP -- the actual prose contract a controller/agent reads -- dropped
-                    # it on restatement. Checking only out_fields[].type/description (as an
-                    # earlier version of this loop did) missed exactly this: a prescription
-                    # can be internally complete while the one artifact that matters at
-                    # runtime, the stamp, is not.
+                    # it on restatement. Checked against THIS FIELD'S OWN segment of the
+                    # stamp (see _field_restatement_segment), not the whole stamp -- an
+                    # earlier version credited a mention anywhere in the stamp, which let a
+                    # different field's restatement (or unrelated prose) satisfy a nested
+                    # member this field's own restatement never actually carried.
                     errors.append(
                         f"stamp_markdown: does not restate out_fields[name={array_field_name!r}]'s "
                         f"required nested member {nested_name!r}, even though the field's own "

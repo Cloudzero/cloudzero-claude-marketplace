@@ -291,6 +291,28 @@ def test_nested_member_present_in_field_but_missing_from_stamp_is_rejected():
     assert any("findings" in e and "fix" in e and "does not restate" in e for e in errors)
 
 
+def test_nested_member_mentioned_elsewhere_in_stamp_does_not_count_as_restated():
+    """Greptile issue (round 7): checking a nested member against the WHOLE
+    stamp let it be credited off a DIFFERENT field's own restatement (or
+    unrelated prose) while the target field's actual restatement stayed
+    incomplete. `fix` must be missing from `findings`'s own segment to fail,
+    even when the literal word `fix` appears elsewhere in the stamp -- e.g.
+    inside `leave_alone`'s restatement, a wholly different field."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["stamp_markdown"] = instance["stamp_markdown"].replace(
+        'findings: [{id, dimension, severity: enum[P1, P2, hygiene], location: "service:line", claim: string, fix: string}]',
+        'findings: [{id, dimension, severity: enum[P1, P2, hygiene], location: "service:line", claim: string}]',
+    ).replace(
+        'leave_alone: [{location, reason}]',
+        'leave_alone: [{location, reason}] -- not a fix, just a triage call',
+    )
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("findings" in e and "fix" in e and "does not restate" in e for e in errors)
+
+
 def test_removed_entry_missing_proof_is_rejected():
     """Same class as above, for action-log: 'never a removed entry without proof'."""
     instance = copy.deepcopy(EXAMPLE)
