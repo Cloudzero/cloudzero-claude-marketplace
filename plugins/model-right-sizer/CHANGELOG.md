@@ -27,20 +27,30 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   classification, the agentic-down-pin promote/revert gate, IBPO's
   accuracy-per-compute arithmetic) is implemented as a pure, stdlib-only
   Python function in `eval/token_economics.py` / `eval/reasoning_budget.py`
-  — run by code, never re-derived by an LLM. Every equation-referencing
-  claim also carries a `formula_expr` + `sample_inputs`, so
-  `eval/check_citations.py` evaluates the literal cited formula on concrete
-  numbers and diffs it against actually *calling* the function it claims to
-  implement — a `source_quote`/`implemented_by` pair is enforced, not just
-  documented, so a future edit that quietly detaches the code from the
-  formula it cites fails loudly instead of passing on sight. The checker
-  (presence + arithmetic + formula-vs-implementation) and both modules are
-  exercised by the pytest suite under `tests/model_right_sizer/` at the repo
-  root, including tests that tamper with an in-memory copy of the ledger to
-  prove the checks actually catch drift, not just that they pass today. One
-  claim — IBPO's "~2x the accuracy-per-compute of self-consistency" — is
-  explicitly marked `verifiable: false` pending the paper's own
-  self-consistency baseline figure, rather than assumed true.
+  — run by code, never re-derived by an LLM. `eval/check_citations.py` runs
+  four independent checks per claim: (1) literal presence of the cited
+  formula/number in the agent file's own prose (`exact_substring` — this
+  caught a real bug: the agent file's CES equation had transcribed `K^ρ`/`M^ρ`
+  as `K^p`/`M^p`); (2) recomputed arithmetic against the claimed figure; (3)
+  the literal formula (`formula_expr`, evaluated on `sample_inputs`) against
+  actually *calling* the function it claims to implement; and (4) that same
+  `formula_expr`'s free variables against an independently-declared
+  `source_variables` set, so `formula_expr` and the implementation can't
+  silently drift together in the same wrong direction without also
+  falsifying a third, separately-authored field. Together this makes a
+  `source_quote`/`implemented_by` pair enforced, not just documented — what
+  it does *not* do is machine-verify `source_quote` against the live arXiv
+  PDF, which stays a human/primary-source check performed at authoring time
+  (named explicitly, the same way `verifiable: false` names its own gap).
+  The checker and both modules are exercised by the pytest suite under
+  `tests/model_right_sizer/` at the repo root, including tamper tests
+  proving each check actually catches drift — one deliberately constructed
+  so a dropped term's sample value is 0 (invisible to the arithmetic check)
+  to show why the variable-coverage check is a distinct layer, not a
+  restatement of the arithmetic one. One claim — IBPO's "~2x the
+  accuracy-per-compute of self-consistency" — is explicitly marked
+  `verifiable: false` pending the paper's own self-consistency baseline
+  figure, rather than assumed true.
 - `schemas/blueprint.schema.json` — a strict JSON Schema (draft 2020-12,
   `additionalProperties: false` throughout) for Pass A, the right-sizing
   blueprint. Requires every `blueprint_rows[]` entry to carry all

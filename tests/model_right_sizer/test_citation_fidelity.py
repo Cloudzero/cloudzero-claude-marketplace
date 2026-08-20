@@ -61,6 +61,39 @@ def test_every_verifiable_token_economics_equation_claim_carries_a_formula_expr(
         assert claim.get("sample_inputs"), f"{claim['claim_id']} has no sample_inputs -- formula_expr can't run"
         assert claim.get("module") in check_citations.FORMULA_MODULES
         assert claim.get("primary_function")
+        # The second-round Greptile finding: without this, the agent's own
+        # markdown prose could mistranscribe the formula (it did -- K^rho/M^rho
+        # were typo'd as K^p/M^p) and nothing would catch it, since neither
+        # source_quote nor formula_expr is ever read against the agent file.
+        assert claim.get("exact_substring"), f"{claim['claim_id']} has no exact_substring -- agent prose is unbound"
+        # And every formula_expr claim needs an independently-declared variable
+        # set, or formula_expr + the implementation could drift together unnoticed.
+        assert claim.get("source_variables"), f"{claim['claim_id']} has no source_variables"
+
+
+def test_every_formula_expr_claim_carries_source_variables():
+    """Same guard as above, but repo-wide (not just Token Economics) -- covers
+    the BudgetThinker formula_expr claim too."""
+    for paper in LEDGER["papers"]:
+        for claim in paper.get("claims", []):
+            if claim.get("formula_expr"):
+                assert claim.get("source_variables"), f"{claim['claim_id']} has formula_expr but no source_variables"
+
+
+def test_formula_variable_coverage_matches_for_every_claim():
+    errors = check_citations.check_formula_variable_coverage(LEDGER)
+    assert errors == []
+
+
+def test_agent_prose_equation_binding_is_exact_for_the_ces_production_function():
+    """The concrete bug this whole layer exists to catch: the agent file once
+    said K^p / M^p (wrong superscript) instead of K^rho / M^rho. Assert the
+    ledger's exact_substring for this claim is now character-identical to its
+    source_quote, so agent-prose drift and paper-fidelity drift can't hide
+    behind each other."""
+    te_paper = next(p for p in LEDGER["papers"] if p["id"] == "arXiv:2605.09104")
+    claim = next(c for c in te_paper["claims"] if c["claim_id"] == "te-ces-production")
+    assert claim["exact_substring"] == claim["source_quote"]
 
 
 def test_main_passes_on_the_real_repo_state(capsys):
@@ -200,6 +233,79 @@ def test_check_formula_claims_catches_missing_sample_inputs():
 
     assert errors
     assert any("te-cost-function" in e and "sample_inputs" in e for e in errors)
+
+
+def test_check_formula_variable_coverage_catches_a_dropped_term():
+    """The scenario Greptile's second finding named explicitly: formula_expr
+    AND the corresponding source_variables both silently losing a term
+    together would defeat check_formula_claims if the dropped variable's
+    sample value happened to be 0 -- but here we tamper formula_expr ALONE
+    (dropping '+ w*L'), leaving source_variables declaring w and L still
+    belong to the equation, so the mismatch is caught structurally, without
+    even needing to run the function."""
+    tampered = copy.deepcopy(LEDGER)
+    te_paper = next(p for p in tampered["papers"] if p["id"] == "arXiv:2605.09104")
+    claim = next(c for c in te_paper["claims"] if c["claim_id"] == "te-cost-function")
+    claim["formula_expr"] = "P_k*K + P_m*M"  # dropped "+ w*L"
+
+    errors = check_citations.check_formula_variable_coverage(tampered)
+
+    assert errors
+    assert any("te-cost-function" in e and "'L'" in e and "'w'" in e for e in errors)
+
+
+def test_check_formula_variable_coverage_catches_an_invented_extra_variable():
+    tampered = copy.deepcopy(LEDGER)
+    te_paper = next(p for p in tampered["papers"] if p["id"] == "arXiv:2605.09104")
+    claim = next(c for c in te_paper["claims"] if c["claim_id"] == "te-cost-function")
+    claim["formula_expr"] = "P_k*K + P_m*M + w*L + fudge_factor"
+
+    errors = check_citations.check_formula_variable_coverage(tampered)
+
+    assert errors
+    assert any("te-cost-function" in e and "fudge_factor" in e for e in errors)
+
+
+def test_check_formula_variable_coverage_catches_a_dropped_term_even_when_the_sample_would_hide_it():
+    """The exact failure mode named in the review comment: if a dropped term's
+    sample value is 0, check_formula_claims's numeric diff can't see it (0
+    contribution either way) -- but check_formula_variable_coverage still
+    catches it, because it never runs the expression at all."""
+    tampered = copy.deepcopy(LEDGER)
+    te_paper = next(p for p in tampered["papers"] if p["id"] == "arXiv:2605.09104")
+    claim = next(c for c in te_paper["claims"] if c["claim_id"] == "te-shadow-price-multi-agent")
+    claim["formula_expr"] = "P_m + w*tau_sync"  # dropped "+ delta_c_coord"
+    claim["sample_inputs"] = [{"P_m": 0.01, "w": 50, "tau_sync": 0.01, "delta_c_coord": 0.0}]  # 0 -- would hide it numerically
+
+    numeric_errors = check_citations.check_formula_claims(tampered)
+    coverage_errors = check_citations.check_formula_variable_coverage(tampered)
+
+    assert numeric_errors == []  # confirms the blind spot is real
+    assert coverage_errors and any("delta_c_coord" in e for e in coverage_errors)  # confirms this check isn't blind to it
+
+
+def test_check_formula_variable_coverage_rejects_unparseable_expression():
+    tampered = copy.deepcopy(LEDGER)
+    te_paper = next(p for p in tampered["papers"] if p["id"] == "arXiv:2605.09104")
+    claim = next(c for c in te_paper["claims"] if c["claim_id"] == "te-cost-function")
+    claim["formula_expr"] = "P_k*K + (("  # syntactically broken
+
+    errors = check_citations.check_formula_variable_coverage(tampered)
+
+    assert errors
+    assert any("te-cost-function" in e and "not a parseable expression" in e for e in errors)
+
+
+def test_check_formula_variable_coverage_rejects_missing_source_variables():
+    tampered = copy.deepcopy(LEDGER)
+    te_paper = next(p for p in tampered["papers"] if p["id"] == "arXiv:2605.09104")
+    claim = next(c for c in te_paper["claims"] if c["claim_id"] == "te-cost-function")
+    del claim["source_variables"]
+
+    errors = check_citations.check_formula_variable_coverage(tampered)
+
+    assert errors
+    assert any("te-cost-function" in e and "no source_variables" in e for e in errors)
 
 
 def test_check_arithmetic_catches_an_inverted_ibpo_range():
