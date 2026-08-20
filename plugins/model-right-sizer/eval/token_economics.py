@@ -88,6 +88,13 @@ def ces_production(
             "footnote 4 describes: a zero factor there implies unboundedly negative "
             "output, not a computable value."
         )
+    if L == 0 and beta < 0:
+        raise ValueError(
+            f"L=0 combined with beta={beta!r} < 0 is undefined (0 raised to a negative "
+            "power) -- the labor term L**beta has no rigid-complementarity escape hatch "
+            "the way K/M do (there's no other factor for zero labor to substitute "
+            "against); this simply isn't a computable value."
+        )
     inner = delta * K**rho + (1 - delta) * M**rho
     if inner <= 0:
         raise ValueError(
@@ -115,6 +122,11 @@ def ces_production_cobb_douglas_limit(
         raise ValueError("Cobb-Douglas requires strictly positive K and M (zero collapses Y to zero).")
     if L < 0:
         raise ValueError("L must be non-negative.")
+    if L == 0 and beta < 0:
+        raise ValueError(
+            f"L=0 combined with beta={beta!r} < 0 is undefined (0 raised to a negative "
+            "power) -- same boundary as ces_production's L**beta term."
+        )
     return A * (K ** (delta * theta)) * (M ** ((1 - delta) * theta)) * L**beta * math.exp(epsilon)
 
 

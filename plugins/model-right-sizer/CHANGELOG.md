@@ -50,7 +50,13 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   restatement of the arithmetic one. One claim — IBPO's "~2x the
   accuracy-per-compute of self-consistency" — is explicitly marked
   `verifiable: false` pending the paper's own self-consistency baseline
-  figure, rather than assumed true.
+  figure, rather than assumed true. `ces_production` and
+  `ces_production_cobb_douglas_limit` also guard `L**beta` against `L=0`
+  combined with a negative `beta` (the same zero-base/negative-exponent
+  `ZeroDivisionError` pattern already fixed for `K`/`M`, found on a second
+  review pass after the K/M fix landed) — a residual boundary the
+  K/M-specific guard didn't cover, since labor has no rigid-complementarity
+  escape hatch to fall back on the way K/M do.
 - `schemas/blueprint.schema.json` — a strict JSON Schema (draft 2020-12,
   `additionalProperties: false` throughout) for Pass A, the right-sizing
   blueprint. Requires every `blueprint_rows[]` entry to carry all

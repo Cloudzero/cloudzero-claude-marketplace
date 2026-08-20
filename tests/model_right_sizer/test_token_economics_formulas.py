@@ -51,6 +51,23 @@ def test_ces_production_zero_factor_with_positive_rho_is_fine():
     assert Y == pytest.approx(2 * (0.5 * 16**0.5) ** 2)
 
 
+def test_ces_production_zero_labor_with_negative_beta_raises_valueerror_not_zerodivisionerror():
+    # The third-round Greptile finding: L**beta leaks the same ZeroDivisionError
+    # when L=0 and beta<0, a residual boundary the K/M guard above didn't cover.
+    with pytest.raises(ValueError, match="L=0 combined with beta"):
+        te.ces_production(K=4, M=16, L=0, delta=0.5, rho=0.5, theta=1, beta=-1.0)
+
+
+def test_ces_production_zero_labor_with_nonnegative_beta_is_fine():
+    Y = te.ces_production(K=4, M=16, L=0, delta=0.5, rho=0.5, theta=1, beta=0.0, A=2)
+    assert Y == pytest.approx(18.0)  # L**0 == 1, same as the base hand-computed case
+
+
+def test_ces_production_cobb_douglas_limit_zero_labor_with_negative_beta_raises():
+    with pytest.raises(ValueError, match="L=0 combined with beta"):
+        te.ces_production_cobb_douglas_limit(K=4, M=9, L=0, delta=0.5, theta=2, beta=-1.0)
+
+
 def test_ces_production_cobb_douglas_limit_matches_hand_computed_value():
     # K**1 * M**1 = 4*9 = 36 when delta=theta=... chosen so delta*theta=(1-delta)*theta=1
     Y = te.ces_production_cobb_douglas_limit(K=4, M=9, L=1, delta=0.5, theta=2, beta=0)
