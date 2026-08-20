@@ -43,6 +43,11 @@ def test_arithmetic_claims_are_internally_consistent():
     assert errors == []
 
 
+def test_numbers_are_grounded_in_exact_substring():
+    errors = check_citations.check_numbers_grounded_in_exact_substring(LEDGER)
+    assert errors == []
+
+
 def test_formula_claims_match_their_implementations():
     errors = check_citations.check_formula_claims(LEDGER)
     assert errors == []
@@ -171,6 +176,58 @@ def test_check_arithmetic_catches_a_tampered_openrouter_multiple():
 
     assert errors
     assert any("te-openrouter-growth" in e for e in errors)
+
+
+def test_check_numbers_grounded_catches_a_uniform_order_preserving_scale():
+    """The exact gap found by the model-right-sizer-eval-audit skill's first
+    real run: check_arithmetic's ordering checks alone don't notice a uniform
+    scale (order is preserved), so a separate, generic check is needed to
+    catch drift from what's actually quoted."""
+    tampered = copy.deepcopy(LEDGER)
+    ibpo_paper = next(p for p in tampered["papers"] if p["id"] == "arXiv:2501.17974")
+    claim = next(c for c in ibpo_paper["claims"] if c["claim_id"] == "ibpo-math500-gain-and-budget")
+    claim["numbers"] = {k: v * 1000 for k, v in claim["numbers"].items()}
+
+    arithmetic_errors = check_citations.check_arithmetic(tampered)
+    grounding_errors = check_citations.check_numbers_grounded_in_exact_substring(tampered)
+
+    assert arithmetic_errors == []  # confirms check_arithmetic really is blind to this
+    assert grounding_errors and any("ibpo-math500-gain-and-budget" in e for e in grounding_errors)
+
+
+def test_check_numbers_grounded_accepts_a_whole_number_float_without_its_trailing_dot_zero():
+    """ibpo-accuracy-per-compute-ratio's numbers.ratio is 2.0, but the agent
+    file's prose says '~2x', not '~2.0x' -- the check must accept the
+    int-formatted candidate too, not just str(2.0) == '2.0'."""
+    ibpo_paper = next(p for p in LEDGER["papers"] if p["id"] == "arXiv:2501.17974")
+    claim = next(c for c in ibpo_paper["claims"] if c["claim_id"] == "ibpo-accuracy-per-compute-ratio")
+    assert claim["numbers"]["ratio"] == 2.0
+    assert "2.0" not in claim["exact_substring"]  # confirms the trailing-.0 case is real, not hypothetical
+
+    errors = check_citations.check_numbers_grounded_in_exact_substring({"papers": [ibpo_paper]})
+
+    assert errors == []
+
+
+def test_check_numbers_grounded_catches_a_value_with_no_plausible_match_at_all():
+    tampered = copy.deepcopy(LEDGER)
+    te_paper = next(p for p in tampered["papers"] if p["id"] == "arXiv:2605.09104")
+    claim = next(c for c in te_paper["claims"] if c["claim_id"] == "te-openrouter-growth")
+    claim["numbers"]["claimed_multiple"] = 999
+
+    errors = check_citations.check_numbers_grounded_in_exact_substring(tampered)
+
+    assert errors and any("te-openrouter-growth" in e and "999" in e for e in errors)
+
+
+def test_values_differ_treats_a_complex_result_as_a_mismatch_not_a_crash():
+    """A mutated formula_expr can raise a negative base to a fractional
+    power, which Python evaluates as a complex number rather than raising --
+    found by running the model-right-sizer-eval-audit skill's mutation
+    battery against this exact function. math.isclose alone raises TypeError
+    on a complex operand; _values_differ must not propagate that."""
+    assert check_citations._values_differ(complex(1, 2), 3.0) is True
+    assert check_citations._values_differ(3.0, complex(1, 2)) is True
 
 
 def test_check_formula_claims_catches_a_formula_expr_that_no_longer_matches_the_implementation():
