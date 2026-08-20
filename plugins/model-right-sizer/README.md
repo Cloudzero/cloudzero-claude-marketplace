@@ -24,6 +24,7 @@ This directory is a self-contained **Claude Code plugin** within the CloudZero m
 - [`schemas/blueprint.schema.json`](schemas/blueprint.schema.json) (+ [`blueprint.example.json`](schemas/blueprint.example.json)) — the strict JSON Schema the agent's Pass A (the right-sizing blueprint) must conform to, and a worked instance. Defined once here; the agent and the `model-right-sizer-dryrun` skill both point at it instead of restating the shape. Enforced, not just documented: [`../../scripts/validate_blueprint.py`](../../scripts/validate_blueprint.py) validates the worked example in CI and is the same validator `model-right-sizer-dryrun` runs against its own output before handing a blueprint to an orchestrator.
 - [`skills/model-right-sizer-install/SKILL.md`](skills/model-right-sizer-install/SKILL.md) — a companion skill that stamps a narrow, organization-agnostic mandate onto a *target* repo's `CLAUDE.md`, `AGENTS.md`, or both (whichever the repo actually has): run `model-right-sizer-dryrun` before every substantive task and hand its JSON blueprint to the orchestrator, then consult `model-right-sizer` directly for a usage report after. It also installs this plugin itself if the agent/skill aren't already discoverable there. Beyond that, it's just the mandate — no broader development process — so it can be adopted independently of whatever flow (if any) the target repo already runs.
 - [`skills/model-right-sizer-dryrun/SKILL.md`](skills/model-right-sizer-dryrun/SKILL.md) — a companion skill that previews the agent's JSON blueprint for a free-text intent, without building anything.
+- [`skills/model-right-sizer-eval-audit/SKILL.md`](skills/model-right-sizer-eval-audit/SKILL.md) — a companion skill that mutation-tests `eval/`'s own effectiveness: programmatically corrupts the citation ledger and boundary-probes the formula functions, runs the real checker against every mutant, and scores the kill/pass rate — the concrete metric to iterate on. Ships with a committed round-over-round trend (`eval_audit_history.jsonl`) and a pytest regression test that locks the current 100% effectiveness in as a standing CI gate.
 - [`eval/`](eval/) — the deterministic formula/citation checks for this plugin's research grounding: a committed answer key (`citation_ledger.json`) plus pure-function implementations of every cited formula (`token_economics.py`, `reasoning_budget.py`) and a standalone drift checker (`check_citations.py`). Corresponding pytest suites live at the repo root under `tests/model_right_sizer/`. See [`eval/README.md`](eval/README.md).
 - [`CHANGELOG.md`](CHANGELOG.md) — dated entries for every change to the agent core or its companion skills. Update this in the same PR as the change.
 
@@ -38,7 +39,7 @@ Install it from the CloudZero marketplace — add the marketplace once, then ins
 /plugin install model-right-sizer@cloudzero
 ```
 
-That installs the agent (`agents/model-right-sizer.md`) and both companion skills (`skills/model-right-sizer-install/`, `skills/model-right-sizer-dryrun/`) together. Adding the marketplace also makes the [`cost-analyst`](../cost-analyst/) plugin available (`/plugin install cost-analyst@cloudzero`). To try it before installing, or to iterate on a local checkout, load it directly for a session instead:
+That installs the agent (`agents/model-right-sizer.md`) and all three companion skills (`skills/model-right-sizer-install/`, `skills/model-right-sizer-dryrun/`, `skills/model-right-sizer-eval-audit/`) together. Adding the marketplace also makes the [`cost-analyst`](../cost-analyst/) plugin available (`/plugin install cost-analyst@cloudzero`). To try it before installing, or to iterate on a local checkout, load it directly for a session instead:
 
 ```
 claude --plugin-dir /path/to/cloudzero-claude-marketplace/plugins/model-right-sizer
@@ -121,6 +122,13 @@ never edits or writes files. Its companion skills' blast radius:
   instructions if plugin install isn't available) — the only action it
   takes outside those marker-delimited blocks.
 - `model-right-sizer-dryrun` writes nothing; it only returns the JSON blueprint (unless the user explicitly asks it to save one to a file).
+- `model-right-sizer-eval-audit`'s script writes only one thing — an appended
+  line to `eval_audit_history.jsonl` when run with `--history` — and reads
+  `eval/citation_ledger.json`, `eval/token_economics.py`, and
+  `eval/reasoning_budget.py` to mutate in-memory copies and probe the real
+  functions; it never edits those files itself. Any real fix a run's report
+  surfaces (a guard to add, a sample to diversify) is applied by the invoking
+  session as a normal, reviewed code edit, not by the script.
 
 See the repo-level [SECURITY.md](../../SECURITY.md) for how to report vulnerabilities.
 

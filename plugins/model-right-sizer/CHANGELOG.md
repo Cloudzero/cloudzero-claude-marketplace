@@ -5,6 +5,32 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 ## Unreleased
 
 ### Added
+- **`skills/model-right-sizer-eval-audit`** — a companion skill that
+  mutation-tests `eval/`'s own effectiveness instead of just running it: a
+  Battery A programmatically corrupts `citation_ledger.json` (formula_expr
+  operator flips / constant scaling / variable transposition / term drops;
+  substring corruption; `numbers` scaling and low/high inversion;
+  `expected_output` corruption) and a Battery B boundary-probes every
+  `token_economics.py` / `reasoning_budget.py` function's domain edges,
+  running the real `check_citations.py` functions against every mutant and
+  scoring the kill/pass rate — with equivalent mutants (a mutation that
+  doesn't change behavior, e.g. `a*b` → `b*a`) detected and excluded so they
+  don't pollute the signal, and known-accepted escapes named with a reason
+  rather than silently dropped. First real run (after fixing two bugs in the
+  harness itself) found and closed 4 concrete gaps: `math.exp(epsilon)`
+  leaking a raw `OverflowError` in both CES production functions (the same
+  zero/extreme-input-leaks-a-raw-exception pattern already fixed twice for
+  K/M/L, on a parameter nobody had probed); `te-shadow-price-multi-agent`'s
+  two samples being too degenerate to distinguish a variable transposition;
+  and a new **`check_numbers_grounded_in_exact_substring`** check in
+  `check_citations.py` (added to `eval/`'s binding layers, now six) closing
+  `check_arithmetic`'s blind spot to a uniform, order-preserving scale of a
+  claim's `numbers` — which, for free, also closed the one entry that used to
+  sit in the skill's `KNOWN_ACCEPTED_ESCAPES` registry. Effectiveness
+  plateaued at 100% by round 2, confirmed stable at round 3; the trend is
+  committed at `eval_audit_history.jsonl`, and a new pytest
+  (`test_real_ledger_and_formulas_achieve_full_effectiveness`) locks the
+  plateau in as a standing CI gate rather than a one-time terminal print.
 - **Token Economics (arXiv:2605.09104) as a third research-grounded layer.**
   A new "Economic formalization" section in `agents/model-right-sizer.md`
   formalizes the effectiveness-vs-efficiency split itself as the paper's

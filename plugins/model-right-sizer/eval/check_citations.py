@@ -6,7 +6,7 @@ agents/model-right-sizer.md and against the deterministic implementations in
 token_economics.py / reasoning_budget.py.
 
 This is the mechanical half of keeping the agent's research grounding honest --
-it does five things, none of them by LLM judgment:
+it does six things, none of them by LLM judgment:
 
   1. Presence check: every paper's `citation_substring`, and every claim's
      `exact_substring` (unless explicitly marked `appears_in_agent_file: false`),
@@ -45,6 +45,14 @@ it does five things, none of them by LLM judgment:
      variable names and so still passes (4). A coordinated two-way drift no
      longer passes silently, because `expected_output` lives in a third place
      neither edit touches.
+  6. Numbers-grounded-in-prose check: every claim with BOTH `numbers` and
+     `exact_substring` has each numeric leaf checked for literal presence in
+     `exact_substring`. Found by mutation testing: (2)'s per-claim arithmetic
+     checks assert INTERNAL properties (ordering, no-raise-on-a-derived-calc),
+     not that the values match the cited text -- a uniform 1000x scale of
+     every numeric leaf preserves ordering and passes (2) silently, even
+     though it no longer matches a single digit of what's actually quoted.
+     Mutation-tested and found wanting, not merely reasoned about.
 
 A claim marked `verifiable: false` is reported as such, not silently skipped --
 see citation_ledger.json's own notes for why each one is unverifiable from the
@@ -175,13 +183,79 @@ def check_arithmetic(ledger: dict) -> list[str]:
     return errors
 
 
+def _numeric_string_candidates(value: float) -> set[str]:
+    """str(value), plus str(int(value)) when value is a whole-number float --
+    a claim's prose often drops the trailing '.0' ('~2x', not '~2.0x')."""
+    candidates = {str(value)}
+    if isinstance(value, float) and value.is_integer():
+        candidates.add(str(int(value)))
+    return candidates
+
+
+def check_numbers_grounded_in_exact_substring(ledger: dict) -> list[str]:
+    """Part 6: for every claim carrying BOTH `numbers` and `exact_substring`,
+    every numeric leaf in `numbers` must appear, formatted as a plain string,
+    somewhere in `exact_substring`. This exists because check_arithmetic's
+    per-claim checks assert INTERNAL properties (ordering, no-raise-on-a-
+    derived-calculation), not that the values match what's actually quoted --
+    found by mutation testing: uniformly scaling every numeric leaf by 1000x
+    preserves ordering and so passes check_arithmetic silently, even though
+    not a single scaled digit still matches the cited text.
+
+    Deliberately does NOT skip `appears_in_agent_file: false` claims (unlike
+    check_presence) -- that flag is about whether `exact_substring` appears in
+    the AGENT FILE, a different question from whether `numbers` and
+    `exact_substring` agree with EACH OTHER inside the ledger. A claim like
+    te-openrouter-growth never shows up in the agent's markdown, but its own
+    `numbers` should still match its own `exact_substring` -- skipping it here
+    was an early bug (copied from check_presence's skip without checking
+    whether it actually applied), caught by a test asserting this check finds
+    a tampered value on exactly that claim.
+
+    Known, named limitation: a literal substring match, not a tokenized one --
+    a wrong value that happens to be a PREFIX of the correct one embedded in a
+    longer number (claiming 4.1 when the text says 4.14) would still match.
+    Reliable against gross drift (a unit error, an order of magnitude, a
+    transcription slip); not a proof of exact correctness.
+    """
+    errors: list[str] = []
+    for paper in ledger["papers"]:
+        for claim in paper.get("claims", []):
+            numbers = claim.get("numbers")
+            substring = claim.get("exact_substring")
+            if numbers is None or substring is None:
+                continue
+            claim_id = claim["claim_id"]
+            for key, value in numbers.items():
+                if isinstance(value, bool) or not isinstance(value, (int, float)):
+                    continue
+                candidates = _numeric_string_candidates(value)
+                if not any(c in substring for c in candidates):
+                    errors.append(
+                        f"{claim_id}: numbers.{key} = {value!r} -- none of {sorted(candidates)} "
+                        f"appear in exact_substring {substring!r}"
+                    )
+    return errors
+
+
 def _values_differ(a, b) -> bool:
     """Bool-aware equality: a bare `a != b` on 1 vs True would pass when it
     shouldn't matter, and math.isclose on two bools works but reads oddly --
-    branch explicitly instead of relying on Python's numeric/bool coercion."""
+    branch explicitly instead of relying on Python's numeric/bool coercion.
+
+    `math.isclose` itself raises TypeError on a complex operand -- reachable
+    in practice, not just in theory: a mutated formula_expr can raise a
+    negative base to a fractional power, which Python evaluates as a complex
+    number instead of raising. Any such incomparable pair is treated as a
+    definite mismatch (True) rather than letting the exception escape and
+    crash the caller -- found by mutation-testing this function itself.
+    """
     if isinstance(a, bool) or isinstance(b, bool):
         return bool(a) != bool(b)
-    return not math.isclose(a, b, rel_tol=1e-9, abs_tol=1e-9)
+    try:
+        return not math.isclose(a, b, rel_tol=1e-9, abs_tol=1e-9)
+    except TypeError:
+        return True
 
 
 def check_formula_claims(ledger: dict) -> list[str]:
@@ -345,6 +419,7 @@ def main() -> int:
         + check_arithmetic(ledger)
         + check_formula_claims(ledger)
         + check_formula_variable_coverage(ledger)
+        + check_numbers_grounded_in_exact_substring(ledger)
     )
     if errors:
         for e in errors:
