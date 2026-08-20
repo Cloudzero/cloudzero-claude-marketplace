@@ -46,6 +46,27 @@ __all__ = [
     "openrouter_growth_multiple",
 ]
 
+# math.exp overflows (raises a raw OverflowError) above ~709.78 for a float64;
+# guard with headroom rather than hitting the exact boundary.
+_MAX_EXP_ARG = 700.0
+
+
+def _safe_exp(epsilon: float) -> float:
+    """math.exp(epsilon) with a domain check instead of a raw OverflowError.
+    `epsilon` is Eq. 1's small stochastic-shock term (e^epsilon) -- nothing in
+    the paper's formula anticipates, or should silently tolerate, an epsilon
+    large enough to blow float64's exponent range. Found by mutation/boundary
+    -probing this module: epsilon had no guard at all, the same 'a raw
+    exception leaks instead of a clean ValueError' pattern already fixed for
+    zero-valued K/M/L above."""
+    if epsilon > _MAX_EXP_ARG:
+        raise ValueError(
+            f"epsilon={epsilon!r} is too large for math.exp (must be <= {_MAX_EXP_ARG} to stay "
+            "within float64's exponent range) -- epsilon is meant to be a small stochastic shock "
+            "term, not a large input; this is almost certainly a unit or sign error upstream."
+        )
+    return math.exp(epsilon)
+
 
 # ---------------------------------------------------------------------------
 # Eq. 1 -- the (nested) CES production function
@@ -101,7 +122,7 @@ def ces_production(
             f"delta*K**rho + (1-delta)*M**rho == {inner!r} <= 0 -- Eq. 1's inner "
             "aggregator is undefined for these inputs (check the sign of rho against K, M)."
         )
-    return A * inner ** (theta / rho) * L**beta * math.exp(epsilon)
+    return A * inner ** (theta / rho) * L**beta * _safe_exp(epsilon)
 
 
 def ces_production_cobb_douglas_limit(
@@ -127,7 +148,7 @@ def ces_production_cobb_douglas_limit(
             f"L=0 combined with beta={beta!r} < 0 is undefined (0 raised to a negative "
             "power) -- same boundary as ces_production's L**beta term."
         )
-    return A * (K ** (delta * theta)) * (M ** ((1 - delta) * theta)) * L**beta * math.exp(epsilon)
+    return A * (K ** (delta * theta)) * (M ** ((1 - delta) * theta)) * L**beta * _safe_exp(epsilon)
 
 
 def nested_ces_M(M_int: float, M_ext: float, delta_m: float, rho_m: float) -> float:
