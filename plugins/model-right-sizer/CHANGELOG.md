@@ -5,6 +5,36 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 ## Unreleased
 
 ### Added
+- **Token Economics (arXiv:2605.09104) as a third research-grounded layer.**
+  A new "Economic formalization" section in `agents/model-right-sizer.md`
+  formalizes the effectiveness-vs-efficiency split itself as the paper's
+  `min TC s.t. Y ≥ Z` constrained cost-minimization objective, maps the
+  nested-CES production function and elasticity-of-substitution onto why
+  model tier and tokens trade off (and why they stop trading off past a
+  model floor — the paper's "Memory Wall"), and maps the paper's shadow-price
+  formulas onto two levers already in the rubric: latency-as-cost on
+  agentic loops (`w·τ_inf`) and message-schema debt (`ΔC_coord`). Also
+  grounds the deterministic-query-layer lever in a literal amortization
+  test (the paper's GraphRAG capital-leverage inequality,
+  `I_graph/Q < ΔY`).
+- **`eval/` — deterministic formula and citation checks for all three
+  research-grounded papers.** Every numeric claim the agent file attributes
+  to IBPO, BudgetThinker, or Token Economics is now checked against a
+  committed answer key (`eval/citation_ledger.json`) instead of trusted on
+  sight, and every formula those papers state or the agent's own rubric
+  assumes (the CES production/cost functions, shadow prices, the MRTS-at-
+  optimum condition, the GraphRAG leverage inequality, budget-adherence
+  classification, the agentic-down-pin promote/revert gate, IBPO's
+  accuracy-per-compute arithmetic) is implemented as a pure, stdlib-only
+  Python function in `eval/token_economics.py` / `eval/reasoning_budget.py`
+  — run by code, never re-derived by an LLM. `eval/check_citations.py` is a
+  standalone drift checker (presence + arithmetic); the pytest suite under
+  `tests/model_right_sizer/` at the repo root exercises both modules plus
+  the checker itself (including tests that tamper with an in-memory copy of
+  the ledger to prove the checker actually catches drift, not just that it
+  passes today). One claim — IBPO's "~2x the accuracy-per-compute of
+  self-consistency" — is explicitly marked `verifiable: false` pending the
+  paper's own self-consistency baseline figure, rather than assumed true.
 - `schemas/blueprint.schema.json` — a strict JSON Schema (draft 2020-12,
   `additionalProperties: false` throughout) for Pass A, the right-sizing
   blueprint. Requires every `blueprint_rows[]` entry to carry all
