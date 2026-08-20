@@ -27,7 +27,7 @@ AGENT_TEXT = check_citations.load_agent_text()
 
 
 def test_ledger_has_required_top_level_shape():
-    assert LEDGER["schema_version"] == "1.0"
+    assert LEDGER["schema_version"] == "1.1"
     assert isinstance(LEDGER["papers"], list) and len(LEDGER["papers"]) >= 1
     for paper in LEDGER["papers"]:
         assert {"id", "citation_substring", "short_name", "title", "url", "claims"} <= paper.keys()
@@ -186,6 +186,31 @@ def test_check_formula_claims_catches_a_formula_expr_that_no_longer_matches_the_
     assert any("te-cost-function" in e for e in errors)
 
 
+def test_check_formula_claims_catches_a_coordinated_formula_and_implementation_drift(monkeypatch):
+    """The exact scenario the fourth-round Greptile finding named: formula_expr
+    AND the implementation are edited TOGETHER to the same wrong structure (a
+    sign flip here) while keeping the same variable names. Neither
+    check_formula_variable_coverage (same variable set) nor a formula-vs-
+    implementation-only check (they now agree with each other) would catch
+    this -- expected_output, computed independently of both, is what does."""
+    tampered = copy.deepcopy(LEDGER)
+    te_paper = next(p for p in tampered["papers"] if p["id"] == "arXiv:2605.09104")
+    claim = next(c for c in te_paper["claims"] if c["claim_id"] == "te-cost-function")
+    claim["formula_expr"] = "P_k*K - P_m*M + w*L"  # sign flip on the M term
+
+    def wrong_total_cost(K, M, L, P_k, P_m, w):
+        return P_k * K - P_m * M + w * L  # "the implementation," coordinately changed to match
+
+    monkeypatch.setattr(check_citations.token_economics, "total_cost", wrong_total_cost)
+
+    errors = check_citations.check_formula_claims(tampered)
+    coverage_errors = check_citations.check_formula_variable_coverage(tampered)
+
+    assert coverage_errors == []  # confirms this really is invisible to the variable-set check
+    assert errors
+    assert any("te-cost-function" in e and "expected_output" in e for e in errors)
+
+
 def test_check_formula_claims_catches_a_boolean_mismatch():
     tampered = copy.deepcopy(LEDGER)
     te_paper = next(p for p in tampered["papers"] if p["id"] == "arXiv:2605.09104")
@@ -275,7 +300,12 @@ def test_check_formula_variable_coverage_catches_a_dropped_term_even_when_the_sa
     te_paper = next(p for p in tampered["papers"] if p["id"] == "arXiv:2605.09104")
     claim = next(c for c in te_paper["claims"] if c["claim_id"] == "te-shadow-price-multi-agent")
     claim["formula_expr"] = "P_m + w*tau_sync"  # dropped "+ delta_c_coord"
-    claim["sample_inputs"] = [{"P_m": 0.01, "w": 50, "tau_sync": 0.01, "delta_c_coord": 0.0}]  # 0 -- would hide it numerically
+    # delta_c_coord = 0.0 -- would hide the dropped term numerically either way,
+    # so expected_output (computed from the correct full formula) matches both
+    # the tampered and the untampered expression here; that's the point.
+    claim["sample_inputs"] = [
+        {"inputs": {"P_m": 0.01, "w": 50, "tau_sync": 0.01, "delta_c_coord": 0.0}, "expected_output": 0.51}
+    ]
 
     numeric_errors = check_citations.check_formula_claims(tampered)
     coverage_errors = check_citations.check_formula_variable_coverage(tampered)

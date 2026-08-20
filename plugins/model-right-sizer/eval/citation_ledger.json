@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.0",
-  "description": "Answer key for check_citations.py and the tests/model_right_sizer/test_citation_fidelity.py suite. One entry per research paper the model-right-sizer agent (agents/model-right-sizer.md) cites for a formula or a numeric claim. Four independent bindings, each mechanically checked: (1) `citation_substring`/`exact_substring` -- literal, character-for-character presence in the agent file, binding the AGENT PROSE to this ledger; (2) `numbers`-bearing claims are recomputed and compared against the claimed value; (3) `formula_expr` + `sample_inputs` -- evaluating the literal formula on concrete samples and diffing it against actually calling `module.primary_function(**sample)`, binding this ledger to the SHIPPED IMPLEMENTATION; (4) `source_variables` -- the declared free-variable set a claim's equation should reference, diffed against formula_expr's actual free variables (via ast), binding formula_expr to what the human-authored `source_quote` independently says the equation contains -- this is what stops formula_expr and the implementation from silently drifting together in the same wrong direction, since source_variables isn't derived from either of them. What this file does NOT mechanically verify: that `source_quote` itself is a faithful transcription of the live arXiv PDF -- that was checked by hand against the fetched paper at authoring time (each claim below cites the exact section/equation/figure it came from) and is a residual human/primary-source trust boundary, the same class of gap `verifiable: false` already names elsewhere in this file. Update this file in the same PR as any edit to the agent file's cited numbers/formulas or to token_economics.py / reasoning_budget.py, and let the tests catch drift between all of them.",
+  "schema_version": "1.1",
+  "description": "Answer key for check_citations.py and the tests/model_right_sizer/test_citation_fidelity.py suite. One entry per research paper the model-right-sizer agent (agents/model-right-sizer.md) cites for a formula or a numeric claim. Five independent bindings, each mechanically checked: (1) `citation_substring`/`exact_substring` -- literal, character-for-character presence in the agent file, binding the AGENT PROSE to this ledger; (2) `numbers`-bearing claims are recomputed and compared against the claimed value; (3) `formula_expr` evaluated on each sample's `inputs` vs. actually calling `module.primary_function(**inputs)`, binding this ledger to the SHIPPED IMPLEMENTATION; (4) `source_variables` -- the declared free-variable set a claim's equation should reference, diffed against formula_expr's actual free variables (via ast), binding formula_expr to what the human-authored `source_quote` independently says the equation contains; (5) each sample's `expected_output` -- computed by hand from the paper's stated formula, independently of both `formula_expr` and the implementation (see the git history of this file for the one-off derivation script) -- checked against BOTH of them. (5) is what (3)+(4) alone can't provide: (3) only proves formula_expr and the implementation agree with EACH OTHER, and (4) only proves formula_expr's variable SET matches what's declared -- neither catches formula_expr and the implementation being edited TOGETHER to the same wrong structure (a sign flip, a swapped term, a transposed pairing) that still uses the correct variable names. expected_output is authored once, from the confirmed-correct source_quote, and stored in a THIRD place neither of the other two edits touches, so a coordinated drift now has to also falsify an independently-computed number to pass. What this file still does NOT mechanically verify: that `source_quote` itself is a faithful transcription of the live arXiv PDF -- that was checked by hand against the fetched paper at authoring time (each claim cites its exact section/equation/figure) and is a residual human/primary-source trust boundary, the same class of gap `verifiable: false` already names elsewhere in this file; no finite set of cross-checks fully closes that without re-deriving the paper's own math from scratch. Update this file in the same PR as any edit to the agent file's cited numbers/formulas or to token_economics.py / reasoning_budget.py, and let the tests catch drift between all of them.",
   "papers": [
     {
       "id": "arXiv:2501.17974",
@@ -47,11 +47,11 @@
           "formula_expr": "weight_accuracy*accuracy + weight_adherence*budget_adherence_score",
           "source_variables": ["accuracy", "budget_adherence_score", "weight_accuracy", "weight_adherence"],
           "sample_inputs": [
-            { "accuracy": 0.8, "budget_adherence_score": 0.6, "weight_accuracy": 0.5, "weight_adherence": 0.5 },
-            { "accuracy": 0.2, "budget_adherence_score": 0.9, "weight_accuracy": 0.3, "weight_adherence": 0.7 }
+            { "inputs": { "accuracy": 0.8, "budget_adherence_score": 0.6, "weight_accuracy": 0.5, "weight_adherence": 0.5 }, "expected_output": 0.7 },
+            { "inputs": { "accuracy": 0.2, "budget_adherence_score": 0.9, "weight_accuracy": 0.3, "weight_adherence": 0.7 }, "expected_output": 0.69 }
           ],
           "verifiable": false,
-          "verification_note": "The paper describes the reward's objective in prose, not a closed-form weight split -- budget_control_token_reward() is model-right-sizer's own literal operationalization of that description (a weighted sum, the simplest function meeting it), not a formula transcribed from the paper's own equations. `formula_expr`/`source_variables` here check that the *function* matches model-right-sizer's own stated operationalization (drift protection on our own code), not that the operationalization matches the paper (which is why `verifiable` stays false against the source)."
+          "verification_note": "The paper describes the reward's objective in prose, not a closed-form weight split -- budget_control_token_reward() is model-right-sizer's own literal operationalization of that description (a weighted sum, the simplest function meeting it), not a formula transcribed from the paper's own equations. formula_expr/source_variables/expected_output here check that the *function* matches model-right-sizer's own stated operationalization (drift protection on our own code), not that the operationalization matches the paper (which is why `verifiable` stays false against the source)."
         }
       ]
     },
@@ -76,8 +76,8 @@
           "formula_expr": "A * (delta*K**rho + (1-delta)*M**rho)**(theta/rho) * L**beta * math.exp(epsilon)",
           "source_variables": ["A", "K", "M", "L", "delta", "rho", "theta", "beta", "epsilon"],
           "sample_inputs": [
-            { "K": 4, "M": 16, "L": 1, "delta": 0.5, "rho": 0.5, "theta": 1, "beta": 0, "A": 2, "epsilon": 0.0 },
-            { "K": 9, "M": 4, "L": 2, "delta": 0.3, "rho": -1.0, "theta": 1.5, "beta": 0.5, "A": 1.5, "epsilon": 0.1 }
+            { "inputs": { "K": 4, "M": 16, "L": 1, "delta": 0.5, "rho": 0.5, "theta": 1, "beta": 0, "A": 2, "epsilon": 0.0 }, "expected_output": 18.0 },
+            { "inputs": { "K": 9, "M": 4, "L": 2, "delta": 0.3, "rho": -1.0, "theta": 1.5, "beta": 0.5, "A": 1.5, "epsilon": 0.1 }, "expected_output": 24.65457730801774 }
           ],
           "verifiable": true
         },
@@ -92,8 +92,8 @@
           "formula_expr": "P_k*K + P_m*M + w*L",
           "source_variables": ["P_k", "K", "P_m", "M", "w", "L"],
           "sample_inputs": [
-            { "K": 3, "M": 1000, "L": 2, "P_k": 2, "P_m": 0.5, "w": 20 },
-            { "K": 0, "M": 500, "L": 10, "P_k": 5, "P_m": 0.02, "w": 15 }
+            { "inputs": { "K": 3, "M": 1000, "L": 2, "P_k": 2, "P_m": 0.5, "w": 20 }, "expected_output": 546.0 },
+            { "inputs": { "K": 0, "M": 500, "L": 10, "P_k": 5, "P_m": 0.02, "w": 15 }, "expected_output": 160.0 }
           ],
           "verifiable": true
         },
@@ -108,8 +108,8 @@
           "formula_expr": "Y - Z",
           "source_variables": ["Y", "Z"],
           "sample_inputs": [
-            { "Y": 80, "Z": 75 },
-            { "Y": 60, "Z": 75 }
+            { "inputs": { "Y": 80, "Z": 75 }, "expected_output": 5 },
+            { "inputs": { "Y": 60, "Z": 75 }, "expected_output": -15 }
           ],
           "verifiable": true
         },
@@ -124,8 +124,8 @@
           "formula_expr": "1.0 / (1.0 - rho)",
           "source_variables": ["rho"],
           "sample_inputs": [
-            { "rho": 0.5 },
-            { "rho": -9.0 }
+            { "inputs": { "rho": 0.5 }, "expected_output": 2.0 },
+            { "inputs": { "rho": -9.0 }, "expected_output": 0.1 }
           ],
           "verifiable": true
         },
@@ -140,8 +140,8 @@
           "formula_expr": "P_m + w*tau_inf",
           "source_variables": ["P_m", "w", "tau_inf"],
           "sample_inputs": [
-            { "P_m": 0.01, "w": 50, "tau_inf": 0.02 },
-            { "P_m": 0.02, "w": 10, "tau_inf": 0.0 }
+            { "inputs": { "P_m": 0.01, "w": 50, "tau_inf": 0.02 }, "expected_output": 1.01 },
+            { "inputs": { "P_m": 0.02, "w": 10, "tau_inf": 0.0 }, "expected_output": 0.02 }
           ],
           "verifiable": true
         },
@@ -156,8 +156,8 @@
           "formula_expr": "P_m + w*tau_sync + delta_c_coord",
           "source_variables": ["P_m", "w", "tau_sync", "delta_c_coord"],
           "sample_inputs": [
-            { "P_m": 0.01, "w": 50, "tau_sync": 0.01, "delta_c_coord": 0.5 },
-            { "P_m": 0.0, "w": 0, "tau_sync": 0, "delta_c_coord": 0.25 }
+            { "inputs": { "P_m": 0.01, "w": 50, "tau_sync": 0.01, "delta_c_coord": 0.5 }, "expected_output": 1.01 },
+            { "inputs": { "P_m": 0.0, "w": 0, "tau_sync": 0, "delta_c_coord": 0.25 }, "expected_output": 0.25 }
           ],
           "verifiable": true
         },
@@ -172,7 +172,7 @@
           "formula_expr": "P_m + w*tau_cong + c_comp",
           "source_variables": ["P_m", "w", "tau_cong", "c_comp"],
           "sample_inputs": [
-            { "P_m": 0.01, "w": 50, "tau_cong": 0.005, "c_comp": 0.2 }
+            { "inputs": { "P_m": 0.01, "w": 50, "tau_cong": 0.005, "c_comp": 0.2 }, "expected_output": 0.46 }
           ],
           "verifiable": true
         },
@@ -187,8 +187,8 @@
           "formula_expr": "P_ext_shadow / P_int_shadow",
           "source_variables": ["P_ext_shadow", "P_int_shadow"],
           "sample_inputs": [
-            { "P_ext_shadow": 0.03, "P_int_shadow": 0.01 },
-            { "P_ext_shadow": 1.0, "P_int_shadow": 4.0 }
+            { "inputs": { "P_ext_shadow": 0.03, "P_int_shadow": 0.01 }, "expected_output": 3.0 },
+            { "inputs": { "P_ext_shadow": 1.0, "P_int_shadow": 4.0 }, "expected_output": 0.25 }
           ],
           "verifiable": true
         },
@@ -203,8 +203,8 @@
           "formula_expr": "(I_graph / Q) < delta_Y",
           "source_variables": ["I_graph", "Q", "delta_Y"],
           "sample_inputs": [
-            { "I_graph": 1000, "Q": 10000, "delta_Y": 0.2 },
-            { "I_graph": 1000, "Q": 1000, "delta_Y": 0.2 }
+            { "inputs": { "I_graph": 1000, "Q": 10000, "delta_Y": 0.2 }, "expected_output": true },
+            { "inputs": { "I_graph": 1000, "Q": 1000, "delta_Y": 0.2 }, "expected_output": false }
           ],
           "verifiable": true
         },

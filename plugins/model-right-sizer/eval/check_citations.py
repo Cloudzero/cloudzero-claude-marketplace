@@ -6,7 +6,7 @@ agents/model-right-sizer.md and against the deterministic implementations in
 token_economics.py / reasoning_budget.py.
 
 This is the mechanical half of keeping the agent's research grounding honest --
-it does four things, none of them by LLM judgment:
+it does five things, none of them by LLM judgment:
 
   1. Presence check: every paper's `citation_substring`, and every claim's
      `exact_substring` (unless explicitly marked `appears_in_agent_file: false`),
@@ -21,28 +21,35 @@ it does four things, none of them by LLM judgment:
      gets recomputed via the eval library and compared to the claimed figure
      within a stated tolerance -- not re-derived by an LLM reading the prose.
   3. Formula-vs-implementation check: every claim that names a `formula_expr` +
-     `sample_inputs` gets that literal expression evaluated on each sample and
-     compared against actually *calling* the function it claims to implement
-     (`module.primary_function(**sample)`). This is what makes `source_quote`
-     an enforced contract instead of documentation: a `source_quote` and an
-     `implemented_by` naming a function are not, on their own, checked against
-     anything -- this closes that gap by running both sides on concrete numbers
-     and diffing them, for every formula claim, not a hand-picked couple.
+     `sample_inputs` gets that literal expression evaluated on each sample's
+     `inputs` and compared against actually *calling* the function it claims to
+     implement (`module.primary_function(**inputs)`). This is what makes
+     `source_quote` an enforced contract instead of documentation: a
+     `source_quote` and an `implemented_by` naming a function are not, on their
+     own, checked against anything -- this closes that gap by running both
+     sides on concrete numbers and diffing them, for every formula claim, not a
+     hand-picked couple.
   4. Formula-vs-declared-variables check: every claim that names `formula_expr`
      also names `source_variables` -- the free-variable set a human reading
      `source_quote` says the equation should contain. `formula_expr`'s actual
      free variables (parsed via `ast`, not eval'd) must equal that declared
-     set exactly. This is the check that (3) alone can't provide: (3) proves
-     `formula_expr` and the implementation agree with EACH OTHER, but says
-     nothing if both were edited together in the same wrong direction (a
-     dropped term, an invented one). `source_variables` is authored
-     independently of both, so a coordinated drift now has to falsify a third,
-     separately-reviewed field too.
+     set exactly. This catches a dropped or invented term that (3) alone
+     wouldn't, if the implementation was edited to match.
+  5. Formula-vs-expected-output check: each sample also carries an
+     `expected_output` -- computed by hand from the paper's confirmed-correct
+     `source_quote`, independently of `formula_expr` and the implementation.
+     Both `formula_expr`'s evaluation AND the implementation's return value are
+     diffed against it. This is what (3) and (4) together still can't catch:
+     `formula_expr` and the implementation being edited TOGETHER to the same
+     wrong structure (a sign flip, a swapped pairing) that keeps the same
+     variable names and so still passes (4). A coordinated two-way drift no
+     longer passes silently, because `expected_output` lives in a third place
+     neither edit touches.
 
 A claim marked `verifiable: false` is reported as such, not silently skipped --
 see citation_ledger.json's own notes for why each one is unverifiable from the
 sources this ledger was built from. That flag is about fidelity to the paper;
-checks (3) and (4) still run for such a claim if it carries a `formula_expr`,
+checks (3)-(5) still run for such a claim if it carries a `formula_expr`,
 because "is this code internally consistent with what the ledger says it
 implements" is a separate question from "is this claim verified against the
 paper's own source."
@@ -50,8 +57,16 @@ paper's own source."
 What none of this verifies: that `source_quote` itself is a faithful
 transcription of the actual paper. That was checked by hand against the fetched
 arXiv PDF at authoring time (each claim cites its exact equation/footnote/figure
-reference for that audit trail) -- a residual human/primary-source trust
-boundary this file is explicit about rather than silently assuming closed.
+reference for that audit trail), and `expected_output` was derived from that
+same confirmed-correct source_quote -- so this is still a residual
+human/primary-source trust boundary, the same one `verifiable: false` names
+elsewhere in this file, not a claim that any finite set of cross-checks makes
+it impossible for a sufficiently coordinated edit to slip through. Each round
+of review on this file has narrowed that residual gap (implementation binding,
+then agent-prose + declared-variable binding, then this independently-computed
+third value); it narrows further with more/harder-to-fake bindings, but never
+reaches a formal proof without re-deriving the paper's math from an independent
+symbolic source, which is out of scope here.
 
 Usage:
   uv run --no-project plugins/model-right-sizer/eval/check_citations.py
@@ -160,15 +175,32 @@ def check_arithmetic(ledger: dict) -> list[str]:
     return errors
 
 
+def _values_differ(a, b) -> bool:
+    """Bool-aware equality: a bare `a != b` on 1 vs True would pass when it
+    shouldn't matter, and math.isclose on two bools works but reads oddly --
+    branch explicitly instead of relying on Python's numeric/bool coercion."""
+    if isinstance(a, bool) or isinstance(b, bool):
+        return bool(a) != bool(b)
+    return not math.isclose(a, b, rel_tol=1e-9, abs_tol=1e-9)
+
+
 def check_formula_claims(ledger: dict) -> list[str]:
-    """Part 3: for every claim carrying `formula_expr` + `sample_inputs`,
-    evaluate the literal formula expression on each sample and diff it against
-    actually calling `module.primary_function(**sample)`. This is the check
-    that turns a claim's `source_quote`/`implemented_by` pair from
-    documentation into something enforced: if `token_economics.py` or
-    `reasoning_budget.py` is ever edited so its behavior no longer matches the
-    formula this ledger cites, a concrete sample surfaces the mismatch as a
-    number, not a trust exercise.
+    """Part 3: for every claim carrying `formula_expr` + `sample_inputs`, and
+    for each sample (`{"inputs": {...}, "expected_output": <value>}`), do
+    THREE pairwise comparisons, not just one:
+
+      (a) formula_expr evaluated on `inputs`  vs.  `expected_output`
+      (b) module.primary_function(**inputs)   vs.  `expected_output`
+      (c) formula_expr evaluated on `inputs`  vs.  module.primary_function(**inputs)
+
+    (c) alone (the original version of this check) only proves formula_expr
+    and the implementation agree with EACH OTHER -- it says nothing if both
+    were edited together to the same wrong formula. `expected_output` is
+    computed by hand from the paper's confirmed-correct source_quote,
+    independently of both, and stored in a third place neither of those two
+    edits touches -- so (a) and (b) are what actually catch a coordinated
+    drift, not (c). All three run regardless; a claim only passes when none
+    of the three pairs disagree.
 
     Runs for every claim with a `formula_expr`, regardless of `verifiable` --
     that flag is about fidelity to the paper's own source; this check is
@@ -200,25 +232,38 @@ def check_formula_claims(ledger: dict) -> list[str]:
                 errors.append(f"{claim_id}: formula_expr is present but sample_inputs is empty")
                 continue
             for i, sample in enumerate(samples):
+                if "inputs" not in sample or "expected_output" not in sample:
+                    errors.append(
+                        f"{claim_id} sample[{i}]: must have both 'inputs' and 'expected_output' keys, "
+                        f"got {sorted(sample.keys())}"
+                    )
+                    continue
+                inputs = sample["inputs"]
+                expected = sample["expected_output"]
                 try:
-                    expr_value = eval(formula_expr, {"math": math, "__builtins__": {}}, dict(sample))  # noqa: S307
+                    expr_value = eval(formula_expr, {"math": math, "__builtins__": {}}, dict(inputs))  # noqa: S307
                 except Exception as e:
                     errors.append(f"{claim_id} sample[{i}]: formula_expr {formula_expr!r} failed to evaluate: {e!r}")
                     continue
                 try:
-                    fn_value = fn(**sample)
+                    fn_value = fn(**inputs)
                 except Exception as e:
-                    errors.append(f"{claim_id} sample[{i}]: {module_name}.{fn_name}(**{sample}) raised {e!r}")
+                    errors.append(f"{claim_id} sample[{i}]: {module_name}.{fn_name}(**{inputs}) raised {e!r}")
                     continue
-                mismatch = (
-                    bool(expr_value) != bool(fn_value)
-                    if isinstance(expr_value, bool) or isinstance(fn_value, bool)
-                    else not math.isclose(expr_value, fn_value, rel_tol=1e-9, abs_tol=1e-9)
-                )
-                if mismatch:
+                if _values_differ(expr_value, expected):
                     errors.append(
                         f"{claim_id} sample[{i}]: formula_expr -> {expr_value!r}, "
-                        f"{module_name}.{fn_name}(**sample) -> {fn_value!r}"
+                        f"but expected_output (independently computed) -> {expected!r}"
+                    )
+                if _values_differ(fn_value, expected):
+                    errors.append(
+                        f"{claim_id} sample[{i}]: {module_name}.{fn_name}(**inputs) -> {fn_value!r}, "
+                        f"but expected_output (independently computed) -> {expected!r}"
+                    )
+                if _values_differ(expr_value, fn_value):
+                    errors.append(
+                        f"{claim_id} sample[{i}]: formula_expr -> {expr_value!r}, "
+                        f"{module_name}.{fn_name}(**inputs) -> {fn_value!r}"
                     )
     return errors
 

@@ -42,12 +42,24 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   it does *not* do is machine-verify `source_quote` against the live arXiv
   PDF, which stays a human/primary-source check performed at authoring time
   (named explicitly, the same way `verifiable: false` names its own gap).
+  Each `sample_inputs` entry also carries an independently hand-computed
+  `expected_output` (fourth review pass), diffed against both `formula_expr`'s
+  evaluation and the implementation's return value — this is what catches
+  `formula_expr` and the implementation being edited TOGETHER to the same
+  wrong structure (a sign flip, a swapped pairing) that keeps the same
+  variable names and so would otherwise pass every other check silently.
   The checker and both modules are exercised by the pytest suite under
   `tests/model_right_sizer/` at the repo root, including tamper tests
   proving each check actually catches drift — one deliberately constructed
   so a dropped term's sample value is 0 (invisible to the arithmetic check)
-  to show why the variable-coverage check is a distinct layer, not a
-  restatement of the arithmetic one. One claim — IBPO's "~2x the
+  to show why the variable-coverage check is a distinct layer, and one that
+  monkeypatches the implementation to match a tampered formula_expr to show
+  the expected_output diff is what catches a coordinated drift, not the
+  other two checks. `check_citations.py`'s own docstring is explicit that
+  this narrows, but doesn't formally close, the residual gap of a
+  sufficiently coordinated multi-field edit -- true closure would mean
+  re-deriving the paper's math from an independent symbolic source at CI
+  time, out of scope here. One claim — IBPO's "~2x the
   accuracy-per-compute of self-consistency" — is explicitly marked
   `verifiable: false` pending the paper's own self-consistency baseline
   figure, rather than assumed true. `ces_production` and
