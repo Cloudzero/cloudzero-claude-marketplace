@@ -131,11 +131,18 @@ overwrite it, so the curve stays legible across future runs.
   implementation, `source_variables`, AND `expected_output` simultaneously
   could still slip through). It narrows that gap by finding concrete,
   fixable instances of it; it doesn't formally prove there are none left.
-- It does **not** run automatically in CI as a required gate (yet) — it's an
-  on-demand / periodic health check, invoked deliberately, because triaging
-  an escape (real gap vs. sample-diversity issue vs. accepted design vs.
-  harness bug) benefits from a human/agent glance at the report before
-  concluding anything, not a hard pass/fail wired into every push.
+- **The full skill — running `mutation_audit.py` directly, triaging every
+  escape, and deciding what to fix — does not run automatically in CI.** It's
+  an on-demand / periodic invocation, because triaging an escape (real gap
+  vs. sample-diversity issue vs. accepted design vs. harness bug) benefits
+  from a human/agent glance at the report before concluding anything, not a
+  script that decides for itself. **What DOES run automatically in CI is the
+  narrower safety net**: `tests/model_right_sizer/test_mutation_audit.py::test_real_ledger_and_formulas_achieve_full_effectiveness`
+  re-runs both batteries against the real ledger/functions on every
+  `pytest tests/ -q` and fails the build if effectiveness drops below 100% —
+  it locks in the plateau this skill reached, it doesn't perform the
+  open-ended triage that got there. If that pytest ever fails, *that's* when
+  this skill's full report + triage step is the right next move.
 - It does **not** touch `agents/model-right-sizer.md`'s prose directly — a
   finding there routes back through `check_presence`'s existing
   `exact_substring` binding, which this skill exercises but doesn't bypass.

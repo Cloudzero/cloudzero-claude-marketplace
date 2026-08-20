@@ -71,14 +71,16 @@ See the **"Extending this agent for your own organization"** section at the bott
 ## Prerequisites
 
 None. This plugin is an agent definition, a JSON Schema for its blueprint
-output, and two companion skills — no runtime dependencies, no code that
+output, and three companion skills — no runtime dependencies, no code that
 calls an LLM or CloudZero API directly.
 It's read by whatever agent runtime loads it (Claude Code, or a compatible
 Claude-Agent-SDK-based runtime), which supplies its own model access. No API
-keys are required by the plugin itself. `eval/` is the one directory with
-executable Python, and it's standard-library-only (`math`, `json`, `pathlib`)
-— it exists to verify the agent's research grounding in CI, not as something
-the agent imports or calls at runtime.
+keys are required by the plugin itself. `eval/` and
+`skills/model-right-sizer-eval-audit/scripts/` are the two places with
+executable Python, and both are standard-library-only (`math`, `json`,
+`pathlib`, `ast`, `argparse`) — `eval/` verifies the agent's research
+grounding, and the skill's script mutation-tests how well `eval/` does that;
+neither is something the agent imports or calls at runtime.
 
 ## Configuration
 
