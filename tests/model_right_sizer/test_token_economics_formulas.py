@@ -36,6 +36,21 @@ def test_ces_production_rejects_negative_factors():
         te.ces_production(K=-1, M=1, L=1, delta=0.5, rho=0.5, theta=1, beta=0)
 
 
+@pytest.mark.parametrize("K,M", [(0, 5), (5, 0), (0, 0)])
+def test_ces_production_zero_factor_with_negative_rho_raises_valueerror_not_zerodivisionerror(K, M):
+    # 0 ** negative_rho is a raw ZeroDivisionError in Python; the documented
+    # non-negative-factor check alone doesn't catch this, so it needs its own guard.
+    with pytest.raises(ValueError, match="rigid-complementarity"):
+        te.ces_production(K=K, M=M, L=1, delta=0.5, rho=-1.0, theta=1, beta=0)
+
+
+def test_ces_production_zero_factor_with_positive_rho_is_fine():
+    # Positive rho raising a zero base to a positive power is well-defined (0),
+    # so this should compute cleanly rather than raise.
+    Y = te.ces_production(K=0, M=16, L=1, delta=0.5, rho=0.5, theta=1, beta=0, A=2)
+    assert Y == pytest.approx(2 * (0.5 * 16**0.5) ** 2)
+
+
 def test_ces_production_cobb_douglas_limit_matches_hand_computed_value():
     # K**1 * M**1 = 4*9 = 36 when delta=theta=... chosen so delta*theta=(1-delta)*theta=1
     Y = te.ces_production_cobb_douglas_limit(K=4, M=9, L=1, delta=0.5, theta=2, beta=0)
@@ -46,6 +61,12 @@ def test_nested_ces_M_matches_hand_computed_value():
     # inner = 0.5*4**0.5 + 0.5*16**0.5 = 3; 3**(1/0.5) = 9
     M = te.nested_ces_M(M_int=4, M_ext=16, delta_m=0.5, rho_m=0.5)
     assert M == pytest.approx(9.0)
+
+
+@pytest.mark.parametrize("M_int,M_ext", [(0, 5), (5, 0), (0, 0)])
+def test_nested_ces_M_zero_factor_with_negative_rho_m_raises_valueerror_not_zerodivisionerror(M_int, M_ext):
+    with pytest.raises(ValueError, match="rigid-complementarity"):
+        te.nested_ces_M(M_int=M_int, M_ext=M_ext, delta_m=0.5, rho_m=-1.0)
 
 
 # ---------------------------------------------------------------------------

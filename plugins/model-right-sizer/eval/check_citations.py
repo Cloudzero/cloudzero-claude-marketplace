@@ -6,7 +6,7 @@ agents/model-right-sizer.md and against the deterministic implementations in
 token_economics.py / reasoning_budget.py.
 
 This is the mechanical half of keeping the agent's research grounding honest --
-it does two things, neither of them by LLM judgment:
+it does three things, none of them by LLM judgment:
 
   1. Presence check: every paper's `citation_substring`, and every claim's
      `exact_substring` (unless explicitly marked `appears_in_agent_file: false`),
@@ -17,10 +17,22 @@ it does two things, neither of them by LLM judgment:
      relationship (the IBPO gain/budget range, the OpenRouter growth multiple)
      gets recomputed via the eval library and compared to the claimed figure
      within a stated tolerance -- not re-derived by an LLM reading the prose.
+  3. Formula check: every claim that names a `formula_expr` + `sample_inputs`
+     gets that literal expression evaluated on each sample and compared against
+     actually *calling* the function it claims to implement
+     (`module.primary_function(**sample)`). This is what makes `source_quote`
+     an enforced contract instead of documentation: a `source_quote` and an
+     `implemented_by` naming a function are not, on their own, checked against
+     anything -- this closes that gap by running both sides on concrete numbers
+     and diffing them, for every formula claim, not a hand-picked couple.
 
 A claim marked `verifiable: false` is reported as such, not silently skipped --
 see citation_ledger.json's own notes for why each one is unverifiable from the
-sources this ledger was built from.
+sources this ledger was built from. That flag is about fidelity to the paper;
+the formula check in (3) still runs for such a claim if it carries a
+`formula_expr`, because "is this code internally consistent with what the
+ledger says it implements" is a separate question from "is this claim
+verified against the paper's own source."
 
 Usage:
   uv run --no-project plugins/model-right-sizer/eval/check_citations.py
@@ -28,6 +40,7 @@ Usage:
 from __future__ import annotations
 
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -38,6 +51,11 @@ import token_economics  # noqa: E402
 EVAL_DIR = Path(__file__).resolve().parent
 LEDGER_PATH = EVAL_DIR / "citation_ledger.json"
 AGENT_FILE_PATH = EVAL_DIR.parent / "agents" / "model-right-sizer.md"
+
+# The only modules a claim's `module` field may name -- deliberately closed,
+# not a dynamic import, so a ledger entry can't point formula_expr evaluation
+# at an arbitrary module.
+FORMULA_MODULES = {"token_economics": token_economics, "reasoning_budget": reasoning_budget}
 
 # Absolute tolerance for "the recomputed figure should land within this much of
 # the claimed one" -- loose enough to cover a paper's own rounding ("nearly
@@ -122,6 +140,69 @@ def check_arithmetic(ledger: dict) -> list[str]:
     return errors
 
 
+def check_formula_claims(ledger: dict) -> list[str]:
+    """Part 3: for every claim carrying `formula_expr` + `sample_inputs`,
+    evaluate the literal formula expression on each sample and diff it against
+    actually calling `module.primary_function(**sample)`. This is the check
+    that turns a claim's `source_quote`/`implemented_by` pair from
+    documentation into something enforced: if `token_economics.py` or
+    `reasoning_budget.py` is ever edited so its behavior no longer matches the
+    formula this ledger cites, a concrete sample surfaces the mismatch as a
+    number, not a trust exercise.
+
+    Runs for every claim with a `formula_expr`, regardless of `verifiable` --
+    that flag is about fidelity to the paper's own source; this check is
+    about whether the shipped code matches what THIS ledger says it
+    implements, which is a separate and always-applicable question.
+    """
+    errors: list[str] = []
+    for paper in ledger["papers"]:
+        for claim in paper.get("claims", []):
+            formula_expr = claim.get("formula_expr")
+            if formula_expr is None:
+                continue
+            claim_id = claim["claim_id"]
+            module_name = claim.get("module")
+            fn_name = claim.get("primary_function")
+            module = FORMULA_MODULES.get(module_name)
+            if module is None:
+                errors.append(
+                    f"{claim_id}: formula_expr is present but `module` is {module_name!r}, "
+                    f"not one of {sorted(FORMULA_MODULES)}"
+                )
+                continue
+            fn = getattr(module, fn_name or "", None)
+            if fn is None:
+                errors.append(f"{claim_id}: {module_name}.{fn_name} does not exist")
+                continue
+            samples = claim.get("sample_inputs") or []
+            if not samples:
+                errors.append(f"{claim_id}: formula_expr is present but sample_inputs is empty")
+                continue
+            for i, sample in enumerate(samples):
+                try:
+                    expr_value = eval(formula_expr, {"math": math, "__builtins__": {}}, dict(sample))  # noqa: S307
+                except Exception as e:
+                    errors.append(f"{claim_id} sample[{i}]: formula_expr {formula_expr!r} failed to evaluate: {e!r}")
+                    continue
+                try:
+                    fn_value = fn(**sample)
+                except Exception as e:
+                    errors.append(f"{claim_id} sample[{i}]: {module_name}.{fn_name}(**{sample}) raised {e!r}")
+                    continue
+                mismatch = (
+                    bool(expr_value) != bool(fn_value)
+                    if isinstance(expr_value, bool) or isinstance(fn_value, bool)
+                    else not math.isclose(expr_value, fn_value, rel_tol=1e-9, abs_tol=1e-9)
+                )
+                if mismatch:
+                    errors.append(
+                        f"{claim_id} sample[{i}]: formula_expr -> {expr_value!r}, "
+                        f"{module_name}.{fn_name}(**sample) -> {fn_value!r}"
+                    )
+    return errors
+
+
 def report_unverifiable(ledger: dict) -> list[str]:
     """Not a failure -- a required acknowledgement. Returns one line per claim
     explicitly marked unverifiable, so main() can print them and a reviewer can
@@ -148,7 +229,7 @@ def main() -> int:
     ledger = load_ledger()
     agent_text = load_agent_text()
 
-    errors = check_presence(ledger, agent_text) + check_arithmetic(ledger)
+    errors = check_presence(ledger, agent_text) + check_arithmetic(ledger) + check_formula_claims(ledger)
     if errors:
         for e in errors:
             fail(e)

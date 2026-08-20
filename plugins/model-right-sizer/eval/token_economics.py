@@ -81,6 +81,13 @@ def ces_production(
         )
     if K < 0 or M < 0 or L < 0:
         raise ValueError("K, M, L are factor quantities and must be non-negative.")
+    if rho < 0 and (K == 0 or M == 0):
+        raise ValueError(
+            f"K=0 or M=0 combined with rho={rho!r} < 0 is undefined (0 raised to a "
+            "negative power) -- this is the rigid-complementarity/'Memory Wall' regime "
+            "footnote 4 describes: a zero factor there implies unboundedly negative "
+            "output, not a computable value."
+        )
     inner = delta * K**rho + (1 - delta) * M**rho
     if inner <= 0:
         raise ValueError(
@@ -120,6 +127,12 @@ def nested_ces_M(M_int: float, M_ext: float, delta_m: float, rho_m: float) -> fl
         raise ValueError("rho_m == 0 is the Cobb-Douglas limit; pass a small nonzero rho_m instead.")
     if M_int < 0 or M_ext < 0:
         raise ValueError("M_int, M_ext must be non-negative token counts.")
+    if rho_m < 0 and (M_int == 0 or M_ext == 0):
+        raise ValueError(
+            f"M_int=0 or M_ext=0 combined with rho_m={rho_m!r} < 0 is undefined (0 "
+            "raised to a negative power) -- the same rigid-complementarity boundary "
+            "as ces_production, one nest level down."
+        )
     inner = delta_m * M_int**rho_m + (1 - delta_m) * M_ext**rho_m
     if inner <= 0:
         raise ValueError(f"delta_m*M_int**rho_m + (1-delta_m)*M_ext**rho_m == {inner!r} <= 0.")

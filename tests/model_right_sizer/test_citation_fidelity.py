@@ -43,6 +43,26 @@ def test_arithmetic_claims_are_internally_consistent():
     assert errors == []
 
 
+def test_formula_claims_match_their_implementations():
+    errors = check_citations.check_formula_claims(LEDGER)
+    assert errors == []
+
+
+def test_every_verifiable_token_economics_equation_claim_carries_a_formula_expr():
+    """Regression guard for the exact gap Greptile flagged: a claim with a
+    `source_quote` and `implemented_by` but no `formula_expr` is documentation,
+    not verification -- check_presence skips it (no exact_substring) and
+    check_arithmetic doesn't know its claim_id, so nothing actually runs it."""
+    te_paper = next(p for p in LEDGER["papers"] if p["id"] == "arXiv:2605.09104")
+    equation_claims = [c for c in te_paper["claims"] if "equation_ref" in c]
+    assert equation_claims, "expected at least one equation-referencing claim"
+    for claim in equation_claims:
+        assert claim.get("formula_expr"), f"{claim['claim_id']} has no formula_expr -- unenforced citation"
+        assert claim.get("sample_inputs"), f"{claim['claim_id']} has no sample_inputs -- formula_expr can't run"
+        assert claim.get("module") in check_citations.FORMULA_MODULES
+        assert claim.get("primary_function")
+
+
 def test_main_passes_on_the_real_repo_state(capsys):
     exit_code = check_citations.main()
     captured = capsys.readouterr()
@@ -118,6 +138,68 @@ def test_check_arithmetic_catches_a_tampered_openrouter_multiple():
 
     assert errors
     assert any("te-openrouter-growth" in e for e in errors)
+
+
+def test_check_formula_claims_catches_a_formula_expr_that_no_longer_matches_the_implementation():
+    tampered = copy.deepcopy(LEDGER)
+    te_paper = next(p for p in tampered["papers"] if p["id"] == "arXiv:2605.09104")
+    claim = next(c for c in te_paper["claims"] if c["claim_id"] == "te-cost-function")
+    # TC = P_k.K + P_m.M + w.L, tampered to drop the w.L term entirely.
+    claim["formula_expr"] = "P_k*K + P_m*M"
+
+    errors = check_citations.check_formula_claims(tampered)
+
+    assert errors
+    assert any("te-cost-function" in e for e in errors)
+
+
+def test_check_formula_claims_catches_a_boolean_mismatch():
+    tampered = copy.deepcopy(LEDGER)
+    te_paper = next(p for p in tampered["papers"] if p["id"] == "arXiv:2605.09104")
+    claim = next(c for c in te_paper["claims"] if c["claim_id"] == "te-graphrag-capital-leverage")
+    # Flip the inequality's direction.
+    claim["formula_expr"] = "(I_graph / Q) > delta_Y"
+
+    errors = check_citations.check_formula_claims(tampered)
+
+    assert errors
+    assert any("te-graphrag-capital-leverage" in e for e in errors)
+
+
+def test_check_formula_claims_catches_a_broken_expression():
+    tampered = copy.deepcopy(LEDGER)
+    te_paper = next(p for p in tampered["papers"] if p["id"] == "arXiv:2605.09104")
+    claim = next(c for c in te_paper["claims"] if c["claim_id"] == "te-cost-function")
+    claim["formula_expr"] = "P_k*K + P_m*M + w*L + this_name_does_not_exist"
+
+    errors = check_citations.check_formula_claims(tampered)
+
+    assert errors
+    assert any("te-cost-function" in e and "failed to evaluate" in e for e in errors)
+
+
+def test_check_formula_claims_catches_a_module_that_isnt_in_the_allowlist():
+    tampered = copy.deepcopy(LEDGER)
+    te_paper = next(p for p in tampered["papers"] if p["id"] == "arXiv:2605.09104")
+    claim = next(c for c in te_paper["claims"] if c["claim_id"] == "te-cost-function")
+    claim["module"] = "os"  # not in FORMULA_MODULES -- must be rejected, not dynamically imported
+
+    errors = check_citations.check_formula_claims(tampered)
+
+    assert errors
+    assert any("te-cost-function" in e for e in errors)
+
+
+def test_check_formula_claims_catches_missing_sample_inputs():
+    tampered = copy.deepcopy(LEDGER)
+    te_paper = next(p for p in tampered["papers"] if p["id"] == "arXiv:2605.09104")
+    claim = next(c for c in te_paper["claims"] if c["claim_id"] == "te-cost-function")
+    claim["sample_inputs"] = []
+
+    errors = check_citations.check_formula_claims(tampered)
+
+    assert errors
+    assert any("te-cost-function" in e and "sample_inputs" in e for e in errors)
 
 
 def test_check_arithmetic_catches_an_inverted_ibpo_range():

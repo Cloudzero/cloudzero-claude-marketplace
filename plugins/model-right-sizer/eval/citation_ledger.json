@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "description": "Answer key for check_citations.py and the tests/model_right_sizer/test_citation_fidelity.py suite. One entry per research paper the model-right-sizer agent (agents/model-right-sizer.md) cites for a formula or a numeric claim. `citation_substring` is checked for literal presence in the agent file; `numbers`-bearing claims are recomputed via eval/token_economics.py or eval/reasoning_budget.py and compared against the claimed value; `exact_substring`-bearing claims are checked for literal (character-for-character, including unicode en-dashes and multiplication signs) presence in the agent file. This file is the committed answer key -- update it in the same PR as any edit to the agent file's cited numbers, and let the tests catch drift between the two.",
+  "description": "Answer key for check_citations.py and the tests/model_right_sizer/test_citation_fidelity.py suite. One entry per research paper the model-right-sizer agent (agents/model-right-sizer.md) cites for a formula or a numeric claim. `citation_substring` is checked for literal presence in the agent file; `numbers`-bearing claims are recomputed and compared against the claimed value; `exact_substring`-bearing claims are checked for literal (character-for-character, including unicode en-dashes and multiplication signs) presence in the agent file. A claim carrying `formula_expr` + `sample_inputs` is machine-checked by evaluating `formula_expr` (a literal Python expression over each sample's variable names) and comparing it, per sample, against calling `module.primary_function(**sample)` -- this is what makes the `source_quote` more than documentation: if the shipped implementation ever diverges from the formula this ledger cites, that divergence shows up as a numeric mismatch on a concrete sample, not a trust exercise. This file is the committed answer key -- update it in the same PR as any edit to the agent file's cited numbers or to the implementations in token_economics.py / reasoning_budget.py, and let the tests catch drift between the three.",
   "papers": [
     {
       "id": "arXiv:2501.17974",
@@ -42,9 +42,15 @@
         {
           "claim_id": "budgetthinker-length-aware-reward",
           "exact_substring": "length-aware reward that optimizes accuracy AND budget adherence at once",
-          "formula": "eval/reasoning_budget.budget_control_token_reward: reward = w_accuracy*accuracy + w_adherence*budget_adherence_score",
+          "module": "reasoning_budget",
+          "primary_function": "budget_control_token_reward",
+          "formula_expr": "weight_accuracy*accuracy + weight_adherence*budget_adherence_score",
+          "sample_inputs": [
+            { "accuracy": 0.8, "budget_adherence_score": 0.6, "weight_accuracy": 0.5, "weight_adherence": 0.5 },
+            { "accuracy": 0.2, "budget_adherence_score": 0.9, "weight_accuracy": 0.3, "weight_adherence": 0.7 }
+          ],
           "verifiable": false,
-          "verification_note": "The paper describes the reward's objective in prose, not a closed-form weight split -- budget_control_token_reward() is model-right-sizer's own literal operationalization of that description (a weighted sum, the simplest function meeting it), not a formula transcribed from the paper's own equations. Flagged unverifiable against the source for that reason; the function itself is still unit-tested for internal consistency (monotonicity, weight normalization)."
+          "verification_note": "The paper describes the reward's objective in prose, not a closed-form weight split -- budget_control_token_reward() is model-right-sizer's own literal operationalization of that description (a weighted sum, the simplest function meeting it), not a formula transcribed from the paper's own equations. `formula_expr` here checks that the *function* matches model-right-sizer's own stated operationalization (drift protection on our own code), not that the operationalization matches the paper (which is why `verifiable` stays false against the source)."
         }
       ]
     },
@@ -63,6 +69,13 @@
           "equation_ref": "Eq. 1",
           "source_quote": "Y = A · [δK^ρ + (1−δ)M^ρ]^(θ/ρ) · L^β · e^ε",
           "implemented_by": "eval/token_economics.ces_production",
+          "module": "token_economics",
+          "primary_function": "ces_production",
+          "formula_expr": "A * (delta*K**rho + (1-delta)*M**rho)**(theta/rho) * L**beta * math.exp(epsilon)",
+          "sample_inputs": [
+            { "K": 4, "M": 16, "L": 1, "delta": 0.5, "rho": 0.5, "theta": 1, "beta": 0, "A": 2, "epsilon": 0.0 },
+            { "K": 9, "M": 4, "L": 2, "delta": 0.3, "rho": -1.0, "theta": 1.5, "beta": 0.5, "A": 1.5, "epsilon": 0.1 }
+          ],
           "verifiable": true
         },
         {
@@ -70,6 +83,13 @@
           "equation_ref": "Eq. 2",
           "source_quote": "TC = P_k · K + P_m · M + w · L",
           "implemented_by": "eval/token_economics.total_cost",
+          "module": "token_economics",
+          "primary_function": "total_cost",
+          "formula_expr": "P_k*K + P_m*M + w*L",
+          "sample_inputs": [
+            { "K": 3, "M": 1000, "L": 2, "P_k": 2, "P_m": 0.5, "w": 20 },
+            { "K": 0, "M": 500, "L": 10, "P_k": 5, "P_m": 0.02, "w": 15 }
+          ],
           "verifiable": true
         },
         {
@@ -77,6 +97,13 @@
           "equation_ref": "Eq. 3",
           "source_quote": "min TC  s.t.  Y ≥ Z",
           "implemented_by": "eval/token_economics.clears_quality_bar, pareto_objective_gap",
+          "module": "token_economics",
+          "primary_function": "pareto_objective_gap",
+          "formula_expr": "Y - Z",
+          "sample_inputs": [
+            { "Y": 80, "Z": 75 },
+            { "Y": 60, "Z": 75 }
+          ],
           "verifiable": true
         },
         {
@@ -84,6 +111,13 @@
           "equation_ref": "footnote 4",
           "source_quote": "the elasticity of substitution is defined as σ = 1/(1−ρ). As ρ → 1 (where σ → ∞), the factors become perfect substitutes ... as ρ → −∞ (where σ → 0), the factors exhibit rigid complementarity. This extreme boundary characterizes the \"Memory Wall\"",
           "implemented_by": "eval/token_economics.elasticity_of_substitution, classify_substitution_regime",
+          "module": "token_economics",
+          "primary_function": "elasticity_of_substitution",
+          "formula_expr": "1.0 / (1.0 - rho)",
+          "sample_inputs": [
+            { "rho": 0.5 },
+            { "rho": -9.0 }
+          ],
           "verifiable": true
         },
         {
@@ -91,6 +125,13 @@
           "equation_ref": "footnote 5",
           "source_quote": "the shadow price is defined as P̃_int/ext = P_m + w · τ_inf, where P_m denotes the per-token procurement price, and τ_inf accounts for inference latency or tool-invocation overhead",
           "implemented_by": "eval/token_economics.shadow_price_single_agent",
+          "module": "token_economics",
+          "primary_function": "shadow_price_single_agent",
+          "formula_expr": "P_m + w*tau_inf",
+          "sample_inputs": [
+            { "P_m": 0.01, "w": 50, "tau_inf": 0.02 },
+            { "P_m": 0.02, "w": 10, "tau_inf": 0.0 }
+          ],
           "verifiable": true
         },
         {
@@ -98,6 +139,13 @@
           "equation_ref": "footnote 5",
           "source_quote": "extended in Section 4 to P̃_comm = P_m + w · τ_sync + ΔC_coord, which incorporates inter-agent synchronization latency (τ_sync) and the coordination costs associated with format alignment (ΔC_coord)",
           "implemented_by": "eval/token_economics.shadow_price_multi_agent",
+          "module": "token_economics",
+          "primary_function": "shadow_price_multi_agent",
+          "formula_expr": "P_m + w*tau_sync + delta_c_coord",
+          "sample_inputs": [
+            { "P_m": 0.01, "w": 50, "tau_sync": 0.01, "delta_c_coord": 0.5 },
+            { "P_m": 0.0, "w": 0, "tau_sync": 0, "delta_c_coord": 0.25 }
+          ],
           "verifiable": true
         },
         {
@@ -105,6 +153,12 @@
           "equation_ref": "footnote 5",
           "source_quote": "in Section 5, the model converges to P̃_eco = P_m + w · τ_cong + C_comp, further encompassing congestion latency (τ_cong) induced by multi-tenant competition, as well as costs related to system compliance and environmental externalities (C_comp)",
           "implemented_by": "eval/token_economics.shadow_price_ecosystem",
+          "module": "token_economics",
+          "primary_function": "shadow_price_ecosystem",
+          "formula_expr": "P_m + w*tau_cong + c_comp",
+          "sample_inputs": [
+            { "P_m": 0.01, "w": 50, "tau_cong": 0.005, "c_comp": 0.2 }
+          ],
           "verifiable": true
         },
         {
@@ -112,6 +166,13 @@
           "equation_ref": "Figure 5",
           "source_quote": "Optimal Point E*, MRTS = P̃_ext/P̃_int; Slope = -P̃_ext/P̃_int",
           "implemented_by": "eval/token_economics.mrts_target, marginal_rate_of_technical_substitution, is_at_cost_minimizing_optimum",
+          "module": "token_economics",
+          "primary_function": "mrts_target",
+          "formula_expr": "P_ext_shadow / P_int_shadow",
+          "sample_inputs": [
+            { "P_ext_shadow": 0.03, "P_int_shadow": 0.01 },
+            { "P_ext_shadow": 1.0, "P_int_shadow": 4.0 }
+          ],
           "verifiable": true
         },
         {
@@ -119,6 +180,13 @@
           "equation_ref": "Sec. 3.4 remarks",
           "source_quote": "GraphRAG provides a canonical capital-leverage calculation: fixed indexing investment I_graph is justified when I_graph / Q < ΔY per query",
           "implemented_by": "eval/token_economics.graphrag_capital_leverage_justified",
+          "module": "token_economics",
+          "primary_function": "graphrag_capital_leverage_justified",
+          "formula_expr": "(I_graph / Q) < delta_Y",
+          "sample_inputs": [
+            { "I_graph": 1000, "Q": 10000, "delta_Y": 0.2 },
+            { "I_graph": 1000, "Q": 1000, "delta_Y": 0.2 }
+          ],
           "verifiable": true
         },
         {
