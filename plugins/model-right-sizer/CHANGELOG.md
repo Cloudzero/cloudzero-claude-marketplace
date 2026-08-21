@@ -5,6 +5,30 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 ## Unreleased
 
 ### Added
+- **`skills/model-right-sizer-prompt-tuning` + `eval/tuning/` — a discrete
+  coordinate-ascent search over four wording knobs**, starting from the
+  premise the ablation study below already established (all four layers
+  stay) and asking a different question: given all four are present, which
+  exact wording maximizes real-execution `accuracy_rate`. Named precisely
+  rather than dressed up as literal gradient descent — there is no
+  derivative of a Markdown file — this is the ordinal, finite-difference
+  analog: four small worded edits (`eval/tuning/knobs.py`), each at one
+  exact anchor plausibly touching the budget-adherence ratio (how much
+  margin `token_ceiling` carries above expected spend, how hard the effort
+  dial leans down under difficulty-uncertainty, and two calibration-
+  feedback knobs in Pass A's ledger and Pass B's report), searched one
+  coordinate at a time (`eval/tuning/optimizer.py`'s pure, dispatch-free
+  scoring + step logic) against a fixed tuning-task subset with a held-out
+  check reserved for the final winner only, to catch overfitting to the
+  benchmark suite itself. All-knobs-at-0 is required to render
+  byte-identical to the shipped agent file, same invariant the ablation
+  study's all-four condition holds. Read-mostly: never edits
+  `agents/model-right-sizer.md`; the winning wording is reported as a
+  proposed diff for a human to review. See `eval/tuning/DESIGN.md` for the
+  full design, including the "what gradient descent means here" framing and
+  the known limitations (single-draw noise per candidate, a local rather
+  than global optimum, a deliberately small four-knob v1 search space).
+
 - **`skills/model-right-sizer-layer-ablation` + `eval/ablation/` — an
   empirical ablation study measuring what each of the four research-grounded
   citation layers actually does to the blueprints the agent produces**,

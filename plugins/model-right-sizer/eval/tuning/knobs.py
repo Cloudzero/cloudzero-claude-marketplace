@@ -1,0 +1,227 @@
+#!/usr/bin/env python3
+#  SPDX-FileCopyrightText: Copyright (c) CloudZero, Inc. or its affiliates. All Rights Reserved.
+#  SPDX-License-Identifier: Apache-2.0
+"""Knob registry + variant renderer for the model-right-sizer prompt-tuning
+experiment (see `DESIGN.md` in this directory).
+
+Where `../ablation/layers.py` ablates whole citation SECTIONS in or out, this
+module makes small, WORDED edits at four fixed anchor points inside the
+all-four-layers agent text -- the four spots most directly responsible for
+how `budget.token_ceiling` gets set and graded, which is the exact mechanism
+"accuracy" (real effort landing within predicted budget, per
+`../reasoning_budget.classify_budget_adherence`) measures. Each knob is an
+ORDINAL axis (a small integer range), not a binary include/exclude -- level
+`0` on every knob reproduces the shipped agent file byte-for-byte (checked by
+`tests/model_right_sizer/test_tuning_knobs.py`), and other levels move the
+wording in a stated direction (tighter/looser budget margin, stronger/weaker
+effort-down bias, etc).
+
+Same deliberate design choice as layers.py: this module never edits
+`agents/model-right-sizer.md` itself. It locates each knob's anchor -- an
+exact, hand-verified substring -- in a COPY of the agent text and replaces it
+with that level's variant. A future edit to the agent file that changes one
+of these anchors breaks this loudly (`KnobAnchorNotFoundError`), which is the
+correct failure mode for an audit tool whose whole point is to not silently
+drift out of sync with what it's measuring.
+"""
+from __future__ import annotations
+
+__all__ = [
+    "KNOBS",
+    "ALL_KNOBS",
+    "KnobAnchorNotFoundError",
+    "default_settings",
+    "render_variant",
+]
+
+
+class KnobAnchorNotFoundError(ValueError):
+    """Raised when a knob's anchor text can't be found exactly once in the
+    agent text -- almost always means agents/model-right-sizer.md changed
+    without this module's anchors being updated to match."""
+
+
+# Each knob: an `anchor` (an exact substring of the shipped agent file,
+# present exactly once) and a `levels` dict mapping an integer level to the
+# full replacement text for that anchor. Level `0`'s replacement is always
+# the anchor itself, unmodified -- that's what makes "all knobs at 0"
+# reproduce the shipped file exactly.
+KNOBS = {
+    "budget_margin": {
+        "description": (
+            "How much headroom `token_ceiling` should carry above the "
+            "expected token spend for the row's model+effort tier. Directly "
+            "targets the calibration this study's accuracy metric measures: "
+            "actual/budgeted landing in [0.5, 1.0] is `within_budget`; too "
+            "much margin reads as `under_budget_oversized`, too little as "
+            "`over_budget`."
+        ),
+        "location": "Pass A, item 4 (the `budget` bullet)",
+        "anchor": "e.g. one routed entirely through a deterministic query layer)",
+        "levels": {
+            # Each non-zero level is an em-dash aside appended to the anchor
+            # so it still flows grammatically into the original sentence's
+            # continuation (" plus an optional `thinking_budget` ...") --
+            # NOT a new sentence, which would run on into that lowercase
+            # continuation with no terminal punctuation.
+            -1: (
+                "e.g. one routed entirely through a deterministic query layer) "
+                "— when uncertain, padded generously (2–3× the expected spend, "
+                "since a build that runs out of budget mid-task is worse than a "
+                "wide ceiling) —"
+            ),
+            0: "e.g. one routed entirely through a deterministic query layer)",
+            1: (
+                "e.g. one routed entirely through a deterministic query layer) "
+                "— sized to roughly 1.2–1.5× the expected token spend for the "
+                "chosen model+effort tier, a small buffer for variance rather "
+                "than a wide safety margin —"
+            ),
+            2: (
+                "e.g. one routed entirely through a deterministic query layer) "
+                "— derived from an explicit `expected_tokens` estimate for the "
+                "chosen model+effort tier ×1.2–1.3, stated in the row's "
+                "rationale so the ceiling is traceable to a number rather than "
+                "picked directly —"
+            ),
+        },
+    },
+    "effort_tax": {
+        "description": (
+            "How strongly the IBPO 'over-thinking tax' framing pushes effort "
+            "DOWN when a stage's difficulty score is uncertain rather than "
+            "clearly low or high. Affects actual token spend, the numerator "
+            "of the accuracy ratio."
+        ),
+        "location": "Adaptive reasoning-budget layers, IBPO item 1",
+        "anchor": (
+            '**Over-thinking an easy stage is a right-sizing failure — the '
+            '"over-thinking tax" — exactly as much as under-powering a hard '
+            "one.**"
+        ),
+        "levels": {
+            -1: (
+                '**Over-thinking an easy stage is a right-sizing failure — the '
+                '"over-thinking tax" — exactly as much as under-powering a hard '
+                "one.** When the difficulty score is genuinely uncertain, "
+                "prefer a HIGHER effort tier — the cost of an unnecessary token "
+                "or two is smaller than the cost of a stage that silently "
+                "under-thinks."
+            ),
+            0: (
+                '**Over-thinking an easy stage is a right-sizing failure — the '
+                '"over-thinking tax" — exactly as much as under-powering a hard '
+                "one.**"
+            ),
+            1: (
+                '**Over-thinking an easy stage is a right-sizing failure — the '
+                '"over-thinking tax" — exactly as much as under-powering a hard '
+                "one.** Default to LOW effort whenever the difficulty score is "
+                "uncertain — treat a middling difficulty score as a reason to "
+                "round down, not up."
+            ),
+        },
+    },
+    "calibration_aggressiveness": {
+        "description": (
+            "Whether the calibration-ledger paragraph (Pass A item 8) names "
+            "`token_ceiling` specifically as something to correct from past "
+            "over/under-budget rows, not just the model tier."
+        ),
+        "location": "Pass A, item 8 (calibration ledger)",
+        "anchor": (
+            "If a task-shape's overrides skew toward a *smaller* tier with a "
+            "positive cost saving and no quality loss, that's evidence to "
+            "shift the primary pick down."
+        ),
+        "levels": {
+            0: (
+                "If a task-shape's overrides skew toward a *smaller* tier with a "
+                "positive cost saving and no quality loss, that's evidence to "
+                "shift the primary pick down."
+            ),
+            1: (
+                "If a task-shape's overrides skew toward a *smaller* tier with a "
+                "positive cost saving and no quality loss, that's evidence to "
+                "shift the primary pick down. Apply the same rule to "
+                "`token_ceiling` specifically: if past rows of this task-shape "
+                "came in `under_budget_oversized`, shift the next ceiling down "
+                "toward the observed actual, not just toward a smaller model "
+                "tier."
+            ),
+        },
+    },
+    "pass_b_feedback": {
+        "description": (
+            "Whether the Pass B budget-adherence line requires naming a "
+            "corrected ceiling NUMBER for next time, not just the direction "
+            "of the miss."
+        ),
+        "location": "Pass B (closing reconciliation), budget adherence bullet",
+        "anchor": (
+            "did it stay within the ceiling you set, blow past it, or come in "
+            "well under (a sign the budget — or the model/effort — was "
+            "oversized)? Adherence is graded alongside outcome quality, not an "
+            "afterthought — a correct-but-3×-over-budget stage is a "
+            "right-sizing miss."
+        ),
+        "levels": {
+            0: (
+                "did it stay within the ceiling you set, blow past it, or come in "
+                "well under (a sign the budget — or the model/effort — was "
+                "oversized)? Adherence is graded alongside outcome quality, not an "
+                "afterthought — a correct-but-3×-over-budget stage is a "
+                "right-sizing miss."
+            ),
+            1: (
+                "did it stay within the ceiling you set, blow past it, or come in "
+                "well under (a sign the budget — or the model/effort — was "
+                "oversized)? Adherence is graded alongside outcome quality, not an "
+                "afterthought — a correct-but-3×-over-budget stage is a "
+                "right-sizing miss. Name the specific ceiling you'd set next "
+                "time as a number, not just the direction — 'oversized' "
+                "without a corrected figure doesn't close the loop back into "
+                "the next blueprint's `budget.token_ceiling`."
+            ),
+        },
+    },
+}
+ALL_KNOBS = tuple(KNOBS)
+
+
+def default_settings() -> dict:
+    """All knobs at level 0 -- the shipped agent file, unmodified. The
+    starting point for the coordinate-ascent search (see optimizer.py)."""
+    return {name: 0 for name in ALL_KNOBS}
+
+
+def render_variant(agent_text: str, settings: dict) -> str:
+    """Return a copy of `agent_text` with each knob in `settings` set to its
+    given level. `settings` may be a partial dict -- any knob not mentioned
+    stays at level 0 (unmodified). Unknown knob names or levels raise
+    ValueError; a missing/duplicated anchor raises KnobAnchorNotFoundError.
+
+    Anchors are disjoint non-overlapping substrings (unlike layers.py's
+    section cuts), so knobs can be applied in any order -- this iterates
+    `ALL_KNOBS` for a deterministic order, not because order matters here.
+    """
+    unknown_knobs = set(settings) - set(ALL_KNOBS)
+    if unknown_knobs:
+        raise ValueError(f"Unknown knob name(s): {sorted(unknown_knobs)} -- must be a subset of {ALL_KNOBS}")
+
+    text = agent_text
+    for name in ALL_KNOBS:
+        level = settings.get(name, 0)
+        spec = KNOBS[name]
+        if level not in spec["levels"]:
+            raise ValueError(f"Unknown level {level!r} for knob {name!r} -- must be one of {sorted(spec['levels'])}")
+        anchor = spec["anchor"]
+        occurrences = text.count(anchor)
+        if occurrences != 1:
+            raise KnobAnchorNotFoundError(
+                f"Knob {name!r}'s anchor found {occurrences} time(s) (expected exactly 1) in the agent "
+                f"text -- agents/model-right-sizer.md likely changed without this module's anchors being "
+                f"updated to match. Anchor: {anchor!r}"
+            )
+        text = text.replace(anchor, spec["levels"][level], 1)
+    return text
