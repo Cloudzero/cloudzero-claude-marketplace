@@ -1,0 +1,209 @@
+{
+  "overhead_floors": {
+    "sonnet": 38401,
+    "haiku": 28508,
+    "opus": 38260
+  },
+  "build_results": [
+    {
+      "candidate": "budget_margin_1",
+      "task": "t1",
+      "row_id": "stage-1",
+      "model": "haiku",
+      "budgeted_tokens": 300,
+      "actual_raw": 30642
+    },
+    {
+      "candidate": "budget_margin_1",
+      "task": "t6",
+      "row_id": "build-validation-check",
+      "model": "haiku",
+      "budgeted_tokens": 1500,
+      "actual_raw": 31139
+    },
+    {
+      "candidate": "budget_margin_1",
+      "task": "t6",
+      "row_id": "verify-validation-diff",
+      "model": "haiku",
+      "budgeted_tokens": 1200,
+      "actual_raw": 30629
+    },
+    {
+      "candidate": "budget_margin_2",
+      "task": "t1",
+      "row_id": "stage-1",
+      "model": "haiku",
+      "budgeted_tokens": 200,
+      "actual_raw": 30644
+    },
+    {
+      "candidate": "budget_margin_neg1",
+      "task": "t1",
+      "row_id": "classify_ticket_subject",
+      "model": "haiku",
+      "budgeted_tokens": 600,
+      "actual_raw": 30652
+    },
+    {
+      "candidate": "budget_margin_2",
+      "task": "t6",
+      "row_id": "validate_input_check_1",
+      "model": "haiku",
+      "budgeted_tokens": 3800,
+      "actual_raw": 31093
+    },
+    {
+      "candidate": "budget_margin_1",
+      "task": "t4",
+      "row_id": "stage-1",
+      "model": "sonnet",
+      "budgeted_tokens": 15000,
+      "actual_raw": 41119
+    },
+    {
+      "candidate": "budget_margin_neg1",
+      "task": "t1",
+      "row_id": "qa_sample_audit",
+      "model": "sonnet",
+      "budgeted_tokens": 3000,
+      "actual_raw": 41176
+    },
+    {
+      "candidate": "calibration_aggressiveness_1",
+      "task": "t1",
+      "row_id": "classify-ticket-subject",
+      "model": "haiku",
+      "budgeted_tokens": 300,
+      "actual_raw": 30642
+    },
+    {
+      "candidate": "budget_margin_neg1",
+      "task": "t6",
+      "row_id": "stage-1",
+      "model": "haiku",
+      "budgeted_tokens": 6000,
+      "actual_raw": 31060
+    },
+    {
+      "candidate": "budget_margin_2",
+      "task": "t4",
+      "row_id": "design_architecture",
+      "model": "opus",
+      "budgeted_tokens": 19000,
+      "actual_raw": 46302
+    },
+    {
+      "candidate": "budget_margin_neg1",
+      "task": "t4",
+      "row_id": "stage-1",
+      "model": "opus",
+      "budgeted_tokens": 40000,
+      "actual_raw": 46006
+    },
+    {
+      "candidate": "current",
+      "task": "t1",
+      "row_id": "stage-1",
+      "model": "haiku",
+      "budgeted_tokens": 400,
+      "actual_raw": 30634
+    },
+    {
+      "candidate": "calibration_aggressiveness_1",
+      "task": "t6",
+      "row_id": "stage-1",
+      "model": "haiku",
+      "budgeted_tokens": 4000,
+      "actual_raw": 31178
+    },
+    {
+      "candidate": "calibration_aggressiveness_1",
+      "task": "t4",
+      "row_id": "row-1-architecture-design",
+      "model": "opus",
+      "budgeted_tokens": 40000,
+      "actual_raw": 46354
+    },
+    {
+      "candidate": "effort_tax_1",
+      "task": "t1",
+      "row_id": "stage-1",
+      "model": "haiku",
+      "budgeted_tokens": 150,
+      "actual_raw": 30645
+    },
+    {
+      "candidate": "current",
+      "task": "t1",
+      "row_id": "stage-2",
+      "model": "sonnet",
+      "budgeted_tokens": 600,
+      "actual_raw": 41126
+    },
+    {
+      "candidate": "effort_tax_neg1",
+      "task": "t1",
+      "row_id": "stage-1-classify",
+      "model": "haiku",
+      "budgeted_tokens": 60,
+      "actual_raw": 30646
+    },
+    {
+      "candidate": "effort_tax_1",
+      "task": "t6",
+      "row_id": "row-1",
+      "model": "haiku",
+      "budgeted_tokens": 1500,
+      "actual_raw": 31269
+    },
+    {
+      "candidate": "effort_tax_neg1",
+      "task": "t4",
+      "row_id": "stage-1",
+      "model": "sonnet",
+      "budgeted_tokens": 1500,
+      "actual_raw": 41036
+    },
+    {
+      "candidate": "pass_b_feedback_1",
+      "task": "t1",
+      "row_id": "classify_ticket_subject",
+      "model": "haiku",
+      "budgeted_tokens": 150,
+      "actual_raw": 30652
+    },
+    {
+      "candidate": "effort_tax_neg1",
+      "task": "t6",
+      "row_id": "stage-1",
+      "model": "haiku",
+      "budgeted_tokens": 4000,
+      "actual_raw": 31555
+    },
+    {
+      "candidate": "pass_b_feedback_1",
+      "task": "t6",
+      "row_id": "stage-1",
+      "model": "haiku",
+      "budgeted_tokens": 3000,
+      "actual_raw": 31287
+    },
+    {
+      "candidate": "effort_tax_1",
+      "task": "t4",
+      "row_id": "architecture_design",
+      "model": "opus",
+      "budgeted_tokens": 40000,
+      "actual_raw": 40962
+    },
+    {
+      "candidate": "pass_b_feedback_1",
+      "task": "t4",
+      "row_id": "r1_design_streaming_contract",
+      "model": "opus",
+      "budgeted_tokens": 30000,
+      "actual_raw": 40980
+    }
+  ]
+}

@@ -213,3 +213,33 @@ a pass up mid-run.
 - **Four knobs is a deliberately small v1 search space** (see "Search
   space" above) — a wording lever this experiment didn't include is simply
   untested, not ruled out.
+
+## Lessons from pass 1
+
+[`results/2026-08-21-pass1.md`](results/2026-08-21-pass1.md) is the first
+real execution of this search (one coordinate-ascent pass, all four knobs,
+scope confirmed up front). One methodology gap surfaced by actually
+running it, not anticipated when this design was written:
+
+- **A real-execution build dispatched as a full sub-agent can't reach a
+  tiny per-item `token_ceiling`, no matter what the wording says.**
+  `t1_bulk_classifier`'s blueprint rows carry per-item ceilings in the
+  tens-to-hundreds of tokens (correct for one raw classification call
+  inside a 10,000-item batch) — but every real build this pass dispatched
+  for `t1` was a full sub-agent call (tool access, its own reasoning), and
+  even after subtracting the measured per-dispatch overhead floor, every
+  single `t1` cell across every candidate landed 3–11× over budget,
+  including the unmodified baseline. This is a build-harness gap, not
+  something any of the four knobs could fix by wording alone — a real
+  `t1`-shaped build needs to be dispatched as a raw model completion call
+  (no sub-agent, no tools) before its accuracy signal can be trusted. Until
+  that's fixed, exclude `t1` from the tuning-set score, the same way the
+  ablation study excluded it from `mean_token_ceiling` for a different
+  (prompt-convention) reason — two different `t1` problems, same response:
+  name it and exclude it rather than let it swamp the other tasks' signal.
+- **A parallelized "one pass" is not the same as DESIGN.md's sequential
+  pass** — evaluating every knob's neighbors against the shared baseline in
+  one round (cheaper, and what pass 1 actually did) finds each knob's
+  independent effect, but never tests them combined. A real second pass —
+  or a direct evaluation of the all-four-winners-combined candidate — is
+  still open before any single "winning wording" can be called validated.
