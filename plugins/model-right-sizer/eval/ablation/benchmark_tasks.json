@@ -1,10 +1,17 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "description": "Fixed benchmark task suite for the model-right-sizer layer-ablation study. Checked in and versioned so results stay comparable across runs and over time -- a runner should never invent ad hoc task prompts mid-study, because that reintroduces the exact per-run variance the fixed suite exists to remove. Each task's `designed_to_probe` is a hypothesis about which layer(s) it should differentially engage, not a ground truth -- the whole point of the study is to check that hypothesis empirically rather than assume it.",
+  "changelog": [
+    {
+      "version": "1.1",
+      "date": "2026-08-21",
+      "change": "t1 and t5 prompts now state the token_ceiling convention explicitly (per-item, not per-batch/campaign). The 2026-08-21 pilot run found different blueprint runs picked different conventions for the identical t1 intent -- 200 tokens (per-item) vs 2,500,000 (per-10,000-item campaign), a 12,500x swing that swamped every other composition signal for that task. Data from schema_version 1.0 is not directly comparable to 1.1 on these two tasks' budget-related metrics -- see results/ for which schema_version each run used."
+    }
+  ],
   "tasks": [
     {
       "id": "t1_bulk_classifier",
-      "prompt": "Classify 10,000 support-ticket subject lines into one of 5 fixed categories, one classification per line. Fully unattended, no human watching, intended to run as an overnight batch job. Output is a CSV of {ticket_id, category}.",
+      "prompt": "Classify 10,000 support-ticket subject lines into one of 5 fixed categories, one classification per line. Fully unattended, no human watching, intended to run as an overnight batch job. Output is a CSV of {ticket_id, category}. State budget.token_ceiling as a PER-ITEM budget (the token ceiling for one classification call), not a total campaign budget across all 10,000 items.",
       "designed_to_probe": ["token_economics", "budget_thinker"],
       "hypothesis": "High efficiency pressure (volume, non-interactive), low effectiveness need, low difficulty -- should route to the cheapest tier with a tight token ceiling and flag the Batch APIs lever. Token Economics' cost-minimization framing and BudgetThinker's explicit-ceiling should both push toward a small, well-specified budget; absent both, the baseline rubric may still land on a cheap tier by default but without an explicit ceiling or batch-routing rationale."
     },
@@ -28,7 +35,7 @@
     },
     {
       "id": "t5_fanout_pr_review",
-      "prompt": "Run an automated code-quality review pass over 200 independent, unrelated small pull requests. Produce one short finding-summary per PR. Fully unattended, non-interactive, and cost per PR matters because this runs on every PR in the org going forward.",
+      "prompt": "Run an automated code-quality review pass over 200 independent, unrelated small pull requests. Produce one short finding-summary per PR. Fully unattended, non-interactive, and cost per PR matters because this runs on every PR in the org going forward. State budget.token_ceiling as a PER-PR budget (the token ceiling for reviewing one PR), not a total campaign budget across all 200 PRs.",
       "designed_to_probe": ["token_economics", "budget_thinker"],
       "hypothesis": "High-volume, recurring, non-interactive fan-out -- should flag Batch APIs and a strict per-item token ceiling. Similar shape to t1 but a review/QA task rather than a pure classifier, so it should probe whether the effectiveness-need score (a wrong review finding has some but not extreme cost) still lands on a small tier under efficiency pressure."
     },
