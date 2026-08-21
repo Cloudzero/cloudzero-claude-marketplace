@@ -151,6 +151,63 @@ KNOBS = {
             ),
         },
     },
+    "calibration_decay": {
+        "description": (
+            "Whether the BudgetThinker paragraph (Adaptive reasoning-budget "
+            "layers, item 2) closes by naming SelfBudgeter's decaying "
+            "tightness coefficient (arXiv 2505.11274, Formula 6: "
+            "`alpha_now = alpha_start - (alpha_start-alpha_end)*(step/"
+            "Total_steps)`) as the reason a task-shape's calibration-ledger "
+            "tolerance should tighten with repeat observations, not stay "
+            "flat. This is the 5th knob added after `budget_margin` through "
+            "`pass_b_feedback`, grounded in a paper that genuinely does "
+            "change a coefficient within a formula over the course of "
+            "training -- unlike the platform PRD's own `J = P - lambda*C` "
+            "notation (phase-2 pin-governance DESIGN.md), which explicitly "
+            "disclaims being anything a formula optimizes. See DESIGN.md's "
+            "'Grounding the 5th knob' section for the correction this "
+            "replaced (lambda was never attributable to IBPO, BudgetThinker, "
+            "or SelfBudgeter -- alpha, in SelfBudgeter specifically, is)."
+        ),
+        "location": (
+            "Adaptive reasoning-budget layers, end of BudgetThinker item 2 "
+            "(same paragraph budget_margin's sibling knobs don't touch)"
+        ),
+        "anchor": "A stage with no stated budget is under-specified.",
+        "levels": {
+            0: "A stage with no stated budget is under-specified.",
+            1: (
+                "A stage with no stated budget is under-specified. "
+                "SelfBudgeter ([arXiv 2505.11274](https://arxiv.org/abs/2505.11274), "
+                "Li, Dong, Ma et al., Peking University / BandAI, ByteDance) "
+                "reinforces this with a *decaying tightness coefficient*: "
+                "training starts permissive of budget deviation and linearly "
+                "tightens toward near-exact adherence as the policy learns "
+                "its own budget predictions. Translate: **a task-shape's "
+                "calibration-ledger tolerance should tighten the same way** "
+                "— the first rows of a new task-shape can carry the loose "
+                "margin `budget_margin` sets above, but tolerance should "
+                "narrow as more `within_budget` rows accumulate for that "
+                "shape, not hold flat indefinitely."
+            ),
+            2: (
+                "A stage with no stated budget is under-specified. "
+                "SelfBudgeter ([arXiv 2505.11274](https://arxiv.org/abs/2505.11274), "
+                "Li, Dong, Ma et al., Peking University / BandAI, ByteDance) "
+                "reinforces this with a *decaying tightness coefficient*: "
+                "training starts permissive of budget deviation and linearly "
+                "tightens toward near-exact adherence as the policy learns "
+                "its own budget predictions. Translate: **a task-shape's "
+                "calibration-ledger tolerance should tighten the same way, "
+                "on an explicit schedule** — state the tightening rate in "
+                "the row's rationale (e.g. \"tolerance −20% after every 3 "
+                "consecutive `within_budget` rows of this task-shape\") "
+                "rather than tightening by feel; a calibration ledger with "
+                "no stated decay rate is exactly as under-specified as a "
+                "stage with no stated budget."
+            ),
+        },
+    },
     "pass_b_feedback": {
         "description": (
             "Whether the Pass B budget-adherence line requires naming a "

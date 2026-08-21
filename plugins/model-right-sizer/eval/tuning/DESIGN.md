@@ -59,7 +59,7 @@ smaller total edit** — the candidate whose knob settings deviate least from
 the shipped baseline (all levels `0`). This is the "Less is More" default:
 among equally-accurate wordings, ship the one that changes the file least.
 
-## Search space — four knobs, chosen because they touch the metric directly
+## Search space — five knobs, chosen because they touch the metric directly
 
 [`knobs.py`](knobs.py) is the registry. Every knob is a small, worded edit
 at one fixed anchor point inside the all-four-layers agent text (not a
@@ -72,12 +72,13 @@ metric reads, not because it's an interesting rewrite in the abstract:
 | `budget_margin` | Pass A item 4, the `budget` bullet | Widens/tightens the stated headroom between `token_ceiling` and the expected token spend for the row's model+effort tier — the single most direct lever on the accuracy ratio's denominator. Levels −1 (generous, 2–3×) → 0 (shipped, no explicit margin) → +1 (1.2–1.5×) → +2 (explicit `expected_tokens` estimate, ×1.2–1.3, stated in the rationale). |
 | `effort_tax` | Adaptive reasoning-budget layers, IBPO item 1 | Pushes the effort dial (and so the ratio's numerator, actual spend) down or up specifically when a stage's difficulty score is uncertain. Levels −1 (favor higher effort when uncertain) → 0 (shipped) → +1 (favor lower effort when uncertain). |
 | `calibration_aggressiveness` | Pass A item 8, calibration ledger | Whether past `under_budget_oversized` rows for a task-shape explicitly pull the NEXT ceiling down, not just the model tier. Levels 0 (shipped) → +1 (adds the explicit ceiling-correction rule). |
+| `calibration_decay` | Adaptive reasoning-budget layers, end of BudgetThinker item 2 | Whether a task-shape's calibration-ledger *tolerance* itself must tighten with repeat `within_budget` observations, grounded in SelfBudgeter's decaying tightness coefficient (arXiv 2505.11274, Formula 6). Levels 0 (shipped) → +1 (states the tightening qualitatively) → +2 (requires an explicit decay rate in the rationale). See "Grounding the 5th knob" below for why this replaced an initial, unsupportable `lambda` framing. |
 | `pass_b_feedback` | Pass B, budget-adherence bullet | Whether a Pass B miss must name a corrected ceiling NUMBER for next time, not just the direction. Levels 0 (shipped) → +1 (requires the number). |
 
-Deliberately excluded from v1, to keep the search cheap (four knobs, not
+Deliberately excluded from v1, to keep the search cheap (five knobs, not
 forty): model-tier wording, the message-schema layer, and the speculative-
 decoding layer's own text — none of those anchors plausibly move the
-budget-adherence ratio as directly as the four above, and a wider search
+budget-adherence ratio as directly as the five above, and a wider search
 multiplies the number of expensive real-execution rounds needed. Propose an
 addition to `KNOBS` as its own reviewable change if a future run wants to
 widen the search.
@@ -87,6 +88,54 @@ file (checked by `tests/model_right_sizer/test_tuning_knobs.py`, the same
 invariant `../ablation/layers.py`'s all-four condition holds) — the starting
 point of this search IS the shipped file, since the brief is "tune the file
 that already has all four layers," not "ablate a layer."
+
+## Grounding the 5th knob — the `lambda` framing didn't survive contact with the sources
+
+The 5th knob was originally proposed as tuning a `lambda` weight inside a
+formula from "one of the research papers," following the platform PRD's
+Phase 2 (Governed Pin Control Plane) governance-phase framing. That framing
+does not hold up:
+
+- `docs/model-right-sizer-platform/phase-2-pin-governance/DESIGN.md` (the
+  actual "governance phase" doc, in the separate
+  `Cloudzero/project-model-right-sizer-platform` repo) states outright:
+  "**lambda is a governed field, not a subsystem.** Nothing in this Epic
+  computes or optimizes `J = P - lambda*C`; lambda is stored, versioned, and
+  delivered like any other policy attribute." Its Out-of-Scope section
+  repeats this almost verbatim. `J = P - lambda*C` is the PRD author's own
+  unattributed shorthand notation — not a quotation from IBPO, BudgetThinker,
+  or SelfBudgeter.
+- All three candidate papers were checked directly. Neither IBPO
+  (arXiv:2501.17974) nor BudgetThinker (arXiv:2508.17196) contains a `lambda`
+  cost-weight. SelfBudgeter (arXiv:2505.11274) — the paper both
+  `RESEARCH.md` and `PROJECT.md` in the platform repo carry as the third
+  research-grounding citation alongside IBPO and BudgetThinker — was read in
+  full: its reward formalism (Formula 1, a piecewise GRPO reward) contains no
+  `lambda` either. `agents/model-right-sizer.md` itself was also grepped:
+  zero hits for "lambda", "λ", or "J = P" before this change.
+- SelfBudgeter's real governing hyperparameter is `alpha`, a *tightness
+  coefficient* — and, unlike the PRD's `lambda`, `alpha` genuinely IS
+  scheduled to change within a formula over the course of training (Formula
+  6, the dynamic linear decay `alpha_now = alpha_start -
+  (alpha_start-alpha_end)*(step/Total_steps)`, from a permissive
+  `alpha_start=6.0` to a strict `alpha_end=0.1`). That is the closest real
+  mechanism available to the original ask — "a governance phase that
+  changes lambda within a formula" — and `calibration_decay` (above)
+  translates it into model-right-sizer's own calibration ledger: tolerance
+  should tighten as a task-shape accumulates `within_budget` observations,
+  the same way `alpha` tightens as training progresses.
+- Deliberately deferred: `citation_ledger.json` (the shipped agent file's
+  answer key, checked by `check_citations.py`) gets no SelfBudgeter entry
+  from this change. That ledger only covers claims that actually appear in
+  `agents/model-right-sizer.md` — `calibration_decay`'s SelfBudgeter text
+  lives only in tuning-experiment variants (`knobs.py` levels 1/2), the same
+  as every other knob in this registry, per this file's own "never edits
+  `agents/model-right-sizer.md` itself" design choice. If a future pass's
+  winning combination promotes `calibration_decay` into the shipped file (as
+  a merged diff, human-reviewed, the same path pass 1's proposed diff
+  already follows), add the SelfBudgeter ledger entry — with `formula_expr`,
+  `source_variables`, and hand-computed `expected_output`s per
+  `eval/tuning/selfbudgeter.py` — in that same PR, not before.
 
 ## Algorithm
 
@@ -173,9 +222,9 @@ smooth over.
 Per candidate evaluated: `n_tuning_tasks` (3) real-execution builds — one
 Pass A dry-run plus a real build per `blueprint_rows[]` entry that dry-run
 produces (typically 1–3 rows per task in this benchmark suite, so roughly
-3–9 real builds per candidate). Per knob-sweep pass: each of the four knobs'
+3–9 real builds per candidate). Per knob-sweep pass: each of the five knobs'
 non-current levels gets one candidate evaluation (1–2 extra levels per knob
-in this registry, so ~6 candidate evaluations per full pass ≈ 20–50 real
+in this registry, so ~7 candidate evaluations per full pass ≈ 20–60 real
 builds). State the actual candidate count up front before spending real
 build budget on a pass, the same way
 [`../../skills/model-right-sizer-layer-ablation/SKILL.md`](../../skills/model-right-sizer-layer-ablation/SKILL.md)
@@ -184,7 +233,7 @@ a pass up mid-run.
 
 ## Stopping criteria
 
-- **Converged**: a full pass over all four knobs produces no improving
+- **Converged**: a full pass over all five knobs produces no improving
   move (every knob's best neighbor score is no better than staying put).
 - **Round budget spent**: `MAX_PASSES` reached without convergence — report
   the best point found so far as provisional, explicitly not a confirmed
