@@ -211,3 +211,36 @@ Both are disclosed in the pilot report's own "what this pilot can't yet
 show" section rather than smoothed into a false-confidence headline number —
 the standing rule from "Statistical honesty" above, applied to the harness's
 own execution, not just the sample size.
+
+## Lessons from the full-independent-dispatch rerun
+
+[`results/2026-08-21-full-independent-run.md`](results/2026-08-21-full-independent-run.md)
+re-ran the composition grid with all 96 (condition × task) cells dispatched
+independently — closing lesson 1 above — plus the `token_ceiling` prompt fix
+(lesson 2) and a control-measured overhead normalization for the accuracy
+cells. Two things worth recording here, one about the findings and one about
+running the harness itself:
+
+1. **The session-correlation confound wasn't just a precision problem — it
+   produced a false finding.** The pilot's headline isolation pattern
+   (`query_shaped_rate` ~2x higher at baseline than every layer-bearing
+   condition) did not replicate once dispatch was actually independent;
+   baseline settled to mid-pack among all 16 conditions. This is the reason
+   Step 2's one-dispatch-per-cell rule is load-bearing rather than a nice-to-
+   have: a plausible-looking aggregate pattern from correlated sessions can
+   point at the wrong cause entirely, not just add noise around the right one.
+2. **96 independent sub-agent dispatches exceeds this runtime's concurrent-
+   dispatch cap (20 via the `Agent` tool).** Past that cap, calls fail hard
+   rather than queue — "do not retry" — so a full composition sweep needs
+   either batching under the cap or a tool that paces concurrency itself
+   (this rerun used the `Workflow` tool's `pipeline()`, which auto-caps
+   concurrency and runs the rest of the batch as slots free up). Whichever
+   tool paces the fan-out, a long-running batch can genuinely **stall
+   silently** — no error, no notification, just no further progress. Don't
+   assume "still running" from the absence of a failure: diagnose a
+   suspected stall by reading the run's `journal.jsonl` (records `started`
+   vs. `result` events per cell) and checking output-file mtimes for cells
+   already marked started; if progress has genuinely stopped, recompute the
+   missing set from the filesystem (not from an assumed cursor position) and
+   dispatch just those remaining cells directly, safely under the concurrency
+   cap, rather than restarting the whole batch.

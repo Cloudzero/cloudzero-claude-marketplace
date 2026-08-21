@@ -139,6 +139,26 @@ since 96 independent sub-agent calls is exactly the shape parallel dispatch
 exists for. This phase never builds anything and never touches the real
 repo/product — every one of the 96 calls is safe to run unattended.
 
+**Watch for the runtime's concurrent-dispatch cap.** The `Agent` tool in
+Claude Code caps concurrent sub-agent dispatches (20 at the time this skill
+was last run against the full grid); calls past the cap fail hard rather
+than queue — "do not retry" — so batch the 96 calls under the cap, or use a
+tool built to pace concurrency itself, e.g. the `Workflow` tool's
+`pipeline()`, which auto-caps concurrency and works through the rest of the
+batch as slots free up. Whichever tool paces the fan-out, a long-running
+96-cell batch can **stall silently** partway through — no error, no
+notification, just no further progress. Don't infer "still running" purely
+from the absence of a failure on a long batch; if a check-in is overdue,
+diagnose a suspected stall directly: read the run's `journal.jsonl` (it
+records `started` vs. `result` events per cell) and check output-file
+mtimes for any cell marked started, and if nothing has moved for a
+implausibly long time, recompute the missing set from the filesystem (the
+ground truth for what's actually landed) rather than assuming a cursor
+position, then dispatch just the missing cells directly, safely under the
+concurrency cap, rather than restarting the whole batch. See
+[`results/2026-08-21-full-independent-run.md`](../../eval/ablation/results/2026-08-21-full-independent-run.md)
+for a worked recovery from exactly this.
+
 ## Step 3 — accuracy sweep (scoped subset × 6 tasks — the expensive phase)
 
 For the conditions named in the confirmed scope (DESIGN.md default: the 5

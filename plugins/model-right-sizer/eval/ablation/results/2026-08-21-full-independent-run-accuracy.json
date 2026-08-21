@@ -1,0 +1,63 @@
+{
+  "overhead_floors": {
+    "sonnet": 38401,
+    "haiku": 28508
+  },
+  "raw": [
+    {
+      "condition": "baseline",
+      "task": "t6",
+      "model": "sonnet",
+      "actual_raw": 40842,
+      "budgeted_tokens": 8000
+    },
+    {
+      "condition": "baseline",
+      "task": "t4",
+      "model": "haiku",
+      "actual_raw": 31452,
+      "budgeted_tokens": 4000
+    },
+    {
+      "condition": "all_four",
+      "task": "t6",
+      "model": "sonnet",
+      "actual_raw": 41081,
+      "budgeted_tokens": 6000
+    },
+    {
+      "condition": "all_four",
+      "task": "t4",
+      "model": "sonnet",
+      "actual_raw": 43290,
+      "budgeted_tokens": 2000
+    }
+  ],
+  "normalized_records": [
+    {
+      "actual_tokens": 2441,
+      "budgeted_tokens": 8000
+    },
+    {
+      "actual_tokens": 2944,
+      "budgeted_tokens": 4000
+    },
+    {
+      "actual_tokens": 2680,
+      "budgeted_tokens": 6000
+    },
+    {
+      "actual_tokens": 4889,
+      "budgeted_tokens": 2000
+    }
+  ],
+  "metrics": {
+    "n": 4,
+    "n_scored": 4,
+    "accuracy_rate": 0.25,
+    "over_budget_rate": 0.25,
+    "under_budget_oversized_rate": 0.5,
+    "mean_adherence_ratio": 0.9830729166666667,
+    "computation_errors": []
+  }
+}
