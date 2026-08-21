@@ -30,6 +30,24 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   come back `status: "not_started"`; `schemas/blueprint.example.json` and
   the README updated to match; a new `test_missing_status_in_routing_map_is_rejected`
   regression test in `tests/test_validate_blueprint.py`.
+- `skills/model-right-sizer-chief-of-staff-drill` — a companion skill that
+  dogfoods the chief-of-staff feature above instead of only schema-testing
+  it: it pulls a real blueprint from `model-right-sizer-dryrun`, actually
+  dispatches each `work_routing_map[]` unit as a live sub-agent, updates
+  `status` in place as a real orchestrator would, answers a mid-flight
+  status question purely from the ledger, and scores the result
+  (accuracy/completeness/value-add/friction) against ground truth as a
+  PASS/PARTIAL/FAIL verdict. First live run (3 real sub-agent dispatches,
+  Haiku tier): **PASS** — the mid-flight consolidated report matched ground
+  truth and covered all 3 rows, and it was the only way to check status
+  without opening each sub-agent's raw transcript (which the runtime
+  explicitly warns not to read directly, since it can overflow context).
+  One friction point surfaced and intentionally left unfixed by the drill
+  itself (see its "don't silently patch what you're testing" rule): two
+  units finished faster than the next status write could land, so a
+  written `in_progress` was already stale by the time it was read —
+  `status` has no timestamp to distinguish a fresh update from a stale one.
+  Named as a candidate follow-up, not applied here.
 - **Token Economics (arXiv:2605.09104) as a third research-grounded layer.**
   A new "Economic formalization" section in `agents/model-right-sizer.md`
   formalizes the effectiveness-vs-efficiency split itself as the paper's
