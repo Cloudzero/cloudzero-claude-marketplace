@@ -9,7 +9,11 @@ description: >-
   overwritten, only the marker-delimited mandate block is inserted or
   refreshed, independently, in each targeted file. The mandate's "before"
   hook runs the `model-right-sizer-dryrun` skill directly to produce a
-  schema-conformant JSON blueprint for the orchestrator to route by. Also
+  schema-conformant JSON blueprint for the orchestrator to route by, and
+  once dispatch starts the mandate makes the orchestrating session the
+  chief-of-staff thread for that blueprint's `work_routing_map[]` —
+  tracking each dispatched unit's status and answering "where am I at" with
+  one consolidated report instead of scattered sub-agent threads. Also
   checks whether the `model-right-sizer` agent file and the
   `model-right-sizer-dryrun` skill are discoverable in this repo and, if
   either is missing, installs the `model-right-sizer` Claude Code plugin to
@@ -155,6 +159,18 @@ that scaling by forcing a full blueprint on every micro-edit.
    the orchestrating session/agent driving this task, and route every
    sub-agent or model dispatch by its `blueprint_rows` / `work_routing_map`
    picks rather than by default or gut feel.
+
+   **Once dispatch starts, the orchestrating session is the chief-of-staff
+   thread for this blueprint's `work_routing_map[]`** — the one place that
+   knows what went out, to which tier, and where each stands, the same way a
+   single tracking thread keeps a dozen loose AI conversations from becoming
+   unmanageable. Concretely: update each row's `status` (`not_started` /
+   `dispatched` / `in_progress` / `done` / `blocked`) in place as dispatch
+   proceeds — the blueprint JSON doubles as a live status ledger, not just
+   the initial plan — and when asked for a status update ("where am I at",
+   "give me an update"), check every row and answer with one consolidated
+   report instead of sending the requester to re-open each dispatched thread
+   individually.
 
    **After the task closes**, consult the `model-right-sizer` agent directly
    for a **model-usage report** (this pass runs the agent itself, not the

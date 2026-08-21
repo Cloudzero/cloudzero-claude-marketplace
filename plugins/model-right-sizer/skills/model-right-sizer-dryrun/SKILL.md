@@ -78,7 +78,9 @@ real run, not a dry run.
    [`../../schemas/blueprint.example.json`](../../schemas/blueprint.example.json)
    for a worked instance. Do not ask for, and do not accept, a markdown-table
    or prose rendering instead — if the agent returns one, ask it to re-emit
-   as the JSON object.
+   as the JSON object. Every `work_routing_map[]` row's `status` should come
+   back `not_started` — a dry run previews the map, it never dispatches, so
+   nothing has a status to report yet.
 
 4. **Validate against the schema itself, emit the JSON, and STOP.** Before
    printing anything, run the agent's raw JSON response through

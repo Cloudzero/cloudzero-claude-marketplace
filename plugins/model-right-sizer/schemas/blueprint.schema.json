@@ -17,7 +17,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "1.0",
+      "const": "1.1",
       "description": "Bump alongside this file and the plugin CHANGELOG when the shape changes."
     },
     "mode": {
@@ -171,7 +171,7 @@
     "routingMapRow": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "build_unit", "pick", "budget", "handoff_schema_ref", "rationale"],
+      "required": ["id", "build_unit", "pick", "budget", "handoff_schema_ref", "status", "rationale"],
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "build_unit": { "type": "string", "minLength": 1 },
@@ -182,6 +182,14 @@
         "pick": { "$ref": "#/$defs/pick" },
         "budget": { "$ref": "#/$defs/budget" },
         "handoff_schema_ref": { "type": "string", "minLength": 1 },
+        "status": {
+          "enum": ["not_started", "dispatched", "in_progress", "done", "blocked"],
+          "description": "Always 'not_started' as emitted by Pass A (nothing has been dispatched yet). The invoking session updates this in place as it dispatches and checks in on this unit, so the blueprint JSON doubles as a live status ledger it can report from on request instead of re-deriving status from scattered sub-agent threads. See 'Chief of staff' in model-right-sizer.md."
+        },
+        "status_note": {
+          "type": ["string", "null"],
+          "description": "Free-text detail on the current status, e.g. why a row is 'blocked'. Null when status is self-explanatory."
+        },
         "rationale": { "type": "string", "minLength": 1 }
       }
     },

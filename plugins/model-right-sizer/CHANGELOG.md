@@ -5,6 +5,31 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 ## Unreleased
 
 ### Added
+- **Chief of staff: `work_routing_map[]` rows now carry a live `status`.**
+  `schemas/blueprint.schema.json` bumped to `schema_version: "1.1"` — every
+  `routingMapRow` now requires a `status`
+  (`not_started`/`dispatched`/`in_progress`/`done`/`blocked`, always emitted
+  `not_started` by Pass A since nothing has dispatched yet) plus an optional
+  `status_note`. A new "Chief of staff" section in
+  `agents/model-right-sizer.md` names the role this creates: once the
+  invoking session dispatches `work_routing_map[]`'s units across
+  sub-agents/models/threads, it becomes the **chief-of-staff thread** for
+  that dispatched work — the one place that knows what went out and where
+  each stands — and updates each row's `status` in place as work proceeds
+  instead of letting the blueprint JSON go stale the moment real dispatch
+  starts. On a status request ("where am I at"), it checks every row and
+  answers with one consolidated report rather than sending the requester to
+  re-open each dispatched sub-agent thread individually. `model-right-sizer`
+  itself stays read-only and stateless — it never polls live dispatch state;
+  the duty belongs to whoever invokes it, and this names it so it isn't left
+  unassigned. Wired through: a new "Model-selection principles" imperative
+  (#7) and a matching "bounce from" condition and vocabulary terms in
+  `agents/model-right-sizer.md`; `model-right-sizer-install`'s mandate block
+  and frontmatter description now spell out the chief-of-staff duty
+  concretely; `model-right-sizer-dryrun` notes that a dry run's rows always
+  come back `status: "not_started"`; `schemas/blueprint.example.json` and
+  the README updated to match; a new `test_missing_status_in_routing_map_is_rejected`
+  regression test in `tests/test_validate_blueprint.py`.
 - **Token Economics (arXiv:2605.09104) as a third research-grounded layer.**
   A new "Economic formalization" section in `agents/model-right-sizer.md`
   formalizes the effectiveness-vs-efficiency split itself as the paper's

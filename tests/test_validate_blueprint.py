@@ -62,6 +62,26 @@ def test_missing_top_level_key_is_rejected():
     assert any("uncertainty_ledger" in e for e in errors)
 
 
+def test_missing_status_in_routing_map_is_rejected():
+    """work_routing_map[] rows must carry a status — the chief-of-staff ledger field."""
+    instance = copy.deepcopy(EXAMPLE)
+    del instance["work_routing_map"][0]["status"]
+
+    errors = validate_blueprint.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("status" in e for e in errors)
+
+
+def test_illegal_status_value_is_rejected():
+    instance = copy.deepcopy(EXAMPLE)
+    instance["work_routing_map"][0]["status"] = "done_ish"
+
+    errors = validate_blueprint.validate(SCHEMA, instance)
+
+    assert errors
+
+
 def test_illegal_enum_value_is_rejected():
     instance = copy.deepcopy(EXAMPLE)
     instance["blueprint_rows"][0]["keep_or_override"] = "maybe"

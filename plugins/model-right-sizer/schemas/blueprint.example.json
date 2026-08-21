@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "mode": "dry_run",
   "intent": "Build a Slack bot that summarizes daily standup threads and posts a digest each morning.",
   "price_sheet": {
@@ -105,6 +105,8 @@
       },
       "budget": { "token_ceiling": 20000, "thinking_budget": "<=2k thinking" },
       "handoff_schema_ref": "digest-summary-v1",
+      "status": "not_started",
+      "status_note": null,
       "rationale": "Same reasoning as stage-1: bounded summarization, Sonnet at low effort."
     }
   ],
