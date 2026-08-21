@@ -82,6 +82,50 @@ def test_illegal_status_value_is_rejected():
     assert errors
 
 
+def test_missing_status_updated_at_is_rejected():
+    """Regression guard: routingMapRow requires status_updated_at at all."""
+    instance = copy.deepcopy(EXAMPLE)
+    del instance["work_routing_map"][0]["status_updated_at"]
+
+    errors = validate_blueprint.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("status_updated_at" in e for e in errors)
+
+
+def test_null_status_updated_at_allowed_when_not_started():
+    """The default Pass A state: nothing dispatched, so no clock read exists yet."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["work_routing_map"][0]["status"] = "not_started"
+    instance["work_routing_map"][0]["status_updated_at"] = None
+
+    errors = validate_blueprint.validate(SCHEMA, instance)
+
+    assert errors == []
+
+
+def test_null_status_updated_at_rejected_once_dispatched():
+    """The exact bug the chief-of-staff drill's first live run found: a non-
+    not_started status with no honest freshness marker must be rejected."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["work_routing_map"][0]["status"] = "in_progress"
+    instance["work_routing_map"][0]["status_updated_at"] = None
+
+    errors = validate_blueprint.validate(SCHEMA, instance)
+
+    assert errors
+
+
+def test_real_status_updated_at_allowed_once_dispatched():
+    instance = copy.deepcopy(EXAMPLE)
+    instance["work_routing_map"][0]["status"] = "done"
+    instance["work_routing_map"][0]["status_updated_at"] = "2026-08-21T06:15:00Z"
+
+    errors = validate_blueprint.validate(SCHEMA, instance)
+
+    assert errors == []
+
+
 def test_illegal_enum_value_is_rejected():
     instance = copy.deepcopy(EXAMPLE)
     instance["blueprint_rows"][0]["keep_or_override"] = "maybe"

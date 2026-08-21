@@ -167,10 +167,15 @@ that scaling by forcing a full blueprint on every micro-edit.
    unmanageable. Concretely: update each row's `status` (`not_started` /
    `dispatched` / `in_progress` / `done` / `blocked`) in place as dispatch
    proceeds — the blueprint JSON doubles as a live status ledger, not just
-   the initial plan — and when asked for a status update ("where am I at",
-   "give me an update"), check every row and answer with one consolidated
-   report instead of sending the requester to re-open each dispatched thread
-   individually.
+   the initial plan — and stamp `status_updated_at` with a real,
+   freshly-read clock time every time `status` changes, never a guess: fast
+   work can finish between one write and the next read, and an
+   un-timestamped `in_progress` then falsely reads as still current. When
+   asked for a status update ("where am I at", "give me an update"), check
+   every row's `status` *and* `status_updated_at` and answer with one
+   consolidated report — a non-terminal status with a stale timestamp is
+   "unconfirmed, recheck," not fact — instead of sending the requester to
+   re-open each dispatched thread individually.
 
    **After the task closes**, consult the `model-right-sizer` agent directly
    for a **model-usage report** (this pass runs the agent itself, not the

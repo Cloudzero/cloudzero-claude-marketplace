@@ -4,6 +4,31 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 
 ## Unreleased
 
+### Fixed
+- **`work_routing_map[].status` had no freshness marker — fixed the gap the
+  chief-of-staff drill found on its first live run.** Two dispatched units
+  finished faster than the next status write could land, so a written
+  `in_progress` was already stale by the time it was read, with no way to
+  tell fresh from stale. `schemas/blueprint.schema.json` (bumped to
+  `schema_version: "1.2"`) adds `status_updated_at` to every
+  `routingMapRow`: an ISO-8601 timestamp that must be a real clock read
+  taken at the moment `status` changes, never guessed or recalled from
+  memory. A new `allOf`/`if`/`else` conditional makes this
+  schema-enforced, not just documented: `status_updated_at` may be `null`
+  only while `status` is `"not_started"` (Pass A's default, nothing
+  dispatched yet); any other status requires a non-empty string, so the
+  exact bug the drill hit — a non-`not_started` row with a `null` or
+  missing timestamp — is now a validation failure, verified directly
+  against `validate_blueprint.py` for both the rejection and the two
+  legal cases (`not_started`+`null`, and any other status +
+  real timestamp). `agents/model-right-sizer.md`'s "Chief of staff"
+  section, the `model-right-sizer-install` mandate, `model-right-sizer-dryrun`,
+  and `model-right-sizer-chief-of-staff-drill` all updated to instruct
+  stamping `status_updated_at` on every status change and reading it
+  alongside `status` — a stale non-terminal status is "unconfirmed, go
+  check," not fact. `blueprint.example.json` and the README updated to
+  match.
+
 ### Added
 - **Chief of staff: `work_routing_map[]` rows now carry a live `status`.**
   `schemas/blueprint.schema.json` bumped to `schema_version: "1.1"` — every

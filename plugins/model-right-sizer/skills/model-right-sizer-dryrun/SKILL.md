@@ -79,8 +79,9 @@ real run, not a dry run.
    for a worked instance. Do not ask for, and do not accept, a markdown-table
    or prose rendering instead — if the agent returns one, ask it to re-emit
    as the JSON object. Every `work_routing_map[]` row's `status` should come
-   back `not_started` — a dry run previews the map, it never dispatches, so
-   nothing has a status to report yet.
+   back `not_started` with `status_updated_at: null` — a dry run previews
+   the map, it never dispatches, so nothing has a status or a clock-stamped
+   change to report yet.
 
 4. **Validate against the schema itself, emit the JSON, and STOP.** Before
    printing anything, run the agent's raw JSON response through

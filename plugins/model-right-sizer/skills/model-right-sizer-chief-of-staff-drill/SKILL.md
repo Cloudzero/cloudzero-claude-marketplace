@@ -50,7 +50,8 @@ plays chief-of-staff over them for real, and grades the outcome.
 
 2. **Get a real blueprint.** Invoke the `model-right-sizer-dryrun` skill on
    the intent. Confirm the returned JSON has >= 3 `work_routing_map[]` rows,
-   each `status: "not_started"`. Validate it through
+   each `status: "not_started"` with `status_updated_at: null`. Validate it
+   through
    [`../../../../scripts/validate_blueprint.py`](../../../../scripts/validate_blueprint.py)
    exactly as that skill's own step 4 does — this drill doesn't get to skip
    the check just because it's a test harness.
@@ -58,14 +59,24 @@ plays chief-of-staff over them for real, and grades the outcome.
 3. **Become the chief-of-staff thread — for real, not narrated.** Keep the
    blueprint JSON in hand (in context, or written to a scratch file) as the
    live status ledger. For each `work_routing_map[]` row:
-   - Flip its `status` to `dispatched`, then actually dispatch a real
-     sub-agent (the `Agent` tool, or your runtime's equivalent) to do that
-     row's `build_unit`, honoring its `pick` (model/effort) when your
-     runtime supports per-call overrides, and treating its
-     `budget.token_ceiling` as a soft cap to note against if blown past.
-   - Flip it to `in_progress` once dispatched and running.
+   - Flip its `status` to `dispatched`, stamp `status_updated_at` with a
+     **real clock read** taken at that moment (e.g. `date -u
+     +%Y-%m-%dT%H:%M:%SZ`, never a guessed or remembered time), then
+     actually dispatch a real sub-agent (the `Agent` tool, or your
+     runtime's equivalent) to do that row's `build_unit`, honoring its
+     `pick` (model/effort) when your runtime supports per-call overrides,
+     and treating its `budget.token_ceiling` as a soft cap to note against
+     if blown past.
+   - Flip it to `in_progress` once dispatched and running, with a fresh
+     `status_updated_at` reflecting *that* moment, not reused from the
+     `dispatched` write.
    - On return, flip it to `done` — or `blocked` with a `status_note` naming
-     the concrete reason, if it errored — never silently drop a row.
+     the concrete reason, if it errored — with `status_updated_at` stamped
+     again at that moment. Never silently drop a row, and never leave a
+     status changed without also re-stamping the timestamp: a `status`
+     write with no honest, freshly-read `status_updated_at` is exactly the
+     schema violation `blueprint.schema.json`'s `routingMapRow.allOf`
+     conditional rejects — this drill should never produce one.
    - Dispatch at least two rows so they are genuinely in flight
      concurrently (or staggered) rather than strictly serial one-at-a-time;
      a purely serial run can't expose a stale mid-flight read.
@@ -73,12 +84,17 @@ plays chief-of-staff over them for real, and grades the outcome.
 4. **Interrupt yourself mid-flight and answer a status question from the
    ledger alone.** After some rows have finished and at least one is still
    `not_started` or `in_progress`, stop and answer, as if a user just asked
-   "where am I at?": read every row's current `status` (and `status_note`
-   where set) and report one consolidated line per row. Do this by reading
-   the ledger fields specifically — not by recalling from memory what you
-   just did — since the whole point under test is whether the *field*
-   carries enough truth to answer from, independent of the asker's memory
-   of the last few tool calls.
+   "where am I at?": read every row's current `status`, `status_updated_at`,
+   and `status_note` (where set) and report one consolidated line per row.
+   Do this by reading the ledger fields specifically — not by recalling
+   from memory what you just did — since the whole point under test is
+   whether the *fields* carry enough truth to answer from, independent of
+   the asker's memory of the last few tool calls. For any non-terminal row
+   (`dispatched`/`in_progress`), compare `status_updated_at` against the
+   current time: if it's stale relative to how long that unit should
+   plausibly take, report it as "unconfirmed, rechecking" rather than
+   asserting it as fact — this is the freshness check the timestamp exists
+   to enable, so use it, don't just carry the field for show.
 
 5. **Let every dispatched unit finish, then diff the mid-flight answer
    against ground truth** (what had actually completed by that point,
@@ -91,10 +107,14 @@ plays chief-of-staff over them for real, and grades the outcome.
      ledger have required re-opening/re-deriving state from each dispatched
      sub-agent's own output? State the concrete counterfactual, don't just
      assert yes.
-   - **Friction** — anything about the `status`/`status_note` fields that
-     was awkward, ambiguous, or insufficient to update live (e.g. no
-     timestamp to tell a fresh `in_progress` from a stale one, no way to
-     express partial completion within a row).
+   - **Friction** — anything about the `status`/`status_updated_at`/
+     `status_note` fields that was awkward, ambiguous, or insufficient to
+     update live (e.g. no way to express partial completion within a row).
+     The original version of this drill found and named one such gap — no
+     timestamp to tell a fresh `in_progress` from a stale one — which is
+     now fixed (`status_updated_at`, schema-enforced non-null once `status`
+     leaves `not_started`); don't re-discover it, but do watch for the next
+     one the same way: report it, don't silently patch it inside the drill.
 
 6. **Report a verdict — PASS, PARTIAL, or FAIL** — with the evidence from
    step 5, not just the label. PASS requires accuracy and completeness both
