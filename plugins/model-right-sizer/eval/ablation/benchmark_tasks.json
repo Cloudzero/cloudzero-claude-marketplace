@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "description": "Fixed benchmark task suite for the model-right-sizer layer-ablation study. Checked in and versioned so results stay comparable across runs and over time -- a runner should never invent ad hoc task prompts mid-study, because that reintroduces the exact per-run variance the fixed suite exists to remove. Each task's `designed_to_probe` is a hypothesis about which layer(s) it should differentially engage, not a ground truth -- the whole point of the study is to check that hypothesis empirically rather than assume it.",
+  "tasks": [
+    {
+      "id": "t1_bulk_classifier",
+      "prompt": "Classify 10,000 support-ticket subject lines into one of 5 fixed categories, one classification per line. Fully unattended, no human watching, intended to run as an overnight batch job. Output is a CSV of {ticket_id, category}.",
+      "designed_to_probe": ["token_economics", "budget_thinker"],
+      "hypothesis": "High efficiency pressure (volume, non-interactive), low effectiveness need, low difficulty -- should route to the cheapest tier with a tight token ceiling and flag the Batch APIs lever. Token Economics' cost-minimization framing and BudgetThinker's explicit-ceiling should both push toward a small, well-specified budget; absent both, the baseline rubric may still land on a cheap tier by default but without an explicit ceiling or batch-routing rationale."
+    },
+    {
+      "id": "t2_ambiguous_cross_service_refactor",
+      "prompt": "Refactor a payment-processing REST endpoint that spans three separate microservices to add idempotency keys. Ownership boundaries between the three services are ambiguous and there are no existing tests covering the current behavior. A mistake here risks double-charging a customer.",
+      "designed_to_probe": ["token_economics", "ibpo"],
+      "hypothesis": "High cost-of-error and high difficulty (ambiguous spec, cross-service, high blast radius) -- should resist downgrading. Token Economics' 'Memory Wall' / model-floor framing should make an aggressive down-pin measurement-required rather than assumed; IBPO's difficulty-adaptive effort should push effort up given the difficulty score, not just the model tier."
+    },
+    {
+      "id": "t3_long_horizon_agentic_build",
+      "prompt": "Autonomously implement and ship a new internal admin-dashboard feature end to end -- design, implementation, tests, and docs -- as a single unattended agent run expected to take on the order of 45 minutes with many tool calls.",
+      "designed_to_probe": ["token_economics", "ibpo", "budget_thinker"],
+      "hypothesis": "Long autonomy horizon and many tool turns -- should trigger the agentic-loop wall-clock lever (loop-class scoring, measurement-gated down-pin) and an explicit thinking/token budget for the whole run, not just a model pick. Token Economics' shadow-price-of-a-token framing (w*tau_inf) is the formal grounding for treating the loop's wall-clock as a first-class cost here."
+    },
+    {
+      "id": "t4_interactive_latency_sensitive_chat",
+      "prompt": "Add a real-time chat-assistant feature to our product. Single user per session, low concurrency, served on our own self-hosted vLLM cluster (we control the inference stack). Users actively watch the response stream in, and latency is the top user complaint about this feature today.",
+      "designed_to_probe": ["speculative_decoding"],
+      "hypothesis": "This is speculative decoding's signature scenario: low concurrency, interactive, latency-felt-directly, self-hosted stack. A blueprint that has the speculative-decoding layer should explicitly propose it (or explicitly rule it out with a stated reason) for the serving stage; a blueprint without that layer should have no way to reach for this lever at all and will likely reach for a smaller model tier instead to cut latency, which is exactly the tradeoff the layer exists to avoid."
+    },
+    {
+      "id": "t5_fanout_pr_review",
+      "prompt": "Run an automated code-quality review pass over 200 independent, unrelated small pull requests. Produce one short finding-summary per PR. Fully unattended, non-interactive, and cost per PR matters because this runs on every PR in the org going forward.",
+      "designed_to_probe": ["token_economics", "budget_thinker"],
+      "hypothesis": "High-volume, recurring, non-interactive fan-out -- should flag Batch APIs and a strict per-item token ceiling. Similar shape to t1 but a review/QA task rather than a pure classifier, so it should probe whether the effectiveness-need score (a wrong review finding has some but not extreme cost) still lands on a small tier under efficiency pressure."
+    },
+    {
+      "id": "t6_bounded_wellspecified_fix",
+      "prompt": "Add a single, fully unambiguous input-validation check to one existing function. The spec is completely unambiguous and the resulting diff will be under 20 lines.",
+      "designed_to_probe": ["ibpo"],
+      "hypothesis": "Trivially easy, low difficulty, bounded, well-specified -- IBPO's 'over-thinking tax' is the direct test: with the IBPO layer present, effort should be explicitly driven down by the difficulty score; without it, the baseline rubric may still guess low effort but without the difficulty-adaptive rationale, so this task specifically probes whether the layer changes the STATED REASON, not just the number."
+    }
+  ]
+}

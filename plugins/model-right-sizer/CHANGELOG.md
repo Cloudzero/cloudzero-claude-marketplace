@@ -5,6 +5,47 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 ## Unreleased
 
 ### Added
+- **`skills/model-right-sizer-layer-ablation` + `eval/ablation/` — an
+  empirical ablation study measuring what each of the four research-grounded
+  citation layers actually does to the blueprints the agent produces**,
+  instead of trusting each paper's own claims to transfer. Two outcomes,
+  matching the request this was built for: (1) each layer's effect ALONE, in
+  isolation against a zero-layer baseline, and (2) the effect of every
+  COMBINATION across the full 16-subset grid (all four layers,
+  independently included/excluded), so a redundancy or synergy between
+  layers is visible rather than assumed away. `eval/ablation/layers.py`
+  renders any of the 16 subsets from the UNMODIFIED agent file via
+  structural-anchor slicing (section headings / numbered-list markers) --
+  no permanent ablation markup was added to the shipped agent file, so real
+  consumers of the plugin pay zero cost for this audit tooling; anchor
+  drift fails loudly (`LayerAnchorNotFoundError`) rather than silently
+  producing a wrong variant, and is caught by a full-16-subset test against
+  the real, current agent file on every CI run, not just at authoring time.
+  "Accuracy" is defined exactly as asked: whether real effort, from actually
+  running the recommended build, stayed within the blueprint's own predicted
+  budget -- `eval/ablation/metrics.accuracy_metrics()` wraps the
+  already-shipped `reasoning_budget.classify_budget_adherence()` (the same
+  function Pass B itself calls), so this study and a real usage report can
+  never define "stayed within prediction" two different ways. A fixed,
+  checked-in six-task benchmark suite (`eval/ablation/benchmark_tasks.json`)
+  spans each layer's signature scenario (bulk classification, an ambiguous
+  high-cost-of-error refactor, a long-horizon agentic build, an interactive
+  low-concurrency chat feature for the speculative-decoding layer
+  specifically, a fan-out review pass, and a trivially bounded fix) so every
+  layer has at least one task where its own stated rationale should bite.
+  `eval/ablation/DESIGN.md` documents the full design, including what's
+  deliberately out of scope (no statistical-significance claims from a
+  six-task pilot; small parenthetical citation asides elsewhere in the file
+  aren't scrubbed when a layer is excluded) rather than silently assuming
+  either gap away. `skills/model-right-sizer-layer-ablation/SKILL.md` is the
+  runbook: generate variants, a cheap 16-condition composition sweep
+  (Pass A blueprints only), a scoped real-execution accuracy sweep (the
+  5 isolation conditions + the all-four/shipped condition by default,
+  stating the marginal cost before extending to the full 16), then compute
+  and report. New tests under `tests/model_right_sizer/test_ablation_*.py`,
+  including an exhaustive check of all 16 subsets against the real agent
+  file (not a synthetic fixture) and a tamper test proving anchor drift
+  fails loudly.
 - **Speculative decoding (arXiv:2211.17192) as a fourth research-grounded
   layer — a new "Serving-layer lever" section.** Grounded in Leviathan,
   Kalman & Matias, *"Fast Inference from Transformers via Speculative
