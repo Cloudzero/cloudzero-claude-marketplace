@@ -292,3 +292,36 @@ running it, not anticipated when this design was written:
   independent effect, but never tests them combined. A real second pass —
   or a direct evaluation of the all-four-winners-combined candidate — is
   still open before any single "winning wording" can be called validated.
+
+## Lessons from pass 2 — a second measurement breakdown, and why passes 3–4 are paused
+
+[`results/2026-08-21-pass2.md`](results/2026-08-21-pass2.md) is pass 2 (evaluating the
+combined pass-1 winners plus the new `calibration_decay` knob). Two more structural gaps
+surfaced, on top of pass 1's t1 gap, and together they're serious enough that passes 3–4 are
+**paused, not run to satisfy the confirmed count**:
+
+- **t4 stopped being a single-row task.** At the combined pass-1-winner point, every one of
+  pass 2's 10 candidates decomposed t4 into 5–7 real-execution rows (design, backend,
+  speculative-decoding eval, frontend, benchmark, review), not the 1 row every pass-1 t4
+  candidate got. Real-building all of that would have meant ~55 real dispatches instead of
+  the stated 10 — an order of magnitude over the confirmed scope, discovered only after the
+  dry-run stage (itself 65k–140k tokens per call) completed. t4 was excluded from pass 2's
+  real-execution scoring as a result — a new, pass-2-specific exclusion, distinct from t1's.
+- **t6 then turned out to have the SAME problem t1 has.** With t4 excluded, every one of the
+  10 t6 real builds landed `under_budget_oversized` — `accuracy_rate=0.0` for the whole pass.
+  A real single-guard-clause edit costs a haiku sub-agent only ~340–1,050 net tokens once the
+  28,508-token overhead floor is subtracted, which is under half of every `budget_margin`
+  level tested, including the loosest. The floor's own apparent variance (a ~700-token spread
+  across ostensibly-identical no-op-adjacent dispatches) is now the same order of magnitude as
+  the entire signal being measured.
+- **Net effect: after two structural exclusions (t1 permanent, t4 this-pass), the tuning
+  set's real-execution signal is currently zero tasks with a working `accuracy_rate` and one
+  task (t6) that gives only a `mean_loss` tiebreak.** Continuing to passes 3–4 against that
+  channel would spend real-build budget confirming a gap already found, not learning
+  anything new — so they're paused pending a redesign (a real, appropriately-sized codebase
+  target instead of a synthetic scratch file; multiple draws per candidate to average down
+  the floor's noise; or explicit sign-off to keep going on mean_loss alone).
+- **One usable finding survived anyway, taken via code**: `optimizer.coordinate_ascent_step`
+  on the t6-only mean_loss data moves `budget_margin` from `+2` down to `+1` — a partial
+  reversal of pass 1's own "clearest winner," because that pass 1 result turns out to have
+  been carried almost entirely by t4's now-excluded single-row measurement.
