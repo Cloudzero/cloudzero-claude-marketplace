@@ -106,20 +106,31 @@ which should be byte-identical to the shipped agent file; that's checked by
 For each of the 16 variant files, and for each of the six tasks in
 `benchmark_tasks.json`:
 
-1. Dispatch a sub-agent using that **variant file's full text as its system
-   prompt** (not the installed `model-right-sizer` agent — the variant),
+1. Dispatch **one independent sub-agent per (variant, task) cell — never one
+   sub-agent handling multiple tasks in the same session.** This is load-
+   bearing, not a style preference:
+   [`results/2026-08-21-pilot-run.md`](../../eval/ablation/results/2026-08-21-pilot-run.md)'s
+   pilot run cut this corner for cost (one session per condition, six tasks
+   each) and found a likely artifact of it directly — one condition's
+   session picked the same unusual model tier in 9 of its 16 rows, a rate
+   no other condition came close to, most plausibly the session's own
+   carried-over tendency rather than four independent per-task effects.
+   Ninety-six independent dispatches is more calls, but it's what makes the
+   96 data points actually 96 independent samples instead of 16 sessions
+   each contributing one correlated block of 6.
+2. Use that **variant file's full text as its system prompt** (not the installed `model-right-sizer` agent — the variant),
    with the task's `prompt` as the intent, instructed exactly the way
    `model-right-sizer-dryrun` instructs it: **blueprint-only, `mode:
    "dry_run"`**, emit the single JSON object conforming to
    `../../schemas/blueprint.schema.json`, then stop. No build.
-2. Validate the response the same way `model-right-sizer-dryrun` does —
+3. Validate the response the same way `model-right-sizer-dryrun` does —
    pipe it through
    `uv run --no-project --with jsonschema scripts/validate_blueprint.py -`
    — and if it doesn't validate, ask that one sub-agent to re-emit once,
    quoting the validator's error, before recording the result. Don't let
    one malformed response silently drop a cell from the grid without
    noting it.
-3. Save each valid blueprint JSON to
+4. Save each valid blueprint JSON to
    `$SCRATCH/results/composition/<variant-name>/<task-id>.json`.
 
 Run this fan-out with the `Agent` tool (or `Task`, depending on which is
@@ -165,6 +176,23 @@ real usage for a given sub-agent dispatch, say so explicitly for that cell
 plausible-looking number — a made-up accuracy figure is worse than a
 visibly incomplete one, because it's indistinguishable from a real one in
 the report.
+
+**Prefer the harness's own reported usage over a self-reported estimate,
+but normalize for dispatch overhead before comparing it to `token_ceiling`.**
+If the runtime reports a real per-dispatch token figure for a sub-agent call
+(e.g. Claude Code's own task-completion usage metadata), that is a more
+trustworthy `actual_tokens` source than asking the sub-agent to guess its
+own usage. But
+[`results/2026-08-21-pilot-run.md`](../../eval/ablation/results/2026-08-21-pilot-run.md)'s
+"Accuracy" section found that a whole-dispatch figure includes the
+sub-agent's system prompt and tool-call scaffolding, not just the
+task-specific reasoning/output a blueprint's `token_ceiling` is sized
+against — comparing them directly produced a spurious ~5-20x
+"over budget" result on every cell in that pilot, a measurement artifact,
+not a real finding about any layer. Establish and subtract (or otherwise
+account for) a baseline per-dispatch overhead figure for whatever agent
+type/runtime is doing the real execution before treating `accuracy_rate`
+as meaningful.
 
 ## Step 4 — compute metrics
 

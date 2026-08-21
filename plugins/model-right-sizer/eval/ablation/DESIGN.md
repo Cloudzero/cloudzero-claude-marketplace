@@ -183,3 +183,31 @@ what's unverified" discipline in `citation_ledger.json`.
   at least one task where its own stated rationale should bite, which is a
   necessary condition for a meaningful ablation, not a claim of general
   external validity.
+
+## Lessons from the first real run
+
+[`results/2026-08-21-pilot-run.md`](results/2026-08-21-pilot-run.md) is the
+first execution of this design (the full 16×6 composition grid, plus a small
+4-cell accuracy slice) and is checked in as a worked example, warts and all.
+It surfaced two confounds this design document didn't originally anticipate,
+both now folded into the SKILL's runbook so a repeat run doesn't repeat them:
+
+1. **Dispatching one sub-agent per condition to handle all six tasks (a
+   cost-saving shortcut, not this design's intent) correlates results within
+   a condition** — six "independent" task samples aren't independent if one
+   session produced all six. The SKILL's Step 2 already specified one
+   dispatch per (condition, task) cell; the pilot run deviated from its own
+   skill for cost and paid for it in interpretability. Any future run should
+   follow Step 2 as written.
+2. **`schemas/blueprint.schema.json` doesn't state whether `token_ceiling`
+   on a fan-out/batch stage means per-item or per-campaign** — different
+   runs picked different conventions for the same intent, producing a
+   12,500x swing on one task alone (`t1_bulk_classifier`) that swamped every
+   other signal in `mean_token_ceiling`. This is a real specification gap
+   worth fixing in the schema independently of this study, named here as a
+   finding rather than fixed in the same change.
+
+Both are disclosed in the pilot report's own "what this pilot can't yet
+show" section rather than smoothed into a false-confidence headline number —
+the standing rule from "Statistical honesty" above, applied to the harness's
+own execution, not just the sample size.
