@@ -104,9 +104,9 @@ def test_main_passes_on_the_real_repo_state(capsys):
     assert captured.err == ""
 
 
-def test_all_three_cited_papers_are_present():
+def test_all_four_cited_papers_are_present():
     ids = {paper["id"] for paper in LEDGER["papers"]}
-    assert ids == {"arXiv:2501.17974", "arXiv:2508.17196", "arXiv:2605.09104"}
+    assert ids == {"arXiv:2501.17974", "arXiv:2508.17196", "arXiv:2605.09104", "arXiv:2211.17192"}
 
 
 # ---------------------------------------------------------------------------

@@ -218,6 +218,120 @@
           "note": "This is the source paper's own headline stat, not one model-right-sizer.md repeats in its prose. Kept in the ledger as a standing example of holding a source document's own arithmetic to the same code-checked standard: 27.0/0.4 = 67.5, which is what 'nearly 68-fold' should mean -- the test asserts the computed multiple falls within a small tolerance of the claimed 68."
         }
       ]
+    },
+    {
+      "id": "arXiv:2211.17192",
+      "citation_substring": "arXiv 2211.17192",
+      "short_name": "SpeculativeDecoding",
+      "title": "Fast Inference from Transformers via Speculative Decoding",
+      "url": "https://arxiv.org/abs/2211.17192",
+      "authors": "Leviathan, Kalman, Matias",
+      "affiliation": "Google Research",
+      "venue": "ICML 2023 (PMLR 202)",
+      "cited_for": "the serving-layer lever -- buying back latency without downgrading model tier, and the gate/caveat on when it does and doesn't help",
+      "claims": [
+        {
+          "claim_id": "sd-expected-tokens-per-iteration",
+          "equation_ref": "Eq. 1",
+          "source_quote": "E(# generated tokens) = (1 − α^(γ+1)) / (1 − α)",
+          "exact_substring": "E(# generated tokens) = (1−α^(γ+1))/(1−α)",
+          "implemented_by": "eval/speculative_decoding.expected_tokens_per_iteration",
+          "module": "speculative_decoding",
+          "primary_function": "expected_tokens_per_iteration",
+          "formula_expr": "(1 - alpha**(gamma+1)) / (1 - alpha)",
+          "source_variables": ["alpha", "gamma"],
+          "sample_inputs": [
+            { "inputs": { "alpha": 0.8, "gamma": 2 }, "expected_output": 2.44 },
+            { "inputs": { "alpha": 0.9, "gamma": 10 }, "expected_output": 6.8618940391 }
+          ],
+          "verifiable": true,
+          "note": "Both samples cross-check against the paper's own Table 1 (assuming c=ĉ=0, its SPEED column equals this ratio directly): α=0.8,γ=2 -> 2.44X; α=0.9,γ=10 -> 6.86X (rounded)."
+        },
+        {
+          "claim_id": "sd-walltime-improvement-factor",
+          "equation_ref": "Theorem 3.8",
+          "source_quote": "The expected improvement factor in total walltime by Algorithm 1 is (1 − α^(γ+1)) / ((1 − α)(γc + 1))",
+          "exact_substring": "(1−α^(γ+1))/((1−α)(γc+1))",
+          "implemented_by": "eval/speculative_decoding.expected_walltime_improvement_factor",
+          "module": "speculative_decoding",
+          "primary_function": "expected_walltime_improvement_factor",
+          "formula_expr": "(1 - alpha**(gamma+1)) / ((1 - alpha) * (gamma*c + 1))",
+          "source_variables": ["alpha", "gamma", "c"],
+          "sample_inputs": [
+            { "inputs": { "alpha": 0.8, "gamma": 2, "c": 0.1 }, "expected_output": 2.0333333333333333 },
+            { "inputs": { "alpha": 0.5, "gamma": 1, "c": 0.0 }, "expected_output": 1.5 }
+          ],
+          "verifiable": true,
+          "note": "Second sample (alpha=0.5, gamma=1, c=0) is Theorem 3.8 evaluated at gamma=1 -- the exact case Corollary 3.9's proof uses, so it also equals minimum_improvement_factor_bound(0.5, 0) below (1.5 == 1.5), a cross-check between the two claims."
+        },
+        {
+          "claim_id": "sd-improvement-gate",
+          "equation_ref": "Corollary 3.9",
+          "source_quote": "If α > c, there exists γ for which we'll get an improvement",
+          "exact_substring": "α > c",
+          "implemented_by": "eval/speculative_decoding.guarantees_some_improvement",
+          "module": "speculative_decoding",
+          "primary_function": "guarantees_some_improvement",
+          "formula_expr": "alpha > c",
+          "source_variables": ["alpha", "c"],
+          "sample_inputs": [
+            { "inputs": { "alpha": 0.5, "c": 0.2 }, "expected_output": true },
+            { "inputs": { "alpha": 0.1, "c": 0.3 }, "expected_output": false }
+          ],
+          "verifiable": true
+        },
+        {
+          "claim_id": "sd-improvement-minimum-bound",
+          "equation_ref": "Corollary 3.9",
+          "source_quote": "the improvement factor will be at least (1+α)/(1+c)",
+          "exact_substring": "(1+α)/(1+c)",
+          "implemented_by": "eval/speculative_decoding.minimum_improvement_factor_bound",
+          "module": "speculative_decoding",
+          "primary_function": "minimum_improvement_factor_bound",
+          "formula_expr": "(1 + alpha) / (1 + c)",
+          "source_variables": ["alpha", "c"],
+          "sample_inputs": [
+            { "inputs": { "alpha": 0.5, "c": 0.0 }, "expected_output": 1.5 },
+            { "inputs": { "alpha": 0.8, "c": 0.1 }, "expected_output": 1.6363636363636362 }
+          ],
+          "verifiable": true
+        },
+        {
+          "claim_id": "sd-operations-increase-factor",
+          "equation_ref": "Theorem 3.11",
+          "source_quote": "The expected factor of increase in the number of total operations of Algorithm 1 is (1−α)(γĉ+γ+1) / (1−α^(γ+1))",
+          "exact_substring": "(1−α)(γĉ+γ+1)/(1−α^(γ+1))",
+          "implemented_by": "eval/speculative_decoding.expected_operations_increase_factor",
+          "module": "speculative_decoding",
+          "primary_function": "expected_operations_increase_factor",
+          "formula_expr": "(1 - alpha) * (gamma*c_hat + gamma + 1) / (1 - alpha**(gamma+1))",
+          "source_variables": ["alpha", "gamma", "c_hat"],
+          "sample_inputs": [
+            { "inputs": { "alpha": 0.8, "gamma": 2, "c_hat": 0.0 }, "expected_output": 1.2295081967213115 },
+            { "inputs": { "alpha": 0.9, "gamma": 10, "c_hat": 0.0 }, "expected_output": 1.6030559401413822 }
+          ],
+          "verifiable": true,
+          "note": "Both samples cross-check against the paper's own Table 1 OPERATIONS column (c=ĉ=0): α=0.8,γ=2 -> 1.23X; α=0.9,γ=10 -> 1.60X (rounded)."
+        },
+        {
+          "claim_id": "sd-not-helpful-without-spare-compute",
+          "section_ref": "Section 6 (Discussion)",
+          "source_quote": "Thus, our method is not helpful for configurations where additional computation resources are not available.",
+          "exact_substring": "our method is not helpful for configurations where additional computation resources are not available",
+          "verifiable": true,
+          "note": "Pure prose grounding for the caveat -- no formula_expr, checked only via presence in agents/model-right-sizer.md (check_presence), because the paper states this limitation qualitatively (tied to Section 3.4's spare-compute assumption and Theorem 3.11's always->=1 operations-increase factor) rather than as a numeric batch-size/concurrency threshold. Do not attribute a numeric concurrency crossover to this paper -- it does not give one."
+        },
+        {
+          "claim_id": "sd-acceptance-rate-from-distributions",
+          "equation_ref": "Corollary 3.6",
+          "source_quote": "α = 1 − E(D_LK(p, q)) = E(min(p, q))",
+          "exact_substring": "α = 1 − E(D_LK(p, q)) = E(min(p, q))",
+          "implemented_by": "eval/speculative_decoding.acceptance_rate",
+          "verifiable": true,
+          "appears_in_agent_file": false,
+          "note": "Implemented by eval/speculative_decoding.acceptance_rate() and pinned by tests/model_right_sizer/test_speculative_decoding_formulas.py, but deliberately carries no formula_expr/sample_inputs here: check_formula_claims' eval sandbox is `{\"math\": math, \"__builtins__\": {}}` (check_citations.py's FORMULA_MODULES section), which blocks the `sum`/`min`/`zip` builtins this equation's E(min(p,q)) reduction over a list needs -- every other claim in this file is expressible as bare arithmetic over scalar operators (or a single comparison) and doesn't hit this wall. Also model-right-sizer's own routing prose (appears_in_agent_file: false) treats α as an already-known input to the gate/walltime/operations claims above, not something it derives from raw per-token distributions, so there's no agent-prose binding needed either."
+        }
+      ]
     }
   ]
 }

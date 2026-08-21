@@ -5,6 +5,44 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 ## Unreleased
 
 ### Added
+- **Speculative decoding (arXiv:2211.17192) as a fourth research-grounded
+  layer — a new "Serving-layer lever" section.** Grounded in Leviathan,
+  Kalman & Matias, *"Fast Inference from Transformers via Speculative
+  Decoding"* (ICML 2023, Google Research): a smaller draft model proposes γ
+  candidate tokens, the target model verifies all of them in one parallel
+  pass with the output distribution provably unchanged, giving an expected
+  walltime-improvement factor (Theorem 3.8) gated by whether the draft
+  model's acceptance rate clears its cost (Corollary 3.9) — and always
+  costing more total compute (Theorem 3.11), which only pays off as latency
+  when that extra compute is otherwise idle. Framed explicitly as a
+  **serving-layer lever, not a model-tier lever**: it can buy back latency on
+  an already-right-sized top-tier pick without downgrading it, but only for
+  low-concurrency/interactive rows where the org controls its own inference
+  stack — the opposite regime from the existing Batch APIs lever, and not a
+  lever available against a closed frontier API whose decode strategy you
+  don't control. Added a matching Levers-list cross-reference bullet, and
+  renumbered the message-schema section from "the third lever" to "the
+  fourth lever" accordingly.
+- **`eval/speculative_decoding.py` + a fourth `citation_ledger.json` paper
+  entry (arXiv:2211.17192), wired into `check_citations.py` and exercised by
+  `tests/model_right_sizer/test_speculative_decoding_formulas.py`.** Same
+  discipline as the three existing grounding papers: Eq. 1 (expected tokens
+  per iteration), Theorem 3.8 (expected walltime-improvement factor),
+  Corollary 3.9 (the improvement gate and its guaranteed minimum bound), and
+  Theorem 3.11 (the always-≥1 total-operations-increase factor) each carry a
+  `formula_expr` + independently hand-computed `sample_inputs` — two of the
+  four cross-checked directly against the paper's own printed Table 1 (its
+  SPEED/OPERATIONS columns, at c=ĉ=0, equal Eq. 1/Theorem 3.11 exactly).
+  Corollary 3.6 (acceptance rate from the two models' raw distributions) is
+  implemented and pytest-covered but deliberately carries no `formula_expr`
+  in the ledger: `check_formula_claims`'s eval sandbox
+  (`{"math": math, "__builtins__": {}}`) blocks the `sum`/`min` builtins its
+  list-reduction needs, unlike every other claim here which reduces to bare
+  arithmetic/comparison — the ledger entry's own note says so, rather than
+  shipping a `formula_expr` that would silently never run. Also not quoted
+  in the agent file's own prose (`appears_in_agent_file: false`), since the
+  rubric treats the acceptance rate as an already-known input, not something
+  it derives from raw per-token distributions itself.
 - **Token Economics (arXiv:2605.09104) as a third research-grounded layer.**
   A new "Economic formalization" section in `agents/model-right-sizer.md`
   formalizes the effectiveness-vs-efficiency split itself as the paper's

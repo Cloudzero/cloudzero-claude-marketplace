@@ -8,12 +8,13 @@ A **model-selection economist** agent definition for [Claude Code](https://docs.
 
 It doesn't decide *what* to build — it decides *what intelligence budget* to build it with. Given a task or a pipeline of stages, it scores each stage on **effectiveness need** vs **efficiency pressure** vs **difficulty**, and returns a probability-weighted model + effort + token-budget recommendation instead of a single "just use the biggest model" verdict. It runs as a bookend around a unit of work: a **blueprint** pass before the work starts, emitted as a single JSON object conforming to [`schemas/blueprint.schema.json`](schemas/blueprint.schema.json) rather than prose or a markdown table, and a **usage report** pass after it closes.
 
-Grounded in three published results:
+Grounded in four published results:
 - Token Economics — *Token Economics for LLM Agents: A Dual-View Study from Computing and Economics* ([arXiv 2605.09104](https://arxiv.org/abs/2605.09104)) — formalizes the effectiveness-vs-efficiency split itself as constrained cost minimization (`min TC s.t. Y ≥ Z`), factor substitution between model tier and tokens, and the shadow price of a token
 - IBPO — *Think Smarter, not Harder: Adaptive Reasoning with Inference-Aware Optimization* ([arXiv 2501.17974](https://arxiv.org/abs/2501.17974)) — adaptive reasoning budgets
 - BudgetThinker — *Empowering Budget-aware LLM Reasoning with Control Tokens* ([arXiv 2508.17196](https://arxiv.org/abs/2508.17196)) — adaptive reasoning budgets
+- Speculative Decoding — *Fast Inference from Transformers via Speculative Decoding* ([arXiv 2211.17192](https://arxiv.org/abs/2211.17192), Leviathan, Kalman & Matias, ICML 2023) — the serving-layer lever that buys back latency without downgrading model tier, plus the gate for when it does and doesn't pay off
 
-Every numeric claim tied to one of these three citations is checked against a committed answer key by [`eval/check_citations.py`](eval/check_citations.py), and every formula they assume is implemented as a plain function — not reasoned about by an LLM — in [`eval/token_economics.py`](eval/token_economics.py) and [`eval/reasoning_budget.py`](eval/reasoning_budget.py), exercised by the pytest suite under [`tests/model_right_sizer/`](../../tests/model_right_sizer/) at the repo root. See [`eval/README.md`](eval/README.md).
+Every numeric claim tied to one of these four citations is checked against a committed answer key by [`eval/check_citations.py`](eval/check_citations.py), and every formula they assume is implemented as a plain function — not reasoned about by an LLM — in [`eval/token_economics.py`](eval/token_economics.py), [`eval/reasoning_budget.py`](eval/reasoning_budget.py), and [`eval/speculative_decoding.py`](eval/speculative_decoding.py), exercised by the pytest suite under [`tests/model_right_sizer/`](../../tests/model_right_sizer/) at the repo root. See [`eval/README.md`](eval/README.md).
 
 ## What's in this plugin
 
