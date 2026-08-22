@@ -111,6 +111,40 @@ HOLDOUT_TASKS = {
             "against it a third time."
         ),
     },
+    "compare-results-cli": {
+        "intent": (
+            "Build a small CLI tool (compare_results.py) that diffs two "
+            "raw-records JSON files from this research program's own "
+            "tuning results directory: a core module (load_records, "
+            "diff_records, compare_candidates), a test suite for it, a "
+            "CLI wrapper, and a documentation/real-integration pass that "
+            "actually runs the tool against real data and fixes whatever "
+            "real bug that run finds."
+        ),
+        "real_outcome_doc": (
+            "results/2026-08-22-fresh-held-out-task-signal-and-formula-"
+            "validation.md"
+        ),
+        "note": (
+            "Third held-out task -- built and dispatched specifically to "
+            "give `investigative_uncertainty`/`compute_token_ceiling_"
+            "additive` a genuinely fresh, non-retired data point (see the "
+            "user's own explicit ask: 'replicate investigative_uncertainty "
+            "on a second, different held-out task' / 'validate the "
+            "additive formula against a fresh real build'). Four real "
+            "per-unit actuals, all sonnet/haiku tier, all real Task/Agent-"
+            "tool dispatches (not create_session, which was unreachable "
+            "this run -- see the real_outcome_doc for the harness-specific "
+            "floor-reconciliation methodology this required). READ ONCE, "
+            "blind, for the investigative_uncertainty rating (3 independent "
+            "draws with no file/tool access, given only forward-looking "
+            "unit specs) -- not yet read calibrated, so still usable for a "
+            "future blind-vs-calibrated check if one is needed. Do not "
+            "treat this as inexhaustible either: it is a real, but small "
+            "(n=4), single-task sample, same caution the second entry's "
+            "own history already demonstrates the hard way."
+        ),
+    },
 }
 
 GENERALIZATION_VERDICTS = (

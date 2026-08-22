@@ -137,7 +137,7 @@ def select_best(evaluations: list) -> dict:
 
 
 def coordinate_ascent_step(current_settings: dict, current_score: dict, knob_name: str, neighbor_evaluations: list) -> dict:
-    """Decide the outcome of sweeping one knob: given the CURRENT point's own
+    """Decide the outcome of sweeping one knob (identified by `knob_name`): given the CURRENT point's own
     score and a list of `{"settings", "score_result"}` for each evaluated
     neighbor (from `propose_neighbors`), return
     `{"new_settings", "new_score", "improved": bool, "knob": knob_name}`.

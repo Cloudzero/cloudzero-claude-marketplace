@@ -186,8 +186,26 @@ REAL_WORK_SPAN = {
 # analogy from another tier's measured span, not independently fit.
 CALIBRATION_STATUS = {
     "claude-sonnet-5": "measured (n=4, one build, low/high spread 0.25-0.98)",
-    "claude-opus-4-8": "placeholder (n=2 real points, both clustered high -- no low-end anchor; scaled from sonnet's span by floor ratio)",
-    "claude-haiku-4-5": "placeholder (n=0 real per-unit dispatches this task; scaled from sonnet's span by floor ratio)",
+    "claude-opus-4-8": (
+        "placeholder (n=3 real points as of 2026-08-22 -- 2 clustered high, "
+        "1 fresh low-real-work anchor at net 24,010 tokens; still no clean "
+        "low-end anchor, since that anchor point needed real multi-file "
+        "search to even find its own tiny edit, so it's not a pure zero-"
+        "work sample either -- see tuning/results/2026-08-22-fresh-held-out-"
+        "task-signal-and-formula-validation.md; scaled from sonnet's span "
+        "by floor ratio, not independently fit)"
+    ),
+    "claude-haiku-4-5": (
+        "placeholder (n=1 real per-unit dispatch as of 2026-08-22 -- a "
+        "fresh low-real-work anchor at net 15,208 tokens, same "
+        "search-overhead caveat as opus's; see tuning/results/2026-08-22-"
+        "fresh-held-out-task-signal-and-formula-validation.md; scaled from "
+        "sonnet's span by floor ratio, not independently fit). This is "
+        "also the tier that missed compute_token_ceiling_additive's one "
+        "fresh-task classification (ratio 1.041, over_budget by 4.1%) -- "
+        "the consistent weak link across this pass's real evidence, not "
+        "yet enough to recalibrate from."
+    ),
 }
 
 
@@ -310,16 +328,25 @@ def compute_token_ceiling(
 ADDITIVE_TOTAL_SPAN = {tier: span * 0.5925 for tier, span in REAL_WORK_SPAN.items()}
 
 ADDITIVE_CALIBRATION_STATUS = (
-    "UNVALIDATED -- k=0.5925 fit by gradient descent against the exact same "
-    "18-row / 6-real-unit dataset REAL_WORK_SPAN was already fit to (see "
-    "tuning/results/2026-08-22-weight-gradient-descent.md and "
-    "-additive-formula-and-signal-expansion.md). Reaches 94% TRAINING "
-    "accuracy on that same data -- with only 6 independent real targets "
-    "behind 18 rows and one effective fitted parameter, that is a strong "
-    "overfitting signal, not evidence of a working general formula. Do not "
-    "treat this as validated, and do not re-fit it again against this same "
-    "task's numbers -- the next legitimate step is checking it against a "
-    "FRESH held-out task's real actuals."
+    "PARTIALLY CONFIRMED, still not fully validated -- k=0.5925 was fit by "
+    "gradient descent against the retired 18-row / 6-real-unit dataset "
+    "REAL_WORK_SPAN was already fit to (94% TRAINING accuracy on that same "
+    "data -- with only 6 independent real targets and one effective fitted "
+    "parameter, that alone was a strong overfitting signal, not evidence of "
+    "a working general formula; see tuning/results/2026-08-22-weight-"
+    "gradient-descent.md and -additive-formula-and-signal-expansion.md). "
+    "As of 2026-08-22, a SECOND, genuinely fresh held-out task (4 real "
+    "units, never used to fit k or any other constant here) checked the "
+    "UNCHANGED shipped constants and got accuracy_rate=3/4=0.750 -- vs. the "
+    "averaged model's 0/4=0.000 on the identical fresh data. That is real, "
+    "non-circular evidence the structural fix generalizes, not just an "
+    "artifact of fitting k to the numbers being checked against. Still not "
+    "'validated' in the full sense -- n=4, one task, one archetype, and the "
+    "one miss was haiku tier (the least-calibrated tier already flagged in "
+    "CALIBRATION_STATUS) -- see tuning/results/2026-08-22-fresh-held-out-"
+    "task-signal-and-formula-validation.md. Do not re-fit k against either "
+    "dataset again; the next legitimate step is a THIRD held-out task, "
+    "ideally one that can also anchor haiku's calibration."
 )
 
 

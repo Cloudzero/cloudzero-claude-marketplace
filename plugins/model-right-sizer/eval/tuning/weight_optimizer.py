@@ -217,7 +217,9 @@ def gradient_descent(
     min_weight: float = 1e-4,
 ) -> dict:
     """Batch gradient descent (full-dataset gradient every epoch -- the
-    dataset is 18 rows, no need for minibatching). Weights are clipped to
+    dataset is 18 rows, no need for minibatching). `learning_rate` is the
+    fixed step size applied to the gradient every epoch -- no decay
+    schedule. Weights are clipped to
     `min_weight` after every step so `compute_loss_and_gradient`'s
     division by `sum(weights)` never degenerates to zero and a weight
     never goes negative (this model's weights are a convex-combination

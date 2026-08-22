@@ -217,13 +217,20 @@ def test_additive_real_work_new_signals_default_to_zero_weight():
     assert without == pytest.approx(with_both_new_signals)
 
 
-def test_additive_calibration_status_says_unvalidated():
+def test_additive_calibration_status_is_not_fully_validated():
     # This is the honesty check for the additive model, mirroring
-    # test_sonnet_is_the_only_tier_marked_measured for the averaged one --
-    # if this constant is ever tightened to claim validation, it should be
-    # because a fresh held-out task's real actuals backed it up, not a
-    # silent edit.
-    assert tcf.ADDITIVE_CALIBRATION_STATUS.startswith("UNVALIDATED")
+    # test_sonnet_is_the_only_tier_marked_measured for the averaged one.
+    # A second held-out task's real actuals (2026-08-22) DID move this from
+    # "UNVALIDATED" to "partially confirmed" -- that's a real status change
+    # backed by real non-circular evidence, not a silent edit, so this test
+    # no longer requires the literal word "UNVALIDATED". But it must still
+    # NOT claim full validation (one task, n=4, one miss) -- if this ever
+    # says "VALIDATED" outright, that should be because of a THIRD held-out
+    # task's confirmation, not a wording change alone.
+    assert "VALIDATED" not in tcf.ADDITIVE_CALIBRATION_STATUS.replace("UNVALIDATED", "").replace(
+        "validated", ""
+    ), "ADDITIVE_CALIBRATION_STATUS reads as fully validated -- confirm a third held-out task actually backs that before loosening this test"
+    assert "fresh" in tcf.ADDITIVE_CALIBRATION_STATUS.lower() or "second" in tcf.ADDITIVE_CALIBRATION_STATUS.lower()
 
 
 def test_additive_formula_reaches_the_reported_training_accuracy():
@@ -488,4 +495,128 @@ def test_context_ingestion_volume_dilutes_the_existing_signal_correlation_on_bli
         f"with real cost on the genuinely blind dataset (4-signal r={r_four:.3f}, "
         f"+context_ingestion_volume r={r_with_cig:.3f}) -- if this reverses, its "
         "default weight of 0.0 may deserve reconsidering; don't just delete this test."
+    )
+
+
+# A SECOND, genuinely fresh held-out task (the "compare_results.py" CLI
+# build, tuning/results/2026-08-22-fresh-held-out-task-signal-and-formula-
+# validation.md) -- built specifically to test whether
+# investigative_uncertainty's first-task result (0.910 -> 0.980) replicates.
+# It does not: on this task the same addition DILUTES an already-near-
+# perfect baseline (0.994 -> 0.936). Both datasets are kept as separate
+# regression tests (not merged) because the whole point is that the same
+# signal behaved oppositely on two independent tasks -- collapsing them
+# into one shared fixture would hide exactly that.
+_SECOND_TASK_SIGNAL_DRAWS = {
+    "unit-core-module": [(0.45, 0.55, 0.65, 0.15, 0.55, 0.15), (0.55, 0.45, 0.7, 0.3, 0.55, 0.25), (0.5, 0.45, 0.6, 0.2, 0.55, 0.15)],
+    "unit-tests": [(0.45, 0.35, 0.45, 0.45, 0.4, 0.1), (0.45, 0.3, 0.55, 0.45, 0.4, 0.15), (0.45, 0.3, 0.55, 0.5, 0.35, 0.1)],
+    "unit-cli": [(0.25, 0.15, 0.3, 0.15, 0.25, 0.05), (0.2, 0.15, 0.25, 0.15, 0.2, 0.05), (0.25, 0.2, 0.35, 0.15, 0.3, 0.05)],
+    "unit-docs-integration": [(0.65, 0.3, 0.4, 0.6, 0.5, 0.65), (0.65, 0.3, 0.45, 0.55, 0.55, 0.55), (0.65, 0.3, 0.4, 0.6, 0.5, 0.55)],
+}
+_SECOND_TASK_REAL_ACTUAL = {
+    # Reconciled onto the shipped DISPATCH_FLOORS convention -- see the
+    # results file's "Floor reconciliation" section for the derivation
+    # (this harness's own fresh floor measurement, netted out and re-added
+    # to DISPATCH_FLOORS so it's comparable to every other dataset here).
+    "unit-core-module": 84_622,
+    "unit-tests": 80_946,
+    "unit-cli": 44_438,
+    "unit-docs-integration": 84_179,
+}
+
+
+def test_investigative_uncertainty_does_not_replicate_on_a_second_held_out_task():
+    # Protects the non-replication finding: unlike the first task (where
+    # adding investigative_uncertainty improved the baseline correlation),
+    # on this second, independent task it DILUTES an already-near-perfect
+    # baseline fit. This is the real reason the signal's default weight
+    # stays 0.0 -- not "untested" anymore, but "tested twice, split
+    # result, net negative per the pre-registered replication bar."
+    units = sorted(_SECOND_TASK_SIGNAL_DRAWS)
+    averaged = {unit: tuple(_mean(v) for v in zip(*_SECOND_TASK_SIGNAL_DRAWS[unit])) for unit in units}
+    actuals = [_SECOND_TASK_REAL_ACTUAL[unit] for unit in units]
+    sum_of_four = [sum(averaged[unit][:4]) for unit in units]
+    sum_with_iu = [sum(averaged[unit][:4]) + averaged[unit][5] for unit in units]
+
+    r_four = _pearson(sum_of_four, actuals)
+    r_with_iu = _pearson(sum_with_iu, actuals)
+    assert r_with_iu < r_four, (
+        f"investigative_uncertainty no longer dilutes the 4-signal sum's correlation "
+        f"on this second held-out task (4-signal r={r_four:.3f}, +investigative_uncertainty "
+        f"r={r_with_iu:.3f}) -- if this reverses, the non-replication finding in "
+        "2026-08-22-fresh-held-out-task-signal-and-formula-validation.md needs revisiting, "
+        "and a nonzero default weight may deserve fresh consideration; don't just delete this test."
+    )
+
+
+def test_additive_formula_holds_up_on_a_fresh_never_fit_held_out_task():
+    # Protects the positive finding from the SAME second held-out task:
+    # compute_token_ceiling_additive, with its shipped constants COMPLETELY
+    # UNCHANGED, correctly classifies 3 of these 4 fresh real actuals as
+    # within_budget -- real, non-circular evidence the additive structural
+    # fix generalizes, since none of these four numbers were used to fit
+    # k=0.5925 or any other constant this formula uses.
+    sys.path.insert(
+        0,
+        str(Path(__file__).resolve().parent.parent.parent / "plugins" / "model-right-sizer" / "eval" / "tuning"),
+    )
+    from reasoning_budget import classify_budget_adherence  # noqa: E402
+
+    units = sorted(_SECOND_TASK_SIGNAL_DRAWS)
+    averaged = {unit: tuple(_mean(v) for v in zip(*_SECOND_TASK_SIGNAL_DRAWS[unit])) for unit in units}
+    tier = {
+        "unit-core-module": "claude-sonnet-5",
+        "unit-tests": "claude-sonnet-5",
+        "unit-cli": "claude-haiku-4-5",
+        "unit-docs-integration": "claude-sonnet-5",
+    }
+    within = 0
+    for unit in units:
+        a, b, c, _vli, _cig, _iu = averaged[unit]
+        ceiling = tcf.compute_token_ceiling_additive(tier[unit], a, b, c)
+        if classify_budget_adherence(_SECOND_TASK_REAL_ACTUAL[unit], ceiling) == "within_budget":
+            within += 1
+    accuracy = within / len(units)
+    assert accuracy >= 0.5, (
+        f"compute_token_ceiling_additive's accuracy on the second held-out task dropped "
+        f"to {accuracy:.2f} (was 0.75 -- 3/4) -- this was real, non-circular confirmation "
+        "evidence for the additive formula; if it no longer holds, re-check "
+        "ADDITIVE_CALIBRATION_STATUS's claim in token_ceiling_formula.py rather than "
+        "just loosening this assertion."
+    )
+
+
+def test_averaged_model_still_fails_on_the_second_held_out_task():
+    # The other half of the same comparison: the averaged (weighted-mean)
+    # model's proven capacity ceiling isn't specific to the original
+    # six-unit training data -- it fails just as completely (0/4) on this
+    # independent fresh task, the same structural reason it capped at
+    # ~16.7% before: it can never predict a scale above the per-example max
+    # of its inputs.
+    sys.path.insert(
+        0,
+        str(Path(__file__).resolve().parent.parent.parent / "plugins" / "model-right-sizer" / "eval" / "tuning"),
+    )
+    from reasoning_budget import classify_budget_adherence  # noqa: E402
+
+    units = sorted(_SECOND_TASK_SIGNAL_DRAWS)
+    averaged = {unit: tuple(_mean(v) for v in zip(*_SECOND_TASK_SIGNAL_DRAWS[unit])) for unit in units}
+    tier = {
+        "unit-core-module": "claude-sonnet-5",
+        "unit-tests": "claude-sonnet-5",
+        "unit-cli": "claude-haiku-4-5",
+        "unit-docs-integration": "claude-sonnet-5",
+    }
+    within = 0
+    for unit in units:
+        a, b, c, _vli, _cig, _iu = averaged[unit]
+        ceiling = tcf.compute_token_ceiling(tier[unit], a, b, c)
+        if classify_budget_adherence(_SECOND_TASK_REAL_ACTUAL[unit], ceiling) == "within_budget":
+            within += 1
+    accuracy = within / len(units)
+    assert accuracy == 0.0, (
+        f"compute_token_ceiling's (averaged model) accuracy on the second held-out task "
+        f"is now {accuracy:.2f}, not the proven 0.0 -- if the averaged model started "
+        "passing here, its capacity-ceiling proof (weight-gradient-descent.md) needs "
+        "re-examining, not this test loosened."
     )
