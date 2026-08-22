@@ -5,6 +5,36 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 ## Unreleased
 
 ### Added
+- **`skills/model-right-sizer-signal-validation`** — a new companion skill
+  codifying the blind multi-draw + correlation methodology this pass used
+  to test `validation_loop_iterations`, `context_ingestion_volume`, and
+  `investigative_uncertainty` against `eval/token_ceiling_formula.py`,
+  generalized for testing any future candidate signal. Its load-bearing
+  rule is the anti-contamination fix this pass had to apply after a real
+  incident: candidate ratings must come from genuinely independent
+  sub-agent dispatches given only a forward-looking task spec, never a
+  context that already holds the real actual costs or this repo's own
+  retired write-ups (see
+  `eval/tuning/results/2026-08-22-second-signal-experiment-genuinely-blind.md`).
+  Requires replication on a second held-out task before proposing (never
+  silently applying) a nonzero default weight.
+- **`skills/model-right-sizer-research-report`** — a synthesis-only
+  companion skill that condenses every result from the layer-ablation
+  study, the prompt-tuning/holdout-tuning coordinate-ascent passes, the
+  `token_ceiling_formula.py` averaged-vs-additive pivot, and the
+  real-work-signal validation experiments into one short,
+  research-paper-style executive report with real charts (loads the
+  `dataviz` and `artifact-design` skills first), published as a
+  self-contained HTML artifact. Every figure and claim must trace to an
+  already-committed results file — it runs no new experiments and
+  dispatches no sub-agents. Includes a reproducibility appendix pointing
+  at the four companion skills that can re-run each piece of research
+  (`model-right-sizer-layer-ablation`, `model-right-sizer-prompt-tuning`,
+  `model-right-sizer-holdout-tuning`, `model-right-sizer-signal-validation`).
+- `README.md` updated with entries for both new skills (plus a
+  pre-existing gap fix: `model-right-sizer-holdout-tuning` had never been
+  documented in the skills list or the blast-radius section — added
+  alongside the two new skills rather than left inconsistent).
 - **`schemas/blueprint.schema.json` bumped to `schema_version: "1.2"`: `budget.real_work_signals`.**
   A fresh, independent addition (no compatibility claim against any other
   `schema_version: "1.2"` work on a sibling branch, same disclaimer 1.1's
