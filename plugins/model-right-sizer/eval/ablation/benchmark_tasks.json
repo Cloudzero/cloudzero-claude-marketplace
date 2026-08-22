@@ -1,7 +1,12 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "description": "Fixed benchmark task suite for the model-right-sizer layer-ablation study. Checked in and versioned so results stay comparable across runs and over time -- a runner should never invent ad hoc task prompts mid-study, because that reintroduces the exact per-run variance the fixed suite exists to remove. Each task's `designed_to_probe` is a hypothesis about which layer(s) it should differentially engage, not a ground truth -- the whole point of the study is to check that hypothesis empirically rather than assume it.",
   "changelog": [
+    {
+      "version": "1.2",
+      "date": "2026-08-22",
+      "change": "t6's real-execution target is now the checked-in fixture at `../fixtures/cost_allocator.py` (+ `../fixtures/test_cost_allocator.py`) instead of a sub-agent inventing its own scratch function. The 2026-08-21 pass-2 prompt-tuning run found every real dispatch against the old, self-invented-scratch-function version of t6 cost only ~340-1,050 net tokens (after subtracting the measured overhead floor) -- under half of every tested token_ceiling, including the tightest -- so accuracy_rate read 0.0 for every candidate regardless of wording, the same structural failure t1 already has. Floor characterization (5x haiku no-op dispatches, zero tool calls: 25,660-25,668 tokens, effectively deterministic) showed the floor itself isn't noisy; the old t6 prompt's REAL required work was just too small to measure against any realistic ceiling. The fixture is sized so a correct fix requires reading real, multi-function context and matching an established-but-inconsistently-applied validation convention -- genuine content cost in the low thousands of tokens, not a fixed dispatch overhead. Data from schema_version <=1.1 is not directly comparable to 1.2 on t6's budget-related metrics."
+    },
     {
       "version": "1.1",
       "date": "2026-08-21",
@@ -42,6 +47,8 @@
     {
       "id": "t6_bounded_wellspecified_fix",
       "prompt": "Add a single, fully unambiguous input-validation check to one existing function. The spec is completely unambiguous and the resulting diff will be under 20 lines.",
+      "real_execution_target": "plugins/model-right-sizer/eval/fixtures/cost_allocator.py",
+      "real_execution_task": "In `eval/fixtures/cost_allocator.py`, bring `apply_seat_discount` in line with the validation convention already established by `apply_volume_discount`, `apply_reserved_instance_credit`, and `allocate_shared_service_cost` in the same file (reject a negative/non-finite `raw_cost` and a non-positive `seat_count` via `AllocationError`, before the discount-tier arithmetic runs). Add a matching pair of tests to `eval/fixtures/test_cost_allocator.py` -- one happy-path assertion and one `pytest.raises(AllocationError)` assertion -- following the existing test conventions for the other three functions in that file. Diff stays well under 20 lines of new/changed source (tests are additional, not counted against that ceiling).",
       "designed_to_probe": ["ibpo"],
       "hypothesis": "Trivially easy, low difficulty, bounded, well-specified -- IBPO's 'over-thinking tax' is the direct test: with the IBPO layer present, effort should be explicitly driven down by the difficulty score; without it, the baseline rubric may still guess low effort but without the difficulty-adaptive rationale, so this task specifically probes whether the layer changes the STATED REASON, not just the number."
     }

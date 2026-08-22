@@ -325,3 +325,55 @@ surfaced, on top of pass 1's t1 gap, and together they're serious enough that pa
   on the t6-only mean_loss data moves `budget_margin` from `+2` down to `+1` — a partial
   reversal of pass 1's own "clearest winner," because that pass 1 result turns out to have
   been carried almost entirely by t4's now-excluded single-row measurement.
+
+## Measurement redesign (2026-08-22) — option 1 from pass 2's three ways forward
+
+Chosen over the other two options (repeated draws; sign-off to keep going on `mean_loss`
+alone). Two pieces of new evidence, both taken via real dispatch, not assumed:
+
+1. **The overhead floor itself is not noisy — it's nearly a constant.** Five independent
+   zero-tool-call haiku dispatches (`reply with exactly one word: ok`) came back at
+   25,660/25,668/25,668/25,668/25,660 tokens — a **4-token** spread, not the ~700-token
+   spread pass 2 attributed to "the floor's own apparent variance." Re-reading pass 2's data
+   with this correction: that ~700-token spread across t6's real builds was never floor
+   noise — it was genuine (if small) variance in how much real work each haiku sub-agent
+   actually did (which scratch function it invented, how many tool calls it made). The
+   floor pass 1 measured and reused (28,508) was evidently taken with a nonzero tool-call
+   count baked in, not a true zero-tool floor; the two aren't the same measurement and
+   shouldn't have been treated as interchangeable.
+2. **Marginal cost scales with real tool use and real content, not a flat per-dispatch
+   tax.** Three follow-up probes from the same zero-tool baseline (~25,664): one trivial
+   `Bash` call (+1,630), three trivial `Bash` calls (+1,809 — most of the jump is a one-time
+   cost of using the Bash tool AT ALL, not a per-call charge), and one `Read` of a real
+   ~230-line Python file (+4,050 — proportional to real file content, not tool count).
+   **This is the actual lesson**: the old t6 prompt's failure wasn't floor noise, it was
+   that the REQUIRED real work (invent a 3-line function, add one guard clause) was
+   inherently smaller than any token_ceiling this rubric would ever assign. A task needs
+   real, substantive content to read and act on before its real cost can discriminate
+   between differently-worded ceiling knobs.
+
+**The fix**: `t6_bounded_wellspecified_fix`'s real-execution target is no longer "invent
+your own scratch function" — it's the checked-in fixture
+[`../fixtures/cost_allocator.py`](../fixtures/cost_allocator.py) (+
+[`../fixtures/test_cost_allocator.py`](../fixtures/test_cost_allocator.py)), a small but
+real multi-function module where one function (`apply_seat_discount`) is the deliberate
+odd-one-out against an established-but-inconsistently-applied validation convention the
+other three functions share. A correct fix requires reading and pattern-matching real
+context, not just writing one guard clause from nothing — see `benchmark_tasks.json`
+schema_version 1.2's changelog entry for the full account, and the fixture module's own
+docstring for why it's shaped the way it is. `../ablation/benchmark_tasks.json` is the
+canonical source (shared with the ablation study); this file doesn't duplicate the task
+text.
+
+**Validated once, for real, before calling this done**: a haiku sub-agent dispatched
+against the redesigned target (see `results/2026-08-22-measurement-redesign-validation.md`)
+— confirming the new task's real net cost lands comfortably above the floor's own
+(now correctly characterized as near-zero) noise, restoring genuine discriminating power
+before any further pass spends real-build budget on it.
+
+**Still out of scope for this redesign**: `t1_bulk_classifier` stays permanently excluded
+— its per-item budget (60–600 tokens) is smaller than even the zero-tool floor (~25,664),
+so no real-content fixture can fix it; that would need a fundamentally different
+measurement mechanism (e.g. a raw completion call outside the full agent-dispatch harness),
+not a bigger fixture. `t4`'s pass-2 decomposition-explosion problem is also untouched here
+— this redesign only addresses t6's failure mode, not t4's.

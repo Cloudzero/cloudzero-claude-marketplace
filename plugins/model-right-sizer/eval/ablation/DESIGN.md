@@ -244,3 +244,22 @@ running the harness itself:
    missing set from the filesystem (not from an assumed cursor position) and
    dispatch just those remaining cells directly, safely under the concurrency
    cap, rather than restarting the whole batch.
+
+## Lesson from the sibling prompt-tuning study: `t6`'s real-execution target changed
+
+`t6_bounded_wellspecified_fix`'s real-execution accuracy measurement (shared by this
+ablation study and `../tuning/`'s coordinate-ascent search) had every dispatched sub-agent
+invent its own trivial scratch function to add a guard clause to. The prompt-tuning study's
+pass 2 found this made `t6` structurally unable to discriminate — a real fix to a
+self-invented 3-line function costs only a few hundred net tokens, smaller than any
+`token_ceiling` this rubric would plausibly assign, so every candidate read
+`under_budget_oversized` regardless of wording (the same failure mode `t1_bulk_classifier`
+already has, for the opposite reason — its budget is deliberately tiny by design, not
+accidentally too generous). See `../tuning/DESIGN.md`'s "Measurement redesign" section and
+`../tuning/results/2026-08-22-measurement-redesign-validation.md` for the floor
+characterization and fix: `t6` now points at a checked-in fixture,
+[`../fixtures/cost_allocator.py`](../fixtures/cost_allocator.py), requiring genuine
+context-reading and pattern-matching rather than invented-from-nothing content. Any future
+ablation re-run that includes a real-execution accuracy slice on `t6` should use this
+fixture, and its numbers are not comparable to any prior run's `t6` accuracy data
+(`benchmark_tasks.json` schema_version bumped to 1.2).
