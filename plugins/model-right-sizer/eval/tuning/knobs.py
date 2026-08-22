@@ -5,8 +5,8 @@
 experiment (see `DESIGN.md` in this directory).
 
 Where `../ablation/layers.py` ablates whole citation SECTIONS in or out, this
-module makes small, WORDED edits at four fixed anchor points inside the
-all-four-layers agent text -- the four spots most directly responsible for
+module makes small, WORDED edits at fixed anchor points inside the
+all-four-layers agent text -- the spots most directly responsible for
 how `budget.token_ceiling` gets set and graded, which is the exact mechanism
 "accuracy" (real effort landing within predicted budget, per
 `../reasoning_budget.classify_budget_adherence`) measures. Each knob is an
@@ -83,6 +83,62 @@ KNOBS = {
                 "chosen model+effort tier ×1.2–1.3, stated in the row's "
                 "rationale so the ceiling is traceable to a number rather than "
                 "picked directly —"
+            ),
+        },
+    },
+    "dispatch_floor_awareness": {
+        "description": (
+            "Whether the `budget` bullet (Pass A item 4) tells the model that "
+            "a real Task-tool sub-agent dispatch carries a large, near-fixed "
+            "token floor before any task-specific content exists, and that "
+            "`token_ceiling` must be built from that floor plus real "
+            "expected work (scaled by tool-call count and generated-content "
+            "volume), not from the apparent size of the described task "
+            "alone. This is the 6th knob, added after a real-world "
+            "novel-use-case validation (see "
+            "`results/2026-08-22-novel-use-case-validation.md`) found the "
+            "shipped wording's `token_ceiling` demand -- 'always an actual "
+            "integer... not a vibe' -- gives no method for deriving that "
+            "integer, so a real dispatch's fixed overhead (independently "
+            "measured this same session at roughly 25,664 tokens for "
+            "haiku and 40,669 for sonnet at zero tool calls) never enters "
+            "the estimate. A dry run against that same real intent budgeted "
+            "15,000 tokens for a unit that actually cost 82,715 raw "
+            "(42,046 net of the sonnet floor) -- `over_budget` by ~2.8x. "
+            "Grounded in a follow-up MD-authoring-best-practices review's "
+            "Priority 1/2 findings, not a fresh paper citation like the "
+            "other five knobs -- this one targets a gap the review found in "
+            "the shipped wording itself, not a research layer's phrasing."
+        ),
+        "location": "Pass A, item 4 (the `budget` bullet, immediately after the `thinking_budget` clause)",
+        "anchor": "`token_ceiling` is `0`); `handoff_schema_ref`",
+        "levels": {
+            0: "`token_ceiling` is `0`); `handoff_schema_ref`",
+            1: (
+                "`token_ceiling` is `0`); before finalizing that integer, add "
+                "the real dispatch floor for the chosen tier — a "
+                "tool-capable sub-agent dispatch carries a near-fixed "
+                "overhead on the order of 20,000–45,000 tokens before any "
+                "task-specific content exists (higher for tool-heavy "
+                "tiers), so `token_ceiling` should read as that floor plus "
+                "the expected real work, never the apparent size of the "
+                "described task alone; `handoff_schema_ref`"
+            ),
+            2: (
+                "`token_ceiling` is `0`); before finalizing that integer, add "
+                "the real dispatch floor for the chosen tier — a "
+                "tool-capable sub-agent dispatch carries a near-fixed "
+                "overhead on the order of 20,000–45,000 tokens before any "
+                "task-specific content exists (higher for tool-heavy "
+                "tiers) — then scale the real-work term by the row's "
+                "expected tool-call count and expected generated-content "
+                "volume: a row that will make several tool calls and draft "
+                "substantial original content is not a small-ceiling task "
+                "even when its loop-class reads `low-tool-turn`. Example: a "
+                "unit expected to make 5–10 tool calls and draft several "
+                "hundred words of original content should land in the "
+                "60,000–90,000 range for a full agentic sonnet-tier "
+                "dispatch, not a few thousand; `handoff_schema_ref`"
             ),
         },
     },
