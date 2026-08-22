@@ -8,9 +8,12 @@ A **model-selection economist** agent definition for [Claude Code](https://docs.
 
 It doesn't decide *what* to build — it decides *what intelligence budget* to build it with. Given a task or a pipeline of stages, it scores each stage on **effectiveness need** vs **efficiency pressure** vs **difficulty**, and returns a probability-weighted model + effort + token-budget recommendation instead of a single "just use the biggest model" verdict. It runs as a bookend around a unit of work: a **blueprint** pass before the work starts, emitted as a single JSON object conforming to [`schemas/blueprint.schema.json`](schemas/blueprint.schema.json) rather than prose or a markdown table, and a **usage report** pass after it closes.
 
-Grounded in two published results on adaptive reasoning budgets:
-- IBPO — *Think Smarter, not Harder: Adaptive Reasoning with Inference-Aware Optimization* ([arXiv 2501.17974](https://arxiv.org/abs/2501.17974))
-- BudgetThinker — *Empowering Budget-aware LLM Reasoning with Control Tokens* ([arXiv 2508.17196](https://arxiv.org/abs/2508.17196))
+Grounded in three published results:
+- Token Economics — *Token Economics for LLM Agents: A Dual-View Study from Computing and Economics* ([arXiv 2605.09104](https://arxiv.org/abs/2605.09104)) — formalizes the effectiveness-vs-efficiency split itself as constrained cost minimization (`min TC s.t. Y ≥ Z`), factor substitution between model tier and tokens, and the shadow price of a token
+- IBPO — *Think Smarter, not Harder: Adaptive Reasoning with Inference-Aware Optimization* ([arXiv 2501.17974](https://arxiv.org/abs/2501.17974)) — adaptive reasoning budgets
+- BudgetThinker — *Empowering Budget-aware LLM Reasoning with Control Tokens* ([arXiv 2508.17196](https://arxiv.org/abs/2508.17196)) — adaptive reasoning budgets
+
+Every numeric claim tied to one of these three citations is checked against a committed answer key by [`eval/check_citations.py`](eval/check_citations.py), and every formula they assume is implemented as a plain function — not reasoned about by an LLM — in [`eval/token_economics.py`](eval/token_economics.py) and [`eval/reasoning_budget.py`](eval/reasoning_budget.py), exercised by the pytest suite under [`tests/model_right_sizer/`](../../tests/model_right_sizer/) at the repo root. See [`eval/README.md`](eval/README.md).
 
 ## What's in this plugin
 
@@ -24,6 +27,7 @@ This directory is a self-contained **Claude Code plugin** within the CloudZero m
 - [`skills/model-right-sizer-schema/SKILL.md`](skills/model-right-sizer-schema/SKILL.md) — a companion skill that prescribes a minimal output schema for **one** agent's handoff to its controller (the agent's "Agent-to-agent message-schema design" lever, scoped to a single seam) and, on confirmation, stamps it into the target agent's file as a marker-delimited `## Agent-to-agent schema` section.
 - [`schemas/agent-schema.schema.json`](schemas/agent-schema.schema.json) (+ [`agent-schema.example.json`](schemas/agent-schema.example.json)) — the strict JSON Schema `model-right-sizer-schema`'s agent dispatch must conform to, and a worked instance. Enforced by [`../../scripts/validate_agent_schema.py`](../../scripts/validate_agent_schema.py), the same way `blueprint.schema.json` is enforced by `validate_blueprint.py`.
 - [`schemas/agent-schema-families.md`](schemas/agent-schema-families.md) — a portable, organization-agnostic catalogue of reusable agent-reply shapes (`scored-review`, `build-report`, `data-payload`, …) that `model-right-sizer-schema` picks from when the target repo doesn't already have its own.
+- [`eval/`](eval/) — the deterministic formula/citation checks for this plugin's research grounding: a committed answer key (`citation_ledger.json`) plus pure-function implementations of every cited formula (`token_economics.py`, `reasoning_budget.py`) and a standalone drift checker (`check_citations.py`). Corresponding pytest suites live at the repo root under `tests/model_right_sizer/`. See [`eval/README.md`](eval/README.md).
 - [`CHANGELOG.md`](CHANGELOG.md) — dated entries for every change to the agent core or its companion skills. Update this in the same PR as the change.
 
 Besides right-sizing *which model*, the agent also flags stages where a deterministic query layer (e.g. PromptQL) would answer a data question more reliably and cheaper than a raw model call, and designs the minimal message schema each agent-to-agent handoff should carry — so a multi-stage chain doesn't leak full transcripts between hops. See the "Agent-to-agent message-schema design" section and the deterministic-query-layer lever in `agents/model-right-sizer.md`.
@@ -73,7 +77,10 @@ and agent-schema-prescription outputs, and three companion skills — no
 runtime dependencies, no code that calls an LLM or CloudZero API directly.
 It's read by whatever agent runtime loads it (Claude Code, or a compatible
 Claude-Agent-SDK-based runtime), which supplies its own model access. No API
-keys are required by the plugin itself.
+keys are required by the plugin itself. `eval/` is the one directory with
+executable Python, and it's standard-library-only (`math`, `json`, `pathlib`)
+— it exists to verify the agent's research grounding in CI, not as something
+the agent imports or calls at runtime.
 
 ## Configuration
 
