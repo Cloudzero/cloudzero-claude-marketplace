@@ -5,6 +5,78 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 ## Unreleased
 
 ### Added
+- `skills/model-right-sizer-schema` — a companion skill that applies the
+  agent's existing "Agent-to-agent message-schema design" lever to a
+  single agent-to-controller seam instead of a whole flow: given a target
+  agent (a path to an existing `agents/*.md` file, or a plain description
+  of one not yet written), it dispatches `model-right-sizer` to prescribe
+  the smallest typed output contract that still carries everything the
+  named controller acts on, shows the before/after size delta, and — on
+  confirmation — stamps a marker-delimited `## Agent-to-agent schema`
+  section directly into the target agent's file. Defers to a target repo's
+  own seam-shape catalogue when one exists (e.g. a
+  `context/agent-schemas.md`-shaped file); otherwise falls back to the new
+  portable catalogue below. Detects and refreshes an existing schema
+  section under either this skill's own markers or a repo's pre-existing
+  marker convention, rather than stamping a second, competing section.
+- `schemas/agent-schema.schema.json` (+ `agent-schema.example.json`) — the
+  strict JSON Schema (draft 2020-12, `additionalProperties: false`
+  throughout) `model-right-sizer-schema`'s agent dispatch must conform to:
+  the target agent + its controller's stated needs, the family picked (and
+  whether it's newly coined), typed `in_fields`/`out_fields`, the bounded
+  `prose_field` (or `null` for a family that structurally carries none),
+  the `exclude` list, the literal `stamp_markdown` block, and a
+  `savings_note` naming the concrete baseline-vs-prescribed size delta —
+  the thing this whole lever exists to produce.
+- `schemas/agent-schema-families.md` — a portable, organization-agnostic
+  catalogue of nine reusable agent-reply shapes (`scored-review`,
+  `verdict-set`, `graded-claim`, `build-report`, `drafted-unit`,
+  `data-payload`, `watch-report`, `action-log`, `candidate-set`), the
+  shared minimal envelope, and the universal exclusion list —
+  `model-right-sizer-schema`'s fallback catalogue for a repo that doesn't
+  already maintain its own. A generic, clean-room distillation of the same
+  family-catalogue-plus-per-agent-stamp convention some internal
+  multi-agent codebases at CloudZero already enforce; reproduced here
+  without any internal tool names, agent names, or organization-specific
+  fields, consistent with this plugin's existing "organization-agnostic
+  core" discipline.
+- `scripts/validate_agent_schema.py` (wired into CI, plus
+  `tests/test_validate_agent_schema.py`, 20 tests) — validates an
+  agent-schema prescription instance against `schemas/agent-schema.schema.json`
+  in full, plus two referential checks a JSON Schema can't express: (1)
+  `stamp_markdown` actually restates every `out_fields[].name` and
+  `exclude[]` entry sitting next to it, matched as a whole-word/whole-phrase
+  containment (not a bare substring — `logs` does not match inside
+  `logs_ref`) so hard-wrapped, backticked, or differently-quoted markdown
+  still passes without a false positive on an unrelated field name; (2)
+  `family.id` resolves to a real entry in `agent-schema-families.md`'s
+  catalogue (or `family.is_new_family` says explicitly it's coining a new
+  one), the family's own definitional out-field is actually present (e.g.
+  `verdict-set` requires a `rows` field), and a family the catalogue
+  documents as carrying no prose slot (`watch-report`, `candidate-set`)
+  isn't paired with a non-null `prose_field`. Both classes of check were
+  added in response to a Greptile review on the introducing PR that found
+  the containment check could accept a substring collision and that nothing
+  validated a prescription's family choice against its own fields —
+  mirrors `validate_blueprint.py`'s role for its sibling schema, and
+  `handoff_schema_ref`'s referential-check pattern, applied to the family
+  catalogue. Two further review rounds on the same PR tightened both checks
+  further: family completeness now checks a family's FULL required field
+  set (not just one identifying field — `FAMILY_REQUIRED_FIELDS`, was
+  `FAMILY_CATALOGUE`), plus nested-member invariants the catalogue states
+  as hard violations (`scored-review` `findings[]` entries must mention
+  `fix`; `action-log` `removed[]`/`actions_taken[]` entries must mention
+  `proof`/`result`); the containment check's word-boundary logic now
+  rejects hyphen/period/colon-joined compounds (`logs-ref`, `logs.ref`,
+  `logs:source`), not just underscore-joined ones, while still accepting a
+  genuine mention followed by ordinary sentence-ending punctuation. 88
+  tests total. A further round scoped the nested-member restatement check
+  to the specific field's own segment of the stamp (from its first mention
+  to the next field name, bounded to start searching after the `**Out**`
+  marker so an `**In**`/`**Out**` name collision can't truncate the
+  segment before the real restatement is reached) — a member could
+  otherwise be credited off a different field's restatement, off unrelated
+  prose, or off the field's own **In**-side mention. 94 tests total.
 - **Token Economics (arXiv:2605.09104) as a third research-grounded layer.**
   A new "Economic formalization" section in `agents/model-right-sizer.md`
   formalizes the effectiveness-vs-efficiency split itself as the paper's
