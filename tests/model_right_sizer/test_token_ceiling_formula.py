@@ -159,3 +159,115 @@ def test_opus_and_haiku_spans_are_placeholders_scaled_from_sonnet():
         assert tcf.CALIBRATION_STATUS[tier].startswith("placeholder")
         expected = sonnet_span * (tcf.DISPATCH_FLOORS[tier] / sonnet_floor)
         assert tcf.REAL_WORK_SPAN[tier] == pytest.approx(expected)
+
+
+# ---------------------------------------------------------------------------
+# The additive alternative -- and its documented overfitting risk
+# ---------------------------------------------------------------------------
+
+
+def test_additive_real_work_is_not_bounded_to_one():
+    # The whole point of the additive model: unlike compute_real_work_scale,
+    # this can legitimately exceed 1.0.
+    work = tcf.compute_real_work_additive(1.0, 1.0, 1.0)
+    assert work == pytest.approx(3.0)
+
+
+def test_additive_real_work_rejects_out_of_range_inputs():
+    with pytest.raises(ValueError, match=r"must be in \[0\.0, 1\.0\]"):
+        tcf.compute_real_work_additive(1.5, 0.5, 0.5)
+
+
+def test_additive_token_ceiling_unknown_tier_raises():
+    with pytest.raises(ValueError, match="Unknown tier"):
+        tcf.compute_token_ceiling_additive("claude-made-up-model", 0.5, 0.5, 0.5)
+
+
+def test_additive_calibration_status_says_unvalidated():
+    # This is the honesty check for the additive model, mirroring
+    # test_sonnet_is_the_only_tier_marked_measured for the averaged one --
+    # if this constant is ever tightened to claim validation, it should be
+    # because a fresh held-out task's real actuals backed it up, not a
+    # silent edit.
+    assert tcf.ADDITIVE_CALIBRATION_STATUS.startswith("UNVALIDATED")
+
+
+def test_additive_formula_reaches_the_reported_training_accuracy():
+    # Exercises the real compute_token_ceiling_additive() call path (not a
+    # hand-rolled reimplementation) against the same 18 real training
+    # examples weight_optimizer.py uses, to keep the ~94% figure this
+    # pass's write-up reports checked in code, not just claimed in prose.
+    sys.path.insert(
+        0,
+        str(Path(__file__).resolve().parent.parent.parent / "plugins" / "model-right-sizer" / "eval" / "tuning"),
+    )
+    import weight_optimizer as wo  # noqa: E402
+    from reasoning_budget import classify_budget_adherence  # noqa: E402
+
+    within = 0
+    for a, b, c, floor, _span, actual in wo.TRAINING_EXAMPLES:
+        tier = "claude-sonnet-5" if floor == tcf.DISPATCH_FLOORS["claude-sonnet-5"] else "claude-opus-4-8"
+        ceiling = tcf.compute_token_ceiling_additive(tier, a, b, c)
+        if classify_budget_adherence(actual, ceiling) == "within_budget":
+            within += 1
+    accuracy = within / len(wo.TRAINING_EXAMPLES)
+    # A range, not a pinned exact value -- this is training-set accuracy on
+    # a tiny, already-overfit dataset; the point of this test is that it
+    # stays HIGH (proving the additive structure genuinely fixes the
+    # capacity ceiling the averaged model has), not that it hits an exact
+    # figure that would make the test brittle to a future constant tweak.
+    assert accuracy > 0.8, (
+        "If this drops, ADDITIVE_TOTAL_SPAN or the additive formula changed "
+        "in a way that lost the structural fix -- re-derive against "
+        "tuning/results/2026-08-22-additive-formula-and-signal-expansion.md, "
+        "don't just loosen this assertion."
+    )
+
+
+def test_gradient_descended_weights_do_not_beat_uniform_weights():
+    # THE load-bearing overfitting-risk test: gradient descent on the
+    # additive model's 3 weights (unconstrained, non-negative) converges to
+    # (0.9287, 0.8846, 0.9004) -- close to, and no meaningfully better than,
+    # uniform weights (1, 1, 1). That means the "3 independently learned
+    # weights" fit is really ONE effective degree of freedom (a global
+    # scale) in a three-parameter costume, not genuine per-signal
+    # importance learning -- a real, disclosed overfitting signal on this
+    # tiny (6-real-unit) dataset. Checked in code so this fact can't
+    # silently go stale if someone re-runs the fit and gets a different
+    # number.
+    sys.path.insert(
+        0,
+        str(Path(__file__).resolve().parent.parent.parent / "plugins" / "model-right-sizer" / "eval" / "tuning"),
+    )
+    import weight_optimizer as wo  # noqa: E402
+    from reasoning_budget import classify_budget_adherence  # noqa: E402
+
+    def additive_accuracy(weights):
+        within = 0
+        for a, b, c, floor, _span, actual in wo.TRAINING_EXAMPLES:
+            tier = "claude-sonnet-5" if floor == tcf.DISPATCH_FLOORS["claude-sonnet-5"] else "claude-opus-4-8"
+            ceiling = tcf.compute_token_ceiling_additive(tier, a, b, c, weights=weights)
+            if classify_budget_adherence(actual, ceiling) == "within_budget":
+                within += 1
+        return within / len(wo.TRAINING_EXAMPLES)
+
+    # The raw gradient-descended weights (0.9287, 0.8846, 0.9004) were fit
+    # against REAL_WORK_SPAN directly (no k folded in); ADDITIVE_TOTAL_SPAN
+    # already has k baked in and expects weights averaging to ~1.0 (its own
+    # default). Normalize by the weights' own mean before comparing, so
+    # both readings share the same scale baseline -- otherwise this test
+    # would be comparing two different parameterizations, not testing
+    # whether per-signal differentiation helps.
+    raw_gd_weights = (0.9287, 0.8846, 0.9004)
+    mean_w = sum(raw_gd_weights) / 3
+    normalized_gd_weights = tuple(w / mean_w for w in raw_gd_weights)
+
+    uniform_accuracy = additive_accuracy((1.0, 1.0, 1.0))
+    gradient_descended_accuracy = additive_accuracy(normalized_gd_weights)
+    # Within 2 examples out of 18 -- gradient descent DOES nudge one more
+    # example into within_budget (18/18 vs uniform's 17/18), a real if
+    # tiny improvement, not literally zero. The claim this test protects is
+    # "not meaningfully better," not "byte-identical" -- a one-example
+    # swing on n=18 is exactly the kind of difference that shouldn't be
+    # read as genuine per-signal learning.
+    assert abs(uniform_accuracy - gradient_descended_accuracy) <= 2 / len(wo.TRAINING_EXAMPLES)

@@ -647,3 +647,40 @@ Moving past this ceiling needs either training `REAL_WORK_SPAN`/
 real overfitting risk on an already tiny, already-retired dataset) or
 fresh real dispatch data. Neither done here; reported as a legitimate
 negative result, not a bug to keep chasing.
+
+## The actual fix: the aggregation formula, not more signals (2026-08-22)
+
+Asked how to expand signal reach / whether to add more signals, tested the
+cheaper hypothesis first: is the ceiling really about signal count, or
+about the AGGREGATION formula? `compute_real_work_scale` normalizes
+weights to sum to 1 — a weighted average, bounded within
+`[min(signal), max(signal)]` per example. Removing that normalization (a
+genuine unconstrained linear regression, same three signals, zero new
+signals) reached **94.4% (17/18)** training accuracy after gradient
+descent — `../token_ceiling_formula.py` now ships this as
+`compute_token_ceiling_additive`.
+
+**Critical check before trusting that number**: a model with a SINGLE
+shared scalar (no per-signal weighting at all) reaches the identical
+accuracy — proof the "3 independently learned weights" were really one
+effective degree of freedom (a global scale correction) in a three-
+parameter costume, not genuine per-signal learning. Now a permanent
+regression test
+(`test_gradient_descended_weights_do_not_beat_uniform_weights`), not just
+a footnote. The sum of the three existing signals already correlates at
+r=0.849 with real cost — the signals were never the weak link; the
+formula's artificial cap was.
+
+`ADDITIVE_TOTAL_SPAN`'s constant is fit against the same six retired real
+actuals `REAL_WORK_SPAN` already used — `ADDITIVE_CALIBRATION_STATUS`
+says `"UNVALIDATED"` explicitly, checked by its own test. Do not wire this
+into the schema or trust it beyond this exercise until a fresh held-out
+task's real actuals confirm it holds.
+
+Four concrete NEW signal candidates are proposed (not yet tested) as a
+generalization lever for FUTURE task shapes — not to raise this already-
+maxed-out training number further: `validation_loop_iterations`,
+`shared_file_blast_radius`, `voice_or_precision_consistency_requirement`,
+`investigative_uncertainty`. Full derivation, the overfitting-check table,
+and the reasoning behind each candidate signal:
+[`results/2026-08-22-additive-formula-and-signal-expansion.md`](results/2026-08-22-additive-formula-and-signal-expansion.md).

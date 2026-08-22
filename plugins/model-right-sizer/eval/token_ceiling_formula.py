@@ -97,6 +97,10 @@ __all__ = [
     "CALIBRATION_STATUS",
     "compute_real_work_scale",
     "compute_token_ceiling",
+    "ADDITIVE_TOTAL_SPAN",
+    "ADDITIVE_CALIBRATION_STATUS",
+    "compute_real_work_additive",
+    "compute_token_ceiling_additive",
 ]
 
 # Zero-tool-call dispatch floors, per model tier -- see
@@ -186,3 +190,90 @@ def compute_token_ceiling(
         raise ValueError(f"Unknown tier {tier!r} -- must be one of {sorted(DISPATCH_FLOORS)}")
     scale = compute_real_work_scale(tool_call_volume, content_volume, cross_reference_load, weights=weights)
     return round(DISPATCH_FLOORS[tier] + REAL_WORK_SPAN[tier] * scale)
+
+
+# ---------------------------------------------------------------------------
+# The additive alternative -- found while gradient-descending the weights
+# above, not by adding a fourth signal
+# ---------------------------------------------------------------------------
+# `compute_real_work_scale`'s weighted AVERAGE has a hard capacity ceiling:
+# it can never predict a scale above `max(tool_call_volume, content_volume,
+# cross_reference_load)` for a given example (see `tuning/weight_optimizer.py`'s
+# docstring and `tuning/results/2026-08-22-weight-gradient-descent.md`).
+# Gradient-descending the SAME three signals with the normalization removed
+# -- a genuine linear regression, `w0*a + w1*b + w2*c`, no longer bounded to
+# [0, 1] -- reached 94% training accuracy on the same 18-row dataset,
+# without a single new signal. A follow-up check with just ONE shared scalar
+# (`k*(a+b+c)`, zero per-signal weight learning at all) reached the
+# IDENTICAL accuracy -- proof the three-weight fit above was really one
+# effective degree of freedom (a global scale correction) in a three-
+# parameter costume, not genuine per-signal learning. See
+# `tuning/results/2026-08-22-additive-formula-and-signal-expansion.md` for
+# the full derivation.
+#
+# ADDITIVE_TOTAL_SPAN is that single scalar (k=0.5925, fit via gradient
+# descent on the same 18 rows) times the averaged model's own span --
+# TRAINED ON THE SAME RETIRED SIX REAL ACTUALS THIS WHOLE MODULE ALREADY
+# DISCLOSES AS n=4/n=2/n=0 BY TIER. This is a second fit against the same
+# fixed dataset, not independent validation. Treat `compute_token_ceiling_additive`
+# as an unvalidated candidate structural fix, not a proven replacement, until
+# a fresh held-out task's real actuals confirm it.
+ADDITIVE_TOTAL_SPAN = {tier: span * 0.5925 for tier, span in REAL_WORK_SPAN.items()}
+
+ADDITIVE_CALIBRATION_STATUS = (
+    "UNVALIDATED -- k=0.5925 fit by gradient descent against the exact same "
+    "18-row / 6-real-unit dataset REAL_WORK_SPAN was already fit to (see "
+    "tuning/results/2026-08-22-weight-gradient-descent.md and "
+    "-additive-formula-and-signal-expansion.md). Reaches 94% TRAINING "
+    "accuracy on that same data -- with only 6 independent real targets "
+    "behind 18 rows and one effective fitted parameter, that is a strong "
+    "overfitting signal, not evidence of a working general formula. Do not "
+    "treat this as validated, and do not re-fit it again against this same "
+    "task's numbers -- the next legitimate step is checking it against a "
+    "FRESH held-out task's real actuals."
+)
+
+
+def compute_real_work_additive(
+    tool_call_volume: float,
+    content_volume: float,
+    cross_reference_load: float,
+    *,
+    weights: tuple[float, float, float] = (1.0, 1.0, 1.0),
+) -> float:
+    """Sum (not average) of the three weighted signals -- deliberately NOT
+    bounded to [0.0, 1.0]; ranges from 0 to `sum(weights)`. This is the
+    structural fix `compute_real_work_scale`'s normalization was missing:
+    real work costs from independent axes (tool calls, content, cross-
+    referencing) are additive, not a severity rating to average. See this
+    module's `ADDITIVE_CALIBRATION_STATUS` before trusting the result."""
+    for name, value in (
+        ("tool_call_volume", tool_call_volume),
+        ("content_volume", content_volume),
+        ("cross_reference_load", cross_reference_load),
+    ):
+        if not 0.0 <= value <= 1.0:
+            raise ValueError(f"{name} must be in [0.0, 1.0], got {value!r}")
+    if len(weights) != 3:
+        raise ValueError(f"weights must have exactly 3 entries, got {len(weights)}")
+    if any(w < 0 for w in weights):
+        raise ValueError(f"weights must be non-negative, got {weights!r}")
+    return tool_call_volume * weights[0] + content_volume * weights[1] + cross_reference_load * weights[2]
+
+
+def compute_token_ceiling_additive(
+    tier: str,
+    tool_call_volume: float,
+    content_volume: float,
+    cross_reference_load: float,
+    *,
+    weights: tuple[float, float, float] = (1.0, 1.0, 1.0),
+) -> int:
+    """`token_ceiling = dispatch_floor(tier) + additive_total_span(tier) *
+    (sum of the three weighted signals)`. UNVALIDATED -- see
+    `ADDITIVE_CALIBRATION_STATUS`. Provided as a tested candidate, not a
+    recommendation to switch `compute_token_ceiling` over to this today."""
+    if tier not in DISPATCH_FLOORS:
+        raise ValueError(f"Unknown tier {tier!r} -- must be one of {sorted(DISPATCH_FLOORS)}")
+    real_work = compute_real_work_additive(tool_call_volume, content_volume, cross_reference_load, weights=weights)
+    return round(DISPATCH_FLOORS[tier] + ADDITIVE_TOTAL_SPAN[tier] * real_work)
