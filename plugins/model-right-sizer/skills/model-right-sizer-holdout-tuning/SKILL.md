@@ -7,17 +7,21 @@ description: >-
   fresh real build per candidate. Picks a task from
   `eval/tuning/overfitting_guard.py`'s `HOLDOUT_TASKS` registry (one whose
   `real_outcome_doc` already records real `{actual_tokens, budgeted_tokens}`
-  pairs from a genuine past dispatch), dispatches a BLIND dry-run (no
-  calibration-ledger access — the dry-run must not read
+  pairs from a genuine past dispatch), dispatches 3 INDEPENDENT BLIND
+  dry-runs per candidate (no calibration-ledger access — none may read
   `eval/tuning/results/`, `eval/ablation/results/`, or
   `overfitting_guard.py` itself) using the current best-known settings,
-  maps its `work_routing_map[]` units back to the matching real actuals,
-  scores the match via `reasoning_budget.classify_budget_adherence` +
-  `optimizer.score_candidate`, diagnoses the dominant miss pattern, proposes
-  ONE targeted knob-wording change grounded in that evidence, and re-runs
-  the same blind comparison to check whether accuracy improved — cheap
-  per iteration because only the blueprint step re-runs, not a real build,
-  since the ground truth is already measured. Carries an explicit stopping
+  averages each unit's budget across the 3 draws (a single draw is not
+  reliable evidence — this repo's own history found single-draw noise
+  large enough to flip within/over-budget classifications and make a
+  reported "win" evaporate on re-measurement), maps the averaged units back
+  to the matching real actuals, scores the match via
+  `reasoning_budget.classify_budget_adherence` + `optimizer.score_candidate`,
+  diagnoses the dominant miss pattern, proposes ONE targeted knob-wording
+  change grounded in that evidence, and re-runs the same 3-draw-averaged
+  comparison to check whether accuracy improved — still cheap per iteration
+  relative to a real build, because only the blueprint step re-runs, since
+  the ground truth is already measured. Carries an explicit stopping
   discipline: the same held-out task's n stays fixed no matter how many
   iterations run against it, so this skill flags — rather than silently
   keeps going — once further squeezing one task starts to look like
@@ -93,7 +97,20 @@ dry-run finding and reading the exact answer).
    most recent "current best-known settings" line. Write the rendered
    variant to a scratch file; this is the dry-run agent's system prompt.
 
-3. **Dispatch ONE blind dry-run.** Give the dispatched agent:
+3. **Dispatch 3 independent blind dry-runs per candidate, not one.**
+   A single draw is not reliable evidence: this repo's own history found
+   per-unit standard deviations of 10–30% of the mean between draws of the
+   IDENTICAL settings, large enough to flip `within_budget`/`over_budget`
+   classifications outright and to make a single-draw "improvement" or
+   "regression" indistinguishable from noise (see
+   [`results/2026-08-22-pass7-blind-vs-chief-of-staff-actuals.md`](../../eval/tuning/results/2026-08-22-pass7-blind-vs-chief-of-staff-actuals.md)'s
+   iteration 4 — a reported `accuracy_rate` of 0.333 from one draw turned
+   out to be 0.167 once averaged over 3). Dispatch 3 independent agents per
+   candidate setting (same persona, same intent, same decomposition
+   instructions) and average each unit's `token_ceiling` across the 3
+   before scoring. A single draw is acceptable only for a cheap first look
+   at whether a candidate is worth evaluating properly — never as the basis
+   for an accept/reject decision on its own. Give each dispatched agent:
    - The rendered variant's full text as its persona.
    - Explicit instructions that this is BLIND: set
      `uncertainty_ledger.calibration.ledger_found: false`, and do not read
@@ -125,9 +142,13 @@ dry-run finding and reading the exact answer).
    rather than forcing a match — an honest "ambiguous, not scored" beats a
    confident wrong pairing.
 
-5. **Score it.** Per matched unit:
-   `reasoning_budget.budget_adherence_ratio(actual_tokens, budgeted_tokens)`
-   and `classify_budget_adherence(...)`. **Check which side of the
+5. **Score it.** Per matched unit, average `token_ceiling` across the 3
+   draws (`statistics.mean`), then compute
+   `reasoning_budget.budget_adherence_ratio(actual_tokens, mean_ceiling)`
+   and `classify_budget_adherence(...)`. Also report each unit's `stdev`
+   across the 3 draws next to its mean — a high stdev relative to the mean
+   is itself a finding worth naming, not just a number to average away.
+   **Check which side of the
    floor-inclusive/floor-exclusive line the current wording puts
    `token_ceiling` on before picking `actual_tokens`** — `dispatch_floor_awareness`
    at level ≥1 makes the ceiling floor-inclusive (compare against raw
@@ -168,7 +189,26 @@ dry-run finding and reading the exact answer).
    exercises every level generically, including new ones, with no changes
    needed on your part.
 
-8. **Re-render, re-dispatch blind, re-score, compare.** Same task, same
+   **Two specific wording pitfalls this repo's own history hit, worth
+   avoiding on purpose:**
+   - **Enumerating named examples can narrow generalization instead of
+     widening it.** A fix naming exactly two qualifying shapes with a
+     concrete number improved the one unit it was diagnosed from but
+     regressed two OTHER units that didn't cleanly match either named
+     example — plausibly because the model read "these two shapes" as an
+     exhaustive boundary, not an illustration. If citing examples, say
+     explicitly that they are illustrative, not a checklist.
+   - **An explicit numeric multiplier can shrink the base estimate it's
+     applied to.** A fix asking the model to "apply a 1.3–1.9× multiplier"
+     to its own real-work estimate scored WORSE on every single unit than a
+     simpler "floor plus real work" framing with no stated multiplier —
+     plausibly because naming a multiplier invites a smaller initial
+     "apparent size" judgment to apply it to, netting lower than a holistic
+     estimate would have. A calibration correction grounded in real
+     evidence is good; making the arithmetic explicit is not automatically
+     better than describing the target outcome directly.
+
+8. **Re-render, re-dispatch (3 draws), re-score, compare.** Same task, same
    intent wording, same decomposition shape, new settings. Compare
    `accuracy_rate`/`mean_loss` against the immediately prior iteration —
    and against the ORIGINAL live-dispatch budgets recorded in the held-out

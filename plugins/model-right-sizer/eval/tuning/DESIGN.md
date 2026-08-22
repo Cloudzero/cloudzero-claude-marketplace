@@ -554,6 +554,40 @@ harder, on a signal already shown to be noise-dominated at this sample
 size, looks like the same overfitting risk this whole mechanism exists to
 catch, not further tuning.
 
+**Iteration 4 corrected the record with proper multi-draw averaging.** Asked
+to keep pushing toward a 90% target, and having found single-draw noise was
+roughly the same size as the wording effects being measured, the methodology
+changed to 3 independent blind draws per candidate, averaged before scoring.
+Re-measuring level 3 this way revealed its TRUE `accuracy_rate` is **0.167**,
+not the 0.333 a single lucky draw had reported — two units (module, skill)
+that looked `within_budget` in the original single draw are `over_budget` on
+2 of their own 3 draws; only the mean survives near the boundary. This
+doesn't reverse the level-3 adoption (its `mean_loss`, 0.246 averaged, still
+beats level 2's 0.448), but it does mean the "0.333, matching the real
+build" framing above should be read as superseded by this correction.
+
+**Iteration 5 tested a general, non-enumerated fix (level 5) with the same
+3-draw-averaged rigor — and it lost cleanly.** Rather than repeat level 4's
+example-narrowing mistake, level 5 added a general "apply a 1.3–1.9×
+multiplier" instruction. Result: worse than level 3 on every single unit
+(not just in aggregate), `accuracy_rate` 0.167 → 0.000, `mean_loss` 0.246 →
+0.487. Diagnosis: naming an explicit multiplier plausibly invited a smaller
+base estimate to apply it to, netting lower than level 3's simpler
+"floor-plus-real-work" framing with no stated multiplier — a second, distinct
+prompt-engineering failure mode this pass surfaced (after level 4's
+enumeration-narrows-generalization finding).
+
+**Where this leaves the tuning thread**: two deliberate wording fixes (levels
+4 and 5) tried and rejected, one confirmed by noise-controlled averaging, one
+initially by a since-superseded single draw. Level 3 remains the current
+best-known setting, backed now by a real 3-draw average rather than a lucky
+single one. This held-out task has been read blind 8 times across this pass
+and is no longer a reliable discriminator at this sample size — the next
+legitimate move is a fresh held-out task, not a sixth attempt against these
+same six numbers. Full iteration-by-iteration detail, including both
+rejected levels' exact per-unit tables:
+[`results/2026-08-22-pass7-blind-vs-chief-of-staff-actuals.md`](results/2026-08-22-pass7-blind-vs-chief-of-staff-actuals.md).
+
 The current best-known settings
 (`budget_margin=-1, effort_tax=1, calibration_aggressiveness=1,
 calibration_decay=0, pass_b_feedback=1, dispatch_floor_awareness=3`) are

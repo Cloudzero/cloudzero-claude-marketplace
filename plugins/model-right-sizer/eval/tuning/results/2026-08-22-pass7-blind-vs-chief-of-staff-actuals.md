@@ -232,12 +232,75 @@ multiplier range grounded in this iteration's own averaged ratios. Also
 evaluated across 3 blind draws for a fair, noise-aware comparison against
 level 3's true average — see the next section for the result.
 
+## Iteration 5 — level 5 (general, non-enumerated correction), 3-draw average — rejected
+
+Level 5 kept level 3's text and added a general-purpose instruction
+(explicitly not a checklist, to avoid level 4's narrowing mistake): apply a
+1.3–1.9× multiplier to the estimated real-work term for any sonnet-tier
+`low-tool-turn`/`agentic` unit doing real editing-plus-validation work.
+Evaluated with the same 3-draw-averaging methodology as level 3's re-measure,
+for an apples-to-apples, noise-aware comparison.
+
+| unit | level 3 mean (3 draws) | level 5 mean (3 draws) | real actual |
+|---|---:|---:|---:|
+| schema/changelog | 56,667 | 53,333 | 76,292 |
+| `budget_threshold.py` module | 53,333 | 41,333 | 56,932 |
+| threshold-warning agent-file | 77,667 | 62,000 | 95,445 |
+| status-ledger agent-file | 69,000 | 60,667 | 92,374 |
+| budget-guard skill | 111,667 | 75,333 | 104,219 |
+| test coverage | 66,667 | 59,667 | 99,532 |
+
+**Level 5 is lower than level 3 on every single unit.** Aggregate:
+`accuracy_rate` 0.167 → **0.000** (all six units `over_budget`), `mean_loss`
+0.246 → **0.487**. This is not noise — both numbers are 3-draw averages, and
+level 5 loses on every unit individually, not just in aggregate. **Rejected,
+unambiguously**, unlike level 4's single-draw-confounded rejection.
+
+**Diagnosis**: the explicit "apply a 1.3–1.9× multiplier" framing backfired.
+Despite the multiplier instruction, every unit's average CEILING went down
+relative to level 3, not up — meaning the BASE estimate the multiplier was
+supposed to apply to shrank first. A plausible mechanism: naming an explicit
+multiplier invites the model to first commit to a smaller "apparent content
+size" judgment (since it now expects to inflate it afterward), and that
+initial anchor ends up smaller than what a holistic "floor plus real work,
+scaled by tool-call count" judgment (level 3's simpler framing) produces
+directly. This is the second distinct prompt-engineering failure mode this
+pass found (after level 4's example-narrowing effect): a numeric correction
+factor applied on top of a self-generated estimate is not guaranteed to net
+higher than not stating one, if the framing changes what gets estimated
+first.
+
+## Where this tuning thread actually stands, honestly
+
+Two knob levels (4, 5) were tried as intentional wording fixes and both were
+rejected — one confirmed by a matched 3-draw comparison (level 5), one by a
+single-draw comparison later shown to be within noise range of level 3's own
+true accuracy (level 4). **Level 3 remains the current best-known setting**,
+now backed by a real 3-draw average: `accuracy_rate = 0.167`, `mean_loss =
+0.246`. That is a real, if modest, improvement over level 2's `mean_loss`
+(0.448, single-draw), but **not** the 0.333 `accuracy_rate` this pass
+originally reported and used to justify adopting it — that number was an
+artifact of one favorable draw. Reaching anywhere near a 90% target on this
+task, with the wording moves tried so far, has not been demonstrated.
+
+**Stopping here.** This held-out task has now been read blind 8 times across
+this pass (iterations 1–3, level 3's 2 extra baseline draws, level 5's 3
+draws) — well past the point where its own n=6 can keep discriminating real
+wording effects from noise, per `overfitting_guard`'s own stated concern.
+Continuing to iterate against this exact task is likely to keep producing
+results this same size of noise can explain either way. The responsible next
+step is a genuinely fresh held-out task (a different real build), not a
+sixth wording attempt against these same six numbers.
+
 ## Honest scope note
 
 This is a real-actuals check on n=6 within one task, not a benchmark sweep —
 consistent with every other write-up in this directory, treat the pattern as
 directional evidence, not a generalizable conclusion. The 3-draw-averaging
-finding in iteration 4 is itself the most important scope caveat in this
-entire pass: single-draw dry-run comparisons on this task carry noise
-comparable in size to the effects being measured, and every single-draw
-result in iterations 1–3 above should be read with that in mind.
+finding in iteration 4 is the most important scope caveat in this entire
+pass: single-draw dry-run comparisons on this task carry noise comparable in
+size to the effects being measured. Read iterations 1–3's single-draw
+results, and this pass's original "adopted level 3, accuracy 0.333" framing,
+with that firmly in mind — the corrected, load-bearing number is iteration
+4/5's 3-draw-averaged `accuracy_rate = 0.167` for level 3, not the earlier
+0.333.
