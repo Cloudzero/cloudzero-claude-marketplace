@@ -411,3 +411,47 @@ of a floor artifact.
 - Same standing caveats apply: n=1 per candidate (the `within_budget` win is one draw, not a
   repeated-and-confirmed one), and the parallel-sweep gap (neighbors evaluated against a
   shared start point, not re-checked after each accepted move).
+
+## Investigating `calibration_decay`'s null result — a diagnosis, then a `calibration_decay=3`
+
+`calibration_decay` (levels 1–2) never won a single move across three different base points
+(pass 2, pass 3, pass 4). Before writing that off as "the wording just doesn't help," it's
+worth diagnosing *why* — and the dry-run data already collected across every pass answers
+this directly, no new dispatch needed to see it:
+
+- **Every single dry-run this experiment has ever run reports
+  `uncertainty_ledger.calibration.ledger_found: false`.** `calibration_decay`'s levels 1 and 2
+  are both worded as *"tolerance should tighten as more `within_budget` rows accumulate for
+  that shape"* / *"state the tightening rate... a calibration ledger with no stated decay
+  rate is under-specified."* Both presuppose a calibration ledger already holding past rows
+  to tighten against. This benchmark's real-execution protocol dispatches a single, fresh
+  sub-agent per candidate with no history — there is never a ledger for the wording's own
+  conditional to act on.
+- **The dry-run rationale text confirms this behaviorally, not just structurally**: across
+  every `calibration_decay=1` and `=2` dry-run in passes 2–4, the blueprint's own rationale
+  never once mentions tightening, decay, or a ledger — the model isn't declining to apply the
+  guidance, it's reading it as inapplicable to a first (and only) observation, which is
+  exactly right given what the wording literally says.
+
+**`calibration_decay=3`** reframes the same real SelfBudgeter mechanism (Formula 6's decay
+schedule) for the regime this benchmark actually tests — a *first* observation, not a
+*repeated* one: *"absent a calibration ledger, a task-shape's first observation is still on
+the schedule's permissive starting end, not its tight asymptote... pad `token_ceiling`
+generously the same way the schedule's own early-training α does, and only tighten once real
+`within_budget` rows for that shape actually exist to justify it."* This doesn't invent a new
+concept — it's the same Formula 6 curve, just correctly identifying which end of it applies
+when no ledger exists, instead of describing behavior that only makes sense once one does.
+
+Tested at the current winning point (`budget_margin=-1, effort_tax=1,
+calibration_aggressiveness=1, pass_b_feedback=1` — the first time `calibration_decay` has
+been tested combined with the actual winning `effort_tax`, not a stale earlier point). See
+[`results/2026-08-22-pass5.md`](results/2026-08-22-pass5.md) for the full result — summary:
+**the fix didn't win.** `calibration_decay=3` scored worse than doing nothing
+(`over_budget`, mean_loss 0.1007 vs. the current point's 0.0000). `calibration_decay=1` tied
+the current point's `accuracy_rate`/`mean_loss`, but its dry-run happened to pick Sonnet
+(every other `calibration_decay` dry-run across all five passes picked Haiku) — Sonnet's real
+net spend on this task ran substantially lower, which explains the tie without any causal
+role for the wording. `select_best`'s own "Less is More" tiebreak correctly declined to move
+on a tie. `calibration_decay` stays at level 0 in the current best-known settings. This is a
+second, deliberately better-targeted negative result, not just an absence of a win yet — and
+it's disclosed as such rather than quietly dropped.

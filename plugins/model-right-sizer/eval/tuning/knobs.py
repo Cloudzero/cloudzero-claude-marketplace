@@ -206,6 +206,22 @@ KNOBS = {
                 "no stated decay rate is exactly as under-specified as a "
                 "stage with no stated budget."
             ),
+            3: (
+                "A stage with no stated budget is under-specified. "
+                "SelfBudgeter ([arXiv 2505.11274](https://arxiv.org/abs/2505.11274), "
+                "Li, Dong, Ma et al., Peking University / BandAI, ByteDance) "
+                "reinforces this with a *decaying tightness coefficient*: "
+                "training starts permissive of budget deviation and linearly "
+                "tightens toward near-exact adherence as the policy learns "
+                "its own budget predictions. Translate: **absent a "
+                "calibration ledger, a task-shape's first observation is "
+                "still on the schedule's permissive starting end, not its "
+                "tight asymptote** — a first observation is unmeasured, not "
+                "evidence of precision, so pad `token_ceiling` generously "
+                "the same way the schedule's own early-training α does, and "
+                "only tighten once real `within_budget` rows for that "
+                "shape actually exist to justify it."
+            ),
         },
     },
     "pass_b_feedback": {
