@@ -30,7 +30,7 @@ removing free-hand arithmetic and content-size guessing from the LLM's job
 entirely, the same way `budget_threshold.py` moved the threshold-crossing
 CHECK out of the LLM's job and into deterministic code.
 
-## The three input signals
+## The four input signals
 
 - `tool_call_volume` — how many real tool calls (search, edit, re-run a
   validator, re-run tests) this unit will plausibly make. 0.0 = a single
@@ -44,12 +44,25 @@ CHECK out of the LLM's job and into deterministic code.
   opposed to working in isolation. 0.0 = a standalone new file with nothing
   to reconcile against; 1.0 = must read and stay faithful to several other
   artifacts at once.
+- `validation_loop_iterations` — how many real re-run-and-fix cycles
+  against a validator or test suite this unit specifically requires,
+  distinct from `tool_call_volume`'s broader notion of any tool use. 0.0 =
+  nothing to validate work against (no CI gate, no schema, no test file
+  covering it); 1.0 = a mandatory validate-then-fix loop expected to take
+  several iterations to converge. Added 2026-08-22 (see
+  `tuning/results/2026-08-22-additive-formula-and-signal-expansion.md`'s
+  proposed candidates) — every one of the five under-estimated real units
+  in this pass's own training data was gated behind a real validate-then-
+  fix loop; the one correctly-estimated unit had none. **Defaults to
+  weight `0.0` in `compute_token_ceiling_additive`** until real rating
+  data justifies a nonzero contribution — see
+  `tuning/results/2026-08-22-validation-loop-iterations-signal.md`.
 
-These three map directly onto the causal drivers `dispatch_floor_awareness`
+These map directly onto the causal drivers `dispatch_floor_awareness`
 (see `tuning/knobs.py`) named from real-dispatch evidence but could only
-ever gesture at in prose: tool-call count, content-generation volume, and
-"a unit gated behind a mandatory validate-then-fix loop" / "a check that
-must cross-reference several already-landed artifacts."
+ever gesture at in prose: tool-call count, content-generation volume,
+cross-referencing several already-landed artifacts, and a mandatory
+validate-then-fix loop specifically.
 
 ## Calibration status per tier — stated honestly, not uniformly
 
@@ -140,31 +153,34 @@ def compute_real_work_scale(
     tool_call_volume: float,
     content_volume: float,
     cross_reference_load: float,
+    validation_loop_iterations: float = 0.0,
     *,
-    weights: tuple[float, float, float] = (1 / 3, 1 / 3, 1 / 3),
+    weights: tuple[float, float, float, float] = (1 / 3, 1 / 3, 1 / 3, 0.0),
 ) -> float:
-    """Combine the three bounded signals into one [0.0, 1.0] real-work
-    scale via a weighted average. Each input and each weight-adjusted
-    combination is validated to stay in [0.0, 1.0] -- callers should adjust
-    `weights` only with a stated reason (e.g. a task-shape where
-    cross-referencing dominates), never silently."""
+    """Combine the four bounded signals into one [0.0, 1.0] real-work scale
+    via a weighted average. Each input and each weight-adjusted combination
+    is validated to stay in [0.0, 1.0] -- callers should adjust `weights`
+    only with a stated reason (e.g. a task-shape where cross-referencing
+    dominates), never silently. `validation_loop_iterations` defaults to
+    `0.0` so an existing caller passing only the first three positional
+    args keeps its prior behavior exactly."""
     for name, value in (
         ("tool_call_volume", tool_call_volume),
         ("content_volume", content_volume),
         ("cross_reference_load", cross_reference_load),
+        ("validation_loop_iterations", validation_loop_iterations),
     ):
         if not 0.0 <= value <= 1.0:
             raise ValueError(f"{name} must be in [0.0, 1.0], got {value!r}")
-    if len(weights) != 3:
-        raise ValueError(f"weights must have exactly 3 entries, got {len(weights)}")
+    if len(weights) != 4:
+        raise ValueError(f"weights must have exactly 4 entries, got {len(weights)}")
     if any(w < 0 for w in weights):
         raise ValueError(f"weights must be non-negative, got {weights!r}")
     total_weight = sum(weights)
     if total_weight == 0:
         raise ValueError("weights must not all be zero")
-    scale = (
-        tool_call_volume * weights[0] + content_volume * weights[1] + cross_reference_load * weights[2]
-    ) / total_weight
+    signals = (tool_call_volume, content_volume, cross_reference_load, validation_loop_iterations)
+    scale = sum(s * w for s, w in zip(signals, weights)) / total_weight
     # Guard against float drift pushing a legitimate boundary case (e.g.
     # every input and weight at 1.0) a hair outside [0.0, 1.0].
     return min(1.0, max(0.0, scale))
@@ -175,8 +191,9 @@ def compute_token_ceiling(
     tool_call_volume: float,
     content_volume: float,
     cross_reference_load: float,
+    validation_loop_iterations: float = 0.0,
     *,
-    weights: tuple[float, float, float] = (1 / 3, 1 / 3, 1 / 3),
+    weights: tuple[float, float, float, float] = (1 / 3, 1 / 3, 1 / 3, 0.0),
 ) -> int:
     """`token_ceiling = dispatch_floor(tier) + real_work_span(tier) *
     real_work_scale`. The one function a blueprint's Pass A budget bullet
@@ -188,7 +205,9 @@ def compute_token_ceiling(
     row's own explicit zero, set directly, not derived from a scale."""
     if tier not in DISPATCH_FLOORS:
         raise ValueError(f"Unknown tier {tier!r} -- must be one of {sorted(DISPATCH_FLOORS)}")
-    scale = compute_real_work_scale(tool_call_volume, content_volume, cross_reference_load, weights=weights)
+    scale = compute_real_work_scale(
+        tool_call_volume, content_volume, cross_reference_load, validation_loop_iterations, weights=weights
+    )
     return round(DISPATCH_FLOORS[tier] + REAL_WORK_SPAN[tier] * scale)
 
 
@@ -238,27 +257,36 @@ def compute_real_work_additive(
     tool_call_volume: float,
     content_volume: float,
     cross_reference_load: float,
+    validation_loop_iterations: float = 0.0,
     *,
-    weights: tuple[float, float, float] = (1.0, 1.0, 1.0),
+    weights: tuple[float, float, float, float] = (1.0, 1.0, 1.0, 0.0),
 ) -> float:
-    """Sum (not average) of the three weighted signals -- deliberately NOT
+    """Sum (not average) of the four weighted signals -- deliberately NOT
     bounded to [0.0, 1.0]; ranges from 0 to `sum(weights)`. This is the
     structural fix `compute_real_work_scale`'s normalization was missing:
     real work costs from independent axes (tool calls, content, cross-
-    referencing) are additive, not a severity rating to average. See this
-    module's `ADDITIVE_CALIBRATION_STATUS` before trusting the result."""
+    referencing, validation iterations) are additive, not a severity rating
+    to average. `validation_loop_iterations`' default WEIGHT is `0.0`, not
+    `1.0` like the other three -- `ADDITIVE_TOTAL_SPAN` was fit before this
+    signal existed, so giving it a nonzero default would silently shift
+    every existing prediction with no data behind the shift. See this
+    module's `ADDITIVE_CALIBRATION_STATUS` before trusting any result,
+    and `tuning/results/2026-08-22-validation-loop-iterations-signal.md`
+    before giving this signal a nonzero weight."""
     for name, value in (
         ("tool_call_volume", tool_call_volume),
         ("content_volume", content_volume),
         ("cross_reference_load", cross_reference_load),
+        ("validation_loop_iterations", validation_loop_iterations),
     ):
         if not 0.0 <= value <= 1.0:
             raise ValueError(f"{name} must be in [0.0, 1.0], got {value!r}")
-    if len(weights) != 3:
-        raise ValueError(f"weights must have exactly 3 entries, got {len(weights)}")
+    if len(weights) != 4:
+        raise ValueError(f"weights must have exactly 4 entries, got {len(weights)}")
     if any(w < 0 for w in weights):
         raise ValueError(f"weights must be non-negative, got {weights!r}")
-    return tool_call_volume * weights[0] + content_volume * weights[1] + cross_reference_load * weights[2]
+    signals = (tool_call_volume, content_volume, cross_reference_load, validation_loop_iterations)
+    return sum(s * w for s, w in zip(signals, weights))
 
 
 def compute_token_ceiling_additive(
@@ -266,14 +294,17 @@ def compute_token_ceiling_additive(
     tool_call_volume: float,
     content_volume: float,
     cross_reference_load: float,
+    validation_loop_iterations: float = 0.0,
     *,
-    weights: tuple[float, float, float] = (1.0, 1.0, 1.0),
+    weights: tuple[float, float, float, float] = (1.0, 1.0, 1.0, 0.0),
 ) -> int:
     """`token_ceiling = dispatch_floor(tier) + additive_total_span(tier) *
-    (sum of the three weighted signals)`. UNVALIDATED -- see
+    (sum of the four weighted signals)`. UNVALIDATED -- see
     `ADDITIVE_CALIBRATION_STATUS`. Provided as a tested candidate, not a
     recommendation to switch `compute_token_ceiling` over to this today."""
     if tier not in DISPATCH_FLOORS:
         raise ValueError(f"Unknown tier {tier!r} -- must be one of {sorted(DISPATCH_FLOORS)}")
-    real_work = compute_real_work_additive(tool_call_volume, content_volume, cross_reference_load, weights=weights)
+    real_work = compute_real_work_additive(
+        tool_call_volume, content_volume, cross_reference_load, validation_loop_iterations, weights=weights
+    )
     return round(DISPATCH_FLOORS[tier] + ADDITIVE_TOTAL_SPAN[tier] * real_work)
