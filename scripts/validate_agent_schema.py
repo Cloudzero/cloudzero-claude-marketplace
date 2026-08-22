@@ -26,7 +26,8 @@ Checks:
     consistent-looking prose but doesn't actually match the typed fields
     sitting right next to it -- the same class of drift the referential check
     in `validate_blueprint.py` exists to catch for `handoff_schema_ref`.
-  - family invariants a generic JSON Schema can't express either: `family.id`
+  - family invariants a generic JSON Schema can't express either -- but ONLY
+    when `family.catalogue_source` is `"plugin_portable_catalogue"`: `family.id`
     resolves to a real entry in the portable catalogue (agent-schema-families.md)
     unless `family.is_new_family` is true, the family's FULL required field
     set (per its shape block in agent-schema-families.md, minus any field the
@@ -34,7 +35,12 @@ Checks:
     "identifying" field, which a Greptile review round correctly flagged as
     letting an otherwise-incomplete contract pass -- and a family the
     catalogue documents as carrying no prose slot (`watch-report`,
-    `candidate-set`) is not paired with a non-null `prose_field`.
+    `candidate-set`) is not paired with a non-null `prose_field`. When
+    `catalogue_source` is `"repo_catalogue"` instead, none of these checks
+    run: `family.id` names a family from the TARGET REPO's own catalogue,
+    which this script has no access to and no ground truth for -- applying
+    the portable catalogue's rules to it is a category error a later
+    Greptile round correctly caught.
   - nested-member invariants the catalogue states as a hard violation, not
     just a top-level field-name check: `scored-review`'s `findings[]`
     entries must mention `fix`, `action-log`'s `removed[]` entries must
@@ -346,12 +352,29 @@ def validate(schema: dict, instance: dict) -> list[str]:
     # Family invariants -- referential/structural checks a generic JSON
     # Schema can't express, the same class of gap NON_REFERENCE_HANDOFFS
     # closes for validate_blueprint.py's handoff_schema_ref.
+    #
+    # These checks only apply when catalogue_source is
+    # "plugin_portable_catalogue" -- FAMILY_REQUIRED_FIELDS and
+    # FAMILY_NESTED_REQUIRED are transcriptions of THIS plugin's own
+    # portable catalogue (agent-schema-families.md). When a prescription
+    # instead names catalogue_source: "repo_catalogue", family.id refers to
+    # a family defined in the TARGET REPO's own catalogue -- a document
+    # this script has no access to and no ground truth for. Validating a
+    # repo-catalogue family's id/shape against the portable catalogue's
+    # constants is a category error: it would reject a perfectly valid
+    # repo-defined family for not matching a taxonomy it was never claiming
+    # to use, or silently apply the wrong shape if the name happens to
+    # collide with one of the 9 portable family names. Greptile caught
+    # this after round 8 landed.
     family = instance.get("family", {})
     family_id = family.get("id")
     is_new_family = family.get("is_new_family")
+    catalogue_source = family.get("catalogue_source")
     out_field_names = {f.get("name") for f in instance.get("out_fields", [])}
 
-    if not is_new_family and family_id not in FAMILY_REQUIRED_FIELDS:
+    if catalogue_source != "plugin_portable_catalogue":
+        pass  # repo_catalogue (or any future source): no portable-catalogue ground truth to check against.
+    elif not is_new_family and family_id not in FAMILY_REQUIRED_FIELDS:
         errors.append(
             f"family.id: {family_id!r} is not in the portable catalogue "
             f"({sorted(FAMILY_REQUIRED_FIELDS)}) and family.is_new_family is not true -- "

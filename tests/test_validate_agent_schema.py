@@ -151,6 +151,39 @@ def test_new_family_bypasses_catalogue_membership_check():
     assert errors == []
 
 
+def test_repo_catalogue_family_bypasses_all_portable_catalogue_checks():
+    """Greptile issue (round 9): a prescription can name catalogue_source:
+    "repo_catalogue" -- meaning family.id refers to a family in the TARGET
+    REPO's own catalogue, which this validator has no access to and no
+    ground truth for. Applying the portable catalogue's membership,
+    required-field, and nested-member checks to it is a category error: a
+    repo-defined family with a completely different id and shape must not
+    be rejected (or worse, validated against the wrong shape) just because
+    it isn't -- and was never claiming to be -- one of the 9 portable
+    families."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["family"] = {
+        "id": "incident-writeup",  # not in FAMILY_REQUIRED_FIELDS at all
+        "is_new_family": False,  # not new either -- it's real, just not OURS
+        "catalogue_source": "repo_catalogue",
+        "shape_summary": "this repo's own incident-writeup family",
+    }
+    instance["out_fields"] = [{"name": "summary", "type": "string"}]  # nothing like scored-review's shape
+    instance["exclude"] = ["raw log lines"]
+    instance["prose_field"] = None
+    instance["stamp_markdown"] = (
+        "## Agent-to-agent schema\n\n"
+        "**In** -- `budget_tokens: int`\n\n"
+        "**Out** -- the `{status, output, error}` envelope; `output.*`: `summary: string`\n\n"
+        "**Never inline:** raw log lines.\n\n"
+        "You return ONLY this schema."
+    )
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors == []
+
+
 def test_family_missing_its_definitional_field_is_rejected():
     """Greptile issue 1 (round 1): a prescription can't claim a catalogue
     family while omitting the field that makes it that family -- e.g.
