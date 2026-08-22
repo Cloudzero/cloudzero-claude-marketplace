@@ -12,6 +12,19 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   opportunities for future contributors (haiku-tier calibration is the
   top-ranked one):
   `eval/tuning/results/2026-08-22-token-ceiling-formula-v1.0.0-release.md`.
+  Revised to interweave a "why this matters" clause into every claim (the
+  real dollar/trust cost of a wrong constant or an open gap), immediately
+  after the fact it explains, rather than a version report that's just a
+  changelog with extra prose.
+- **`skills/model-right-sizer-release-report`** — a new companion skill
+  codifying the per-version release-report discipline the v1.0.0 report
+  above established: publish a dated report on every `FORMULA_VERSION`
+  bump stating the exact configuration, the ranked gap list, and the
+  settled/don't-re-relitigate list — with every claim required to carry its
+  real-world stakes in the same breath, not a separate section. Also the
+  designated tool for backfilling a report for a version that shipped
+  before this skill existed, reconstructed from that version's git history
+  and contemporaneous results files, never from current constants.
 - **`skills/model-right-sizer-signal-validation`** — a new companion skill
   codifying the blind multi-draw + correlation methodology this pass used
   to test `validation_loop_iterations`, `context_ingestion_volume`, and
