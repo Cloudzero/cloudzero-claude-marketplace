@@ -1,0 +1,31 @@
+{
+  "floor_haiku_zero_tool": 25664,
+  "floor_haiku_zero_tool_probes": [25668, 25660, 25668, 25668, 25660],
+  "floor_sonnet_zero_tool": 40669,
+  "floor_sonnet_zero_tool_probes": [40669, 40669],
+  "note": "Zero-tool-call floors, correctly characterized 2026-08-22 (see measurement-redesign-validation.md). Supersedes the 28,508/38,401 floors reused in passes 1-2, which had a nonzero tool count baked in.",
+  "pass3": {
+    "pass3_current":               {"budgeted": 3000,  "raw": 39171, "settings": {"budget_margin": 1,  "effort_tax": -1, "calibration_aggressiveness": 1, "calibration_decay": 0, "pass_b_feedback": 1}},
+    "budget_margin_neg1":          {"budgeted": 10000, "raw": 39041, "settings": {"budget_margin": -1, "effort_tax": -1, "calibration_aggressiveness": 1, "calibration_decay": 0, "pass_b_feedback": 1}},
+    "budget_margin_0":             {"budgeted": 4000,  "raw": 39745, "settings": {"budget_margin": 0,  "effort_tax": -1, "calibration_aggressiveness": 1, "calibration_decay": 0, "pass_b_feedback": 1}},
+    "budget_margin_2":             {"budgeted": 4000,  "raw": 38387, "settings": {"budget_margin": 2,  "effort_tax": -1, "calibration_aggressiveness": 1, "calibration_decay": 0, "pass_b_feedback": 1}},
+    "effort_tax_0":                {"budgeted": 3000,  "raw": 38341, "settings": {"budget_margin": 1,  "effort_tax": 0,  "calibration_aggressiveness": 1, "calibration_decay": 0, "pass_b_feedback": 1}},
+    "effort_tax_1":                {"budgeted": 4000,  "raw": 38438, "settings": {"budget_margin": 1,  "effort_tax": 1,  "calibration_aggressiveness": 1, "calibration_decay": 0, "pass_b_feedback": 1}},
+    "calibration_aggressiveness_0": {"budgeted": 5000, "raw": 38865, "settings": {"budget_margin": 1,  "effort_tax": -1, "calibration_aggressiveness": 0, "calibration_decay": 0, "pass_b_feedback": 1}},
+    "calibration_decay_1":         {"budgeted": 6000,  "raw": 38227, "settings": {"budget_margin": 1,  "effort_tax": -1, "calibration_aggressiveness": 1, "calibration_decay": 1, "pass_b_feedback": 1}},
+    "calibration_decay_2":         {"budgeted": 6000,  "raw": 40775, "settings": {"budget_margin": 1,  "effort_tax": -1, "calibration_aggressiveness": 1, "calibration_decay": 2, "pass_b_feedback": 1}},
+    "pass_b_feedback_0":           {"budgeted": 3000,  "raw": 38484, "settings": {"budget_margin": 1,  "effort_tax": -1, "calibration_aggressiveness": 1, "calibration_decay": 0, "pass_b_feedback": 0}}
+  },
+  "pass4": {
+    "pass4_current (= pass3's budget_margin_neg1)": {"budgeted": 10000, "raw": 39041, "settings": {"budget_margin": -1, "effort_tax": -1, "calibration_aggressiveness": 1, "calibration_decay": 0, "pass_b_feedback": 1}},
+    "budget_margin_0 (= pass3's budget_margin_0)":  {"budgeted": 4000,  "raw": 39745, "settings": {"budget_margin": 0,  "effort_tax": -1, "calibration_aggressiveness": 1, "calibration_decay": 0, "pass_b_feedback": 1}},
+    "budget_margin_1 (= pass3's pass3_current)":    {"budgeted": 3000,  "raw": 39171, "settings": {"budget_margin": 1,  "effort_tax": -1, "calibration_aggressiveness": 1, "calibration_decay": 0, "pass_b_feedback": 1}},
+    "budget_margin_2 (= pass3's budget_margin_2)":  {"budgeted": 4000,  "raw": 38387, "settings": {"budget_margin": 2,  "effort_tax": -1, "calibration_aggressiveness": 1, "calibration_decay": 0, "pass_b_feedback": 1}},
+    "effort_tax_0":                {"budgeted": 6000,  "raw": 38525, "settings": {"budget_margin": -1, "effort_tax": 0,  "calibration_aggressiveness": 1, "calibration_decay": 0, "pass_b_feedback": 1}},
+    "effort_tax_1":                {"budgeted": 15000, "raw": 38624, "settings": {"budget_margin": -1, "effort_tax": 1,  "calibration_aggressiveness": 1, "calibration_decay": 0, "pass_b_feedback": 1}},
+    "calibration_aggressiveness_0": {"budgeted": 12000, "raw": 38933, "settings": {"budget_margin": -1, "effort_tax": -1, "calibration_aggressiveness": 0, "calibration_decay": 0, "pass_b_feedback": 1}},
+    "calibration_decay_1":         {"budgeted": 6000,  "raw": 38652, "settings": {"budget_margin": -1, "effort_tax": -1, "calibration_aggressiveness": 1, "calibration_decay": 1, "pass_b_feedback": 1}},
+    "calibration_decay_2":         {"budgeted": 8000,  "raw": 38972, "settings": {"budget_margin": -1, "effort_tax": -1, "calibration_aggressiveness": 1, "calibration_decay": 2, "pass_b_feedback": 1}},
+    "pass_b_feedback_0":           {"budgeted": 6000,  "raw": 38642, "settings": {"budget_margin": -1, "effort_tax": -1, "calibration_aggressiveness": 1, "calibration_decay": 0, "pass_b_feedback": 0}}
+  }
+}

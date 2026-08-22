@@ -377,3 +377,37 @@ so no real-content fixture can fix it; that would need a fundamentally different
 measurement mechanism (e.g. a raw completion call outside the full agent-dispatch harness),
 not a bigger fixture. `t4`'s pass-2 decomposition-explosion problem is also untouched here
 — this redesign only addresses t6's failure mode, not t4's.
+
+## Passes 3–4 — the redesign works, and finds the experiment's first real win
+
+[`results/2026-08-22-pass3.md`](results/2026-08-22-pass3.md) and
+[`results/2026-08-22-pass4.md`](results/2026-08-22-pass4.md) are the first two passes run
+against the redesigned t6 target. The direction flips from pass 2's uniform
+`under_budget_oversized`: **every candidate across both passes now lands `over_budget`
+instead** — the real content cost of the fixture task clusters tightly around 12,500–15,100
+net tokens, and every ceiling tested through pass 3 (3,000–10,000) undershoots that. This is
+the redesign doing exactly what it was built to do: a genuine, discriminating signal instead
+of a floor artifact.
+
+- **Pass 3**: `budget_margin` moves `+1 → -1` (the loosest margin level) — mean_loss drops
+  from 3.50 to 0.34, an order of magnitude, because `-1`'s 10,000-token ceiling comes closest
+  to the real requirement of any tested level.
+- **Pass 4**: `effort_tax` moves `-1 → +1` — and lands the experiment's **first-ever
+  `within_budget` real-execution result** (accuracy_rate 0.0 → 1.0, mean_loss → 0.0000).
+  `effort_tax=+1`'s wording pushed the dry-run's own quoted `token_ceiling` up to 15,000,
+  which happens to bracket the real ~12,960-token spend inside `[0.5, 1.0]`. Read honestly:
+  this is a win by the metric the experiment optimizes (ceiling calibration), not evidence the
+  wording made the real work cheaper — the real net spend stayed in the same 12,500–15,100
+  cluster every candidate has shown.
+- **`calibration_decay` has now been tested at three different base points across passes 2–4
+  and never once won a move** — real negative evidence against promoting it, not just an
+  absence of a win.
+- Final settings: `budget_margin=-1, effort_tax=1, calibration_aggressiveness=1,
+  calibration_decay=0, pass_b_feedback=1`. Proposed diff:
+  [`results/2026-08-22-final-winner.patch`](results/2026-08-22-final-winner.patch) — not
+  applied, per this study's design; a human reviews and merges separately.
+- Passes 1–2 ran against the since-fixed t6 target and should not be treated as comparable to
+  passes 3–4's numbers — say so explicitly rather than averaging across the redesign boundary.
+- Same standing caveats apply: n=1 per candidate (the `within_budget` win is one draw, not a
+  repeated-and-confirmed one), and the parallel-sweep gap (neighbors evaluated against a
+  shared start point, not re-checked after each accepted move).
