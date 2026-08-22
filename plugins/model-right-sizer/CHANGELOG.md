@@ -5,6 +5,36 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 ## Unreleased
 
 ### Added
+- **`schemas/blueprint.schema.json` bumped to `schema_version: "1.1"`** with
+  two independent additions. (1) A status ledger on `work_routing_map[]`
+  rows: `status` (enum `not_started` / `dispatched` / `in_progress` /
+  `done` / `blocked`, every row emitted `not_started` at blueprint time),
+  `status_updated_at` (nullable ISO-8601 timestamp, enforced by a new
+  `allOf`/`if`/`then` pair to be `null` exactly while `status` is
+  `not_started` and a real string once it leaves that state — this file
+  had no existing `if`/`then` conditional to imitate, only prose-documented
+  "required-in-spirit" conventions like `budget.token_ceiling`'s and
+  `query_layer_note`'s, so the mechanical form here is newly introduced,
+  not ported from an existing pattern), and optional `status_note` (names
+  the concrete reason for `blocked`, also usable for `done`). This is a
+  fresh, independent authoring of the status-ledger concept for this
+  schema — it is *not* a port of, and makes no compatibility claim against,
+  any `schema_version: "1.2"` status-field work on a sibling branch that
+  hasn't merged into this history. (2) `budget.warning_threshold_pct`: an
+  optional number in `(0, 1]`, default `0.7`, documented as the fraction of
+  `token_ceiling` at which the invoking session should warn a dispatched
+  sub-agent to course-correct before it blows its ceiling; omitting it
+  means "use the default of 0.7." Both additions land on the shared
+  `$defs.budget`/`$defs.routingMapRow` definitions only, so
+  `blueprint_rows[]` gains `warning_threshold_pct` too but not the status
+  fields, which are `work_routing_map[]`-only by design. `blueprint.example.json`
+  updated to `schema_version: "1.1"` with its `unit-1` row now carrying
+  `status: "done"`, a realistic `status_updated_at` timestamp, no
+  `status_note`, and `budget.warning_threshold_pct: 0.65`. Verified against
+  `scripts/validate_blueprint.py` and the full `tests/` suite, plus ad hoc
+  checks that the conditional actually rejects a `not_started` row with a
+  non-null timestamp, a non-`not_started` row with a null timestamp, and an
+  out-of-range `warning_threshold_pct`.
 - **`skills/model-right-sizer-prompt-tuning` + `eval/tuning/` — a discrete
   coordinate-ascent search over four wording knobs**, starting from the
   premise the ablation study below already established (all four layers

@@ -17,7 +17,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "1.0",
+      "const": "1.1",
       "description": "Bump alongside this file and the plugin CHANGELOG when the shape changes."
     },
     "mode": {
@@ -109,6 +109,13 @@
         "thinking_budget": {
           "type": ["string", "null"],
           "description": "e.g. '<=8k thinking'. Null only for a stage with no effort dial at all, or 0 token_ceiling."
+        },
+        "warning_threshold_pct": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "default": 0.7,
+          "description": "Fraction of token_ceiling at which the invoking session should warn the dispatched sub-agent to course-correct before it blows its ceiling. Optional -- omitting it means 'use the default of 0.7'."
         }
       }
     },
@@ -171,7 +178,17 @@
     "routingMapRow": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "build_unit", "pick", "budget", "handoff_schema_ref", "rationale"],
+      "required": [
+        "id",
+        "build_unit",
+        "pick",
+        "budget",
+        "handoff_schema_ref",
+        "rationale",
+        "status",
+        "status_updated_at"
+      ],
+      "description": "allOf/if/then below enforces the status_updated_at <-> status coupling: null exactly while status is 'not_started', a real timestamp string once it isn't -- the same conditional-requirement idiom as budget.token_ceiling's own 'required, never a null stand-in for unset' rule above, expressed mechanically instead of only in prose.",
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "build_unit": { "type": "string", "minLength": 1 },
@@ -182,8 +199,44 @@
         "pick": { "$ref": "#/$defs/pick" },
         "budget": { "$ref": "#/$defs/budget" },
         "handoff_schema_ref": { "type": "string", "minLength": 1 },
-        "rationale": { "type": "string", "minLength": 1 }
-      }
+        "rationale": { "type": "string", "minLength": 1 },
+        "status": {
+          "enum": ["not_started", "dispatched", "in_progress", "done", "blocked"],
+          "description": "Every row is emitted 'not_started' at blueprint time; the orchestrator updates it as dispatch proceeds."
+        },
+        "status_updated_at": {
+          "type": ["string", "null"],
+          "description": "ISO-8601 timestamp of the last status transition. Null while status is 'not_started'; required (non-null) once status leaves 'not_started' -- see this $def's own description for the enforcing allOf/if/then."
+        },
+        "status_note": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional. Names the concrete reason when status is 'blocked'; also available for 'done' at authoring discretion."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "const": "not_started" } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": { "status_updated_at": { "const": null } }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": { "enum": ["dispatched", "in_progress", "done", "blocked"] }
+            },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": { "status_updated_at": { "type": "string", "minLength": 1 } },
+            "required": ["status_updated_at"]
+          }
+        }
+      ]
     },
     "messageSchema": {
       "type": "object",
