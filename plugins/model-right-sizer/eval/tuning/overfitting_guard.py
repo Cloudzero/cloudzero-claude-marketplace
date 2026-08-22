@@ -72,6 +72,28 @@ HOLDOUT_TASKS = {
             "for a clean blind check again."
         ),
     },
+    "chief-of-staff-budget-enforcement": {
+        "intent": (
+            "Extend model-right-sizer's chief-of-staff role with token-budget "
+            "enforcement: a status ledger on work_routing_map[] rows, plus a "
+            "configurable-threshold (default 70%) warning sent into a "
+            "dispatched sub-agent's own next turn once its real spend "
+            "crosses that fraction of budget.token_ceiling."
+        ),
+        "real_outcome_doc": "results/2026-08-22-chief-of-staff-budget-guard-build.md",
+        "note": (
+            "Second held-out task, added fresh and genuinely uncontaminated "
+            "as of this entry -- unrelated to the repo-slack-channel task "
+            "above, and its real outcome doc did not exist at blueprint "
+            "time for any of its own six real dispatches (each ran before "
+            "this file did). Has six real {actual_tokens, budgeted_tokens} "
+            "pairs attached in its real_outcome_doc, not just one -- usable "
+            "for a multi-row blind-vs-calibrated check, not only a single "
+            "ratio. Will itself become contaminated the first time a "
+            "calibrated dry-run reads its results doc, same as the first "
+            "entry -- add a third before relying on this one twice."
+        ),
+    },
 }
 
 GENERALIZATION_VERDICTS = (
