@@ -508,9 +508,34 @@ combination can be proposed for merge — a calibrated-only win is
 `calibration_masked`, not a `genuine_win`. Pass 6's own blind check came back
 ambiguous (its verdict depends on a decomposition choice that differed from
 what was actually measured, not a flaw in the reasoning) — reported as such,
-not rounded up to a clean pass. The current best-known settings
+not rounded up to a clean pass.
+
+## Pass 7 — a real-actuals check against a second held-out task, blind vs. blind (2026-08-22)
+
+Building the chief-of-staff token-budget-enforcement feature itself (via the
+tuned blueprint's own real dispatches, never hand-authored) produced six
+real `{actual_tokens, budgeted_tokens}` pairs — added as
+`overfitting_guard.HOLDOUT_TASKS`' second entry. Pass 7 used it directly: two
+genuinely blind dry-runs (no calibration ledger, so no contamination
+possible on either side) against the exact same intent, one at
+`dispatch_floor_awareness=2` and one at a new level 3 diagnosed from the
+first run's worst miss (a `low-tool-turn`-classified schema edit gated
+behind a mandatory validate-then-fix loop, priced as if that loop were
+free). Result: `accuracy_rate` 0.167 → 0.333 (now matching the real build's
+own live-dispatch rate), `mean_loss` 0.448 → 0.256 — a real, uncontaminated
+improvement, though not a complete fix (one unit regressed, plausibly
+sampling noise; the targeted miss improved but didn't close). Full
+comparison: [`results/2026-08-22-pass7-blind-vs-chief-of-staff-actuals.md`](results/2026-08-22-pass7-blind-vs-chief-of-staff-actuals.md).
+`dispatch_floor_awareness=3` is adopted as the new current best-known level,
+replacing 2 — deliberately not pursued further on this same task this pass,
+per that write-up's own "adopt, don't chase" call: squeezing one held-out
+task's n=6 harder starts to look like the same overfitting risk this whole
+mechanism exists to catch.
+
+The current best-known settings
 (`budget_margin=-1, effort_tax=1, calibration_aggressiveness=1,
-calibration_decay=0, pass_b_feedback=1, dispatch_floor_awareness=2`) are
+calibration_decay=0, pass_b_feedback=1, dispatch_floor_awareness=3`) are
 carried forward as the working point but are **not yet proposed as a
 `*-final-winner.patch`** — per `overfitting_guard.REQUIRED_GATE_NOTE`, that
-requires a clean `genuine_win` first.
+requires a clean `genuine_win` first, and both held-out tasks have now been
+read more than once.

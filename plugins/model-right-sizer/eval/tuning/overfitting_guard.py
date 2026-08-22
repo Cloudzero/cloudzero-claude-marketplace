@@ -82,16 +82,21 @@ HOLDOUT_TASKS = {
         ),
         "real_outcome_doc": "results/2026-08-22-chief-of-staff-budget-guard-build.md",
         "note": (
-            "Second held-out task, added fresh and genuinely uncontaminated "
-            "as of this entry -- unrelated to the repo-slack-channel task "
-            "above, and its real outcome doc did not exist at blueprint "
-            "time for any of its own six real dispatches (each ran before "
-            "this file did). Has six real {actual_tokens, budgeted_tokens} "
+            "Second held-out task. Used twice already (pass 7's two blind "
+            "dry-runs at dispatch_floor_awareness=2 and =3, see "
+            "results/2026-08-22-pass7-blind-vs-chief-of-staff-actuals.md) -- "
+            "both reads were genuinely blind (calibration ledger access "
+            "withheld on both), so no calibration-masking contamination "
+            "happened, but this task's own n=6 has now been used to select "
+            "a knob level twice, which is its own overfitting risk if "
+            "pushed further. Has six real {actual_tokens, budgeted_tokens} "
             "pairs attached in its real_outcome_doc, not just one -- usable "
             "for a multi-row blind-vs-calibrated check, not only a single "
-            "ratio. Will itself become contaminated the first time a "
-            "calibrated dry-run reads its results doc, same as the first "
-            "entry -- add a third before relying on this one twice."
+            "ratio. Would still become contaminated in the calibrated sense "
+            "the first time a CALIBRATED dry-run reads its results doc, "
+            "same as the first entry -- add a third, fresh task before "
+            "either relying on this one for a calibrated check or tuning "
+            "against it a third time."
         ),
     },
 }

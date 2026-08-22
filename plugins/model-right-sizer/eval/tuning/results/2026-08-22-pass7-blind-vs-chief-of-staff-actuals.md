@@ -58,10 +58,59 @@ validate-then-fix loop is not the same size as an isolated text edit with
 nothing to check it against, and every validator/test rerun in that loop is
 a real tool call the ceiling must price in.
 
-Iteration 2 (same settings, `dispatch_floor_awareness: 2 → 3`, otherwise
-identical, same blind discipline, same intent) is in flight — see the next
-results file (or this one's own addendum, if run in the same pass) for the
-comparison.
+## Iteration 2 — `dispatch_floor_awareness: 2 → 3`, blind
+
+Same settings otherwise, same blind discipline (no calibration ledger, no
+`eval/tuning/results/` access), same intent, same six build-unit shapes.
+Because **both iterations were blind**, any difference between them is
+attributable to the wording change alone — this is a cleaner test than
+pass 6's calibrated-vs-blind check, with no calibration-lookup contamination
+possible on either side.
+
+| unit | iter 1 budget → class | iter 2 budget → class | real actual |
+|---|---|---|---:|
+| schema/example/changelog | 40,000 → `over_budget` (1.907) | 50,000 → `over_budget` (1.526) | 76,292 |
+| `budget_threshold.py` module | 50,000 → `over_budget` (1.139) | 65,000 → **`within_budget`** (0.876) | 56,932 |
+| threshold-warning agent-file section | 110,000 → `within_budget` (0.868) | 85,000 → **`over_budget`** (1.123) | 95,445 |
+| status-ledger agent-file section | 75,000 → `over_budget` (1.232) | 75,000 → `over_budget` (1.232) | 92,374 |
+| budget-guard skill | 65,000 → `over_budget` (1.603) | 110,000 → **`within_budget`** (0.947) | 104,219 |
+| test coverage | 55,000 → `over_budget` (1.810) | 60,000 → `over_budget` (1.659) | 99,532 |
+
+Aggregate: **`accuracy_rate = 0.333`** (2/6, up from 1/6), **`mean_loss =
+0.256`** (down from 0.448). This now matches the real build's own
+live-dispatch `accuracy_rate` (0.333) exactly, though `mean_loss` is still
+worse than the live picks' 0.208 — a genuine, measured improvement, not a
+complete fix.
+
+**Read this honestly, not hopefully**: this is a net win with a real cost.
+Two units improved into `within_budget` (the library module, the skill).
+One unit — the threshold-warning agent-file section — **regressed**, from
+`within_budget` to `over_budget` (its own budget dropped from 110,000 to
+85,000 despite being, if anything, the harder unit; most plausibly ordinary
+dry-run sampling variance on an n=1-per-iteration opus-tier estimate, the
+same category of noise pass 5 found in `calibration_decay`'s tier picks, not
+a causal effect of the wording change). The unit the level-3 fix specifically
+targeted (schema/changelog, still classified `low-tool-turn`) improved
+(1.907 → 1.526) but is **still** the single worst miss — the fix moved it in
+the right direction without closing it, suggesting the wording isn't yet
+being weighted strongly enough for this specific shape, or that a
+`low-tool-turn` unit gated behind a mandatory validate-then-fix loop needs a
+more concrete numeric anchor of its own rather than sharing the agentic
+worked example by reference. Status-ledger landed at the *identical* 75,000
+budget in both iterations — stable, but still `over_budget` either way.
+
+## Decision: adopt, don't chase further on this one task
+
+`dispatch_floor_awareness=3` becomes the new current best-known setting,
+replacing level 2 — a real, uncontaminated (blind-vs-blind) improvement on
+a genuinely fresh held-out task, matching the real build's own accuracy
+rate. Deliberately **not** pursuing a level 4 against this same task right
+now: two of the remaining four misses (schema/changelog, test-coverage) are
+real and worth another pass, but squeezing this exact n=6 task further,
+again, is close to the overfitting pattern this whole thread of work exists
+to guard against — the next move should be a *third*, still-fresh held-out
+task (this one is now doubly-read, per `overfitting_guard.HOLDOUT_TASKS`'
+own contamination note), not a fourth iteration on this one.
 
 ## Honest scope note
 
