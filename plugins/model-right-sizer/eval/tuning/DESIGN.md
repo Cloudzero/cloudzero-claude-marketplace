@@ -526,11 +526,33 @@ own live-dispatch rate), `mean_loss` 0.448 → 0.256 — a real, uncontaminated
 improvement, though not a complete fix (one unit regressed, plausibly
 sampling noise; the targeted miss improved but didn't close). Full
 comparison: [`results/2026-08-22-pass7-blind-vs-chief-of-staff-actuals.md`](results/2026-08-22-pass7-blind-vs-chief-of-staff-actuals.md).
-`dispatch_floor_awareness=3` is adopted as the new current best-known level,
-replacing 2 — deliberately not pursued further on this same task this pass,
-per that write-up's own "adopt, don't chase" call: squeezing one held-out
-task's n=6 harder starts to look like the same overfitting risk this whole
-mechanism exists to catch.
+`dispatch_floor_awareness=3` was adopted as the new current best-known
+level, replacing 2.
+
+**A third iteration (level 4) was then tried and rejected.** Asked to keep
+tuning toward a 90% target, a level 4 added a concrete calibrated range for
+the two shapes iteration 2's misses shared. Result: `accuracy_rate`
+regressed to 0.167 (mean_loss flat at 0.256) — the specifically-targeted
+unit did improve into `within_budget`, but two OTHER units that had been
+`within_budget` at level 3 flipped to `over_budget`, one by a large margin.
+Per `optimizer.select_best`'s own primary criterion, this is a straight
+rejection, not a mixed result to average away — level 4 stays in
+`knobs.py`'s registry as a tried-and-rejected data point (same discipline
+`calibration_decay`'s own history keeps), and **level 3 remains the current
+best-known level**. The more consequential finding from this iteration:
+two units swung by large margins with no wording change targeting either of
+them, suggesting single-draw sampling noise is roughly the same magnitude
+as the wording effects this loop is trying to detect — a real ceiling on
+how far single-draw-per-candidate blind tuning can reliably push
+`accuracy_rate` on this one task without averaging multiple draws per
+candidate first. Full three-iteration comparison and diagnosis:
+[`results/2026-08-22-pass7-blind-vs-chief-of-staff-actuals.md`](results/2026-08-22-pass7-blind-vs-chief-of-staff-actuals.md).
+
+Deliberately not pursuing a fourth single-draw iteration on this same task
+this pass, per that write-up's own call: squeezing one held-out task's n=6
+harder, on a signal already shown to be noise-dominated at this sample
+size, looks like the same overfitting risk this whole mechanism exists to
+catch, not further tuning.
 
 The current best-known settings
 (`budget_margin=-1, effort_tax=1, calibration_aggressiveness=1,

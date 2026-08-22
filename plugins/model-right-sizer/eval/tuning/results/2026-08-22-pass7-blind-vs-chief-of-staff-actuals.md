@@ -112,6 +112,70 @@ to guard against — the next move should be a *third*, still-fresh held-out
 task (this one is now doubly-read, per `overfitting_guard.HOLDOUT_TASKS`'
 own contamination note), not a fourth iteration on this one.
 
+## Iteration 3 — `dispatch_floor_awareness: 3 → 4`, blind — a regression, not a win
+
+Same discipline again. Level 4 added a concrete 70,000–100,000 range for
+two named shapes (a shared/cross-referenced file gated behind mandatory
+validation; a check requiring cross-referencing multiple already-landed
+artifacts), diagnosed directly from iteration 2's four remaining misses.
+
+| unit | iter 2 (level 3) | iter 3 (level 4) | real actual |
+|---|---|---|---:|
+| schema/example/changelog | 50,000 → `over_budget` (1.526) | 85,000 → **`within_budget`** (0.898) | 76,292 |
+| `budget_threshold.py` module | 65,000 → `within_budget` (0.876) | 42,000 → **`over_budget`** (1.356) | 56,932 |
+| threshold-warning agent-file section | 85,000 → `over_budget` (1.123) | 90,000 → `over_budget` (1.060) | 95,445 |
+| status-ledger agent-file section | 75,000 → `over_budget` (1.232) | 80,000 → `over_budget` (1.155) | 92,374 |
+| budget-guard skill | 110,000 → `within_budget` (0.947) | 58,000 → **`over_budget`** (1.797) | 104,219 |
+| test coverage | 60,000 → `over_budget` (1.659) | 85,000 → `over_budget` (1.171) | 99,532 |
+
+Aggregate: **`accuracy_rate = 0.167`** (1/6, down from 2/6), `mean_loss =
+0.256` (unchanged from iteration 2 to three decimal places — a coincidence,
+not evidence the two candidates are equivalent).
+
+**This is a real regression, reported as one, not talked around.** The
+schema/changelog unit — the miss level 4 was specifically diagnosed from —
+did improve into `within_budget` (0.898), confirming the diagnosis was
+directionally right for that one unit. But two units that were
+`within_budget` in iteration 2 flipped to `over_budget`, one of them badly
+(`budget-guard skill`: 110,000 → 58,000 budgeted, a huge drop, against a
+real actual of 104,219 that didn't move). Net effect: worse accuracy than
+the setting it was meant to improve on.
+
+**A plausible mechanism, held with appropriate uncertainty (n=1 per
+candidate, can't be confirmed from this data alone)**: level 4's fix names
+exactly TWO qualifying shapes with a concrete number range. That specificity
+may have read, to the model producing the blueprint, as an implicit
+boundary — "these two shapes get the bump, others don't" — rather than as
+two illustrative examples of a general principle. The two units that got
+cheaper (module, skill) don't cleanly match either named shape as literally
+described, even though the skill unit genuinely does cross-reference
+several already-landed artifacts (arguably shape #2) — enumerating
+concrete examples in a wording fix can narrow a model's generalization
+instead of widening it. This is a real, disclosable candidate mechanism,
+not a confirmed one.
+
+**Decision: reject level 4, revert current best-known settings to level 3.**
+`optimizer.select_best`'s own primary criterion (`accuracy_rate`) says this
+plainly — 0.167 loses to 0.333 regardless of the tied `mean_loss`. Per
+`overfitting_guard`'s spirit, a wording change that regresses the metric
+it was meant to improve gets rejected, not rationalized into a mixed
+result.
+
+**A more consequential finding than any single knob level: n=1 sampling
+noise appears to be roughly the same MAGNITUDE as the wording effects this
+loop is trying to detect.** Two units swung by large margins (module:
+65k→42k; skill: 110k→58k) between iterations where nothing in the wording
+specifically targeted either of them — this looks like ordinary dry-run
+sampling variance on individual row estimates, the same pattern pass 5 and
+pass 7's own iteration 2 both flagged for opus-tier picks, now visible on
+sonnet-tier picks too and large enough to flip classifications outright.
+Continuing single-draw-per-candidate iterations on this same task is not
+guaranteed to distinguish a real wording improvement from noise of this
+size — reaching a reliably higher accuracy_rate (nevermind ~90%) likely
+needs averaging multiple blind draws per candidate before scoring, which
+costs proportionally more dispatches per iteration, not another single-shot
+guess.
+
 ## Honest scope note
 
 This is a real-actuals check on n=6 within one task, not a benchmark sweep —
