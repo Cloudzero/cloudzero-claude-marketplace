@@ -248,6 +248,9 @@ def _contains_phrase(haystack: str, needle: str) -> bool:
     return bool(_find_positions(haystack, needle))
 
 
+_OUT_MARKER = re.compile(r"\*\*Out\*\*")
+
+
 def _field_restatement_segment(stamp: str, field_name: str, all_field_names) -> str:
     """The slice of the stamp that actually restates `field_name` -- from its
     own first mention up to whichever OTHER out_fields[] name is mentioned
@@ -261,9 +264,23 @@ def _field_restatement_segment(stamp: str, field_name: str, all_field_names) -> 
     every worked stamp in this repo already follows -- fields restated
     sequentially, each as its own clause -- which is exactly what lets "next
     field-name mention" stand in for "end of this field's clause" without a
-    full markdown parse."""
+    full markdown parse.
+
+    Greptile round 8: an **In** field and an **Out** field can share a name
+    (e.g. `evidence` appearing on both sides of a handoff). Searching the
+    whole stamp for "field_name's own first mention" found the **In**-section
+    occurrence when one existed, so the segment started and ended before the
+    real **Out**-section restatement was ever reached -- rejecting a
+    perfectly good stamp. Every worked stamp in this convention carries a
+    literal `**Out**` marker ahead of the `output.*` restatement (see
+    agent-schema-families.md's worked example and this repo's own
+    agent-schema.example.json), so search only from there onward. Degrades
+    to searching the whole stamp if the marker is missing, rather than
+    silently returning nothing."""
     normalized = _normalize(stamp)
-    own_positions = _find_positions(normalized, _normalize(field_name))
+    out_marker = _OUT_MARKER.search(normalized)
+    scoped = normalized[out_marker.start() :] if out_marker else normalized
+    own_positions = _find_positions(scoped, _normalize(field_name))
     if not own_positions:
         return ""  # field itself isn't mentioned at all -- already reported by the out_fields[].name check
     start = own_positions[0]
@@ -271,11 +288,11 @@ def _field_restatement_segment(stamp: str, field_name: str, all_field_names) -> 
         p
         for other in all_field_names
         if other != field_name
-        for p in _find_positions(normalized, _normalize(other))
+        for p in _find_positions(scoped, _normalize(other))
         if p > start
     ]
-    end = min(other_starts) if other_starts else len(normalized)
-    return normalized[start:end]
+    end = min(other_starts) if other_starts else len(scoped)
+    return scoped[start:end]
 
 
 def fail(msg: str) -> None:

@@ -313,6 +313,41 @@ def test_nested_member_mentioned_elsewhere_in_stamp_does_not_count_as_restated()
     assert any("findings" in e and "fix" in e and "does not restate" in e for e in errors)
 
 
+def test_shared_field_name_between_in_and_out_sections_does_not_truncate_segment():
+    """Greptile issue (round 8): a field name can be shared between the
+    **In** and **Out** sections of a stamp (e.g. `evidence` naming both the
+    raw-evidence reference the agent receives and the typed evidence array
+    it returns). Searching the WHOLE stamp for the field's own first mention
+    found the **In**-section occurrence, so the segment ended before the
+    real **Out**-section restatement was ever reached -- rejecting a
+    perfectly valid, fully-restated stamp. The fix scopes the search to
+    start at the `**Out**` marker."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["family"]["id"] = "graded-claim"
+    instance["family"]["is_new_family"] = False
+    instance["out_fields"] = [
+        {"name": "subject", "type": "string"},
+        {"name": "grade", "type": "object", "description": "{score, confidence}"},
+        {"name": "evidence", "type": "array", "description": "[{source_ref, quote, stance}]"},
+        {"name": "counter_case", "type": "string"},
+    ]
+    instance["exclude"] = ["full transcripts behind source_ref"]
+    instance["prose_field"] = None
+    instance["stamp_markdown"] = (
+        "## Agent-to-agent schema\n\n"
+        "**In** -- `evidence: state_key` (a reference to the raw evidence, never inlined) · `budget_tokens: int`\n\n"
+        "**Out** -- the `{status, output, error}` envelope; `output.*`:\n"
+        "`subject: string` · `grade: {score: number, confidence: enum[high, medium, low]}` · "
+        "`evidence: [{source_ref, quote, stance}]` · `counter_case: string`\n\n"
+        "**Never inline:** full transcripts behind source_ref.\n\n"
+        "You return ONLY this schema."
+    )
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors == []
+
+
 def test_removed_entry_missing_proof_is_rejected():
     """Same class as above, for action-log: 'never a removed entry without proof'."""
     instance = copy.deepcopy(EXAMPLE)
