@@ -69,11 +69,21 @@ remaining_budget_pct(91_376, 96_512)   -> 0.0532 (5.3% remaining)
 Threshold crossed again, harder — but the unit's work was already complete
 (tests written, suite green, validators clean) with no legitimate follow-up
 task remaining. **No warning was injected here**, and that's the correct
-call, not a gap: this is `eval/budget_threshold.py`'s own documented
-limitation showing up in practice — "no confirmed live mid-turn token-spend
-signal exists," so a crossing discovered only at turn-completion, on a turn
-that was already the unit's last one, has nothing left to warn *into*. The
-mechanism is only actionable when a next turn genuinely exists.
+call, not a gap: this is the documented limitation from
+`model-right-sizer-budget-guard`'s own SKILL.md step 5 showing up in
+practice — its author checked, rather than assumed, whether a live mid-turn
+spend signal exists on this session's dispatch tools and found none, so a
+crossing discovered only at turn-completion, on a turn that was already the
+unit's last one, has nothing left to warn *into*. The mechanism is only
+actionable when a next turn genuinely exists.
+
+(Correction, applied during the sequel blog post's review: the original
+draft of this section attributed the "no confirmed live mid-turn signal"
+finding to `eval/budget_threshold.py`'s own docstring. That module's
+docstring actually describes the check it implements, not the absence of a
+live signal — the finding and its "checked, rather than assumed" framing
+live in the `model-right-sizer-budget-guard` skill instead. Fixed here for
+accuracy.)
 
 ## A real, new finding this test surfaced, not invented to fill the report
 
