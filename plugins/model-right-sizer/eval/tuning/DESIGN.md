@@ -455,3 +455,24 @@ role for the wording. `select_best`'s own "Less is More" tiebreak correctly decl
 on a tie. `calibration_decay` stays at level 0 in the current best-known settings. This is a
 second, deliberately better-targeted negative result, not just an absence of a win yet — and
 it's disclosed as such rather than quietly dropped.
+
+## Novel-use-case validation (2026-08-22)
+
+Everything above tunes and scores against this benchmark's own synthetic `t1`–`t6` tasks. A
+separate check asked whether the settled settings generalize past that benchmark at all: the
+tuned variant (`budget_margin=-1, effort_tax=1, calibration_aggressiveness=1,
+calibration_decay=0, pass_b_feedback=1`) was dry-run against a genuinely novel, real intent
+(the "Repo Slack Channel Routing" design) and then one of its own recommended units
+(`unit-channel-setup`, sonnet tier, 15,000-token budget) was actually dispatched for real.
+
+Result: **`over_budget` by ~2.8x** (raw=82,715, sonnet zero-tool floor=40,669, net=42,046,
+ratio=2.803). Full write-up, including the dry-run's own routing table and the honest n=1
+scope caveat:
+[`results/2026-08-22-novel-use-case-validation.md`](results/2026-08-22-novel-use-case-validation.md).
+This does not undo the on-benchmark pass 3–4 findings (`budget_margin`/`effort_tax` are still
+this benchmark's best-known settings), but it is evidence that budgets tuned against
+single-shot/low-tool-turn synthetic tasks don't reliably transfer to real multi-tool-call,
+content-generation-heavy work — the same shape of miss as `t1`'s exclusion and `t4`'s
+decomposition explosion, on the budget-magnitude axis instead of the decomposition axis. The
+skill built from this test — and its own documentation of this gap — lives at
+[`../../skills/repo-slack-channel/SKILL.md`](../../skills/repo-slack-channel/SKILL.md).
