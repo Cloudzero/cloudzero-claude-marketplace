@@ -620,3 +620,26 @@ def test_averaged_model_still_fails_on_the_second_held_out_task():
         "passing here, its capacity-ceiling proof (weight-gradient-descent.md) needs "
         "re-examining, not this test loosened."
     )
+
+
+def test_formula_version_is_published_and_documented():
+    # v1.0.0 (2026-08-22) is this module's first formally published
+    # version -- its exact configuration and a ranked gap list live in a
+    # dated release report. This test only checks the marker exists and
+    # points somewhere real; it is not a re-check of the release's content
+    # (that's what the other tests in this file already cover).
+    assert tcf.FORMULA_VERSION == "1.0.0"
+    release_doc = (
+        Path(__file__).resolve().parent.parent.parent
+        / "plugins"
+        / "model-right-sizer"
+        / "eval"
+        / "tuning"
+        / "results"
+        / "2026-08-22-token-ceiling-formula-v1.0.0-release.md"
+    )
+    assert release_doc.is_file(), (
+        f"FORMULA_VERSION={tcf.FORMULA_VERSION!r} but its release report is missing at "
+        f"{release_doc} -- a bumped version with no dated release report is exactly the "
+        "undocumented-change failure mode this test exists to catch."
+    )

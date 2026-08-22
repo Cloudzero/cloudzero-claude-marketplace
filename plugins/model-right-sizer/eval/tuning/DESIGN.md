@@ -949,3 +949,31 @@ correlation-direction tests use their own dataset, kept separate from the
 first task's, specifically so the non-replication can't be silently
 averaged away in a shared fixture) and a third `HOLDOUT_TASKS` entry in
 `overfitting_guard.py`.
+
+## Publishing `token_ceiling_formula.py` v1.0.0 (2026-08-22)
+
+Declared "a satisfactory state" and published as this module's first
+formal version -- `FORMULA_VERSION = "1.0.0"`, a version marker
+independent of the plugin-wide version and each skill's own, scoped
+specifically to the signal set and calibration constants. Publishing
+means: the exact current configuration (six signals; the additive formula
+preferred; three signals at nonzero default weight, three at `0.0` --
+two tested-and-rejected, one tested-twice-with-a-split-result) is now a
+named, referenceable point, not just "whatever the file currently says."
+
+The release report is written explicitly for future contributors, not
+just as a snapshot -- it ranks six concrete gaps/opportunities by
+expected value rather than listing them flat: **haiku-tier calibration is
+the single highest-value next experiment** (every real finding that
+touches haiku this pass points the same direction -- the one additive-
+formula miss, and real search overhead on its own near-zero anchor task),
+followed by resolving `investigative_uncertainty`'s inconclusive split
+result against a genuine finder/discovery-archetype unit (never yet
+tested), strengthening `ADDITIVE_TOTAL_SPAN`'s one-task confirmation,
+the two never-tested candidate signals, the layer-ablation sweep's small
+n and `t4`'s missing bounded real-execution target, and reconciling the
+two now-coexisting "zero-tool floor" measurements (`DISPATCH_FLOORS` vs.
+this pass's own `Agent`-tool floor). Also states explicitly what's
+settled and should NOT be re-relitigated (the two rejected signals, the
+averaged model's proven capacity ceiling, sonnet's calibration). Full
+report: [`results/2026-08-22-token-ceiling-formula-v1.0.0-release.md`](results/2026-08-22-token-ceiling-formula-v1.0.0-release.md).

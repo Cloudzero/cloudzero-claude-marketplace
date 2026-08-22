@@ -5,6 +5,13 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 ## Unreleased
 
 ### Added
+- **`eval/token_ceiling_formula.py` published as `FORMULA_VERSION = "1.0.0"`**
+  — this module's first formal version, tracking the signal set and
+  calibration constants independently of the plugin-wide version and each
+  skill's own. Full release report, including a ranked list of gaps and
+  opportunities for future contributors (haiku-tier calibration is the
+  top-ranked one):
+  `eval/tuning/results/2026-08-22-token-ceiling-formula-v1.0.0-release.md`.
 - **`skills/model-right-sizer-signal-validation`** — a new companion skill
   codifying the blind multi-draw + correlation methodology this pass used
   to test `validation_loop_iterations`, `context_ingestion_volume`, and

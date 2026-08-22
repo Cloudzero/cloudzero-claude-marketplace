@@ -4,6 +4,12 @@
 """Deterministic `token_ceiling` computation from bounded [0.0, 1.0] signals,
 instead of asking an LLM to free-hand a raw integer.
 
+**Versioned as of 2026-08-22** -- see `FORMULA_VERSION` below and
+`tuning/results/2026-08-22-token-ceiling-formula-v1.0.0-release.md` for
+v1.0.0's exact published configuration, plus a ranked list of gaps and
+opportunities for whoever picks this up next (haiku-tier calibration is
+the single highest-value next experiment).
+
 ## Why this exists
 
 `eval/tuning/`'s holdout-tuning passes (see
@@ -147,6 +153,7 @@ another pass over this one.
 from __future__ import annotations
 
 __all__ = [
+    "FORMULA_VERSION",
     "DISPATCH_FLOORS",
     "REAL_WORK_SPAN",
     "CALIBRATION_STATUS",
@@ -157,6 +164,24 @@ __all__ = [
     "compute_real_work_additive",
     "compute_token_ceiling_additive",
 ]
+
+# This module's own version, independent of the plugin-wide version in
+# `.claude-plugin/plugin.json` and of each skill's own `version:` frontmatter
+# -- this one tracks changes to the SIGNAL SET and CALIBRATION CONSTANTS
+# specifically (which signals exist, their default weights, DISPATCH_FLOORS/
+# REAL_WORK_SPAN/ADDITIVE_TOTAL_SPAN's actual numbers), since those are what
+# a future contributor needs to know changed, separately from prose/wording
+# changes elsewhere in this file. Bump policy: PATCH for a calibration
+# constant re-measured with more data but no shape change (e.g. a
+# CALIBRATION_STATUS n-count going up); MINOR for a signal's default weight
+# changing, or a new signal added at weight 0.0; MAJOR for a signal being
+# removed, an existing nonzero weight changing what it multiplies, or the
+# preferred formula (`compute_token_ceiling_additive` vs.
+# `compute_token_ceiling`) switching. Full rationale for each version lives
+# in a dated `tuning/results/*-release.md` file, not just in this comment --
+# see `tuning/results/2026-08-22-token-ceiling-formula-v1.0.0-release.md`
+# for v1.0.0's own.
+FORMULA_VERSION = "1.0.0"
 
 # Zero-tool-call dispatch floors, per model tier -- see
 # `tuning/DESIGN.md`'s "Measurement redesign" section (haiku, sonnet: 5 and
