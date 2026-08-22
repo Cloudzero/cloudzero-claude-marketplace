@@ -172,3 +172,7 @@ Cargo.lock
 .idea/
 *.sublime-project
 *.sublime-workspace
+
+# Ephemeral session-handoff KT docs (see project-xdp-tools skills/session-handoff) —
+# self-deleting knowledge-transfer notes for a successor session, never committed.
+KT-*.md
