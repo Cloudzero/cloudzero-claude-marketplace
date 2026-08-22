@@ -140,6 +140,35 @@ KNOBS = {
                 "60,000–90,000 range for a full agentic sonnet-tier "
                 "dispatch, not a few thousand; `handoff_schema_ref`"
             ),
+            3: (
+                "`token_ceiling` is `0`); before finalizing that integer, add "
+                "the real dispatch floor for the chosen tier — a "
+                "tool-capable sub-agent dispatch carries a near-fixed "
+                "overhead on the order of 20,000–45,000 tokens before any "
+                "task-specific content exists (higher for tool-heavy "
+                "tiers) — then scale the real-work term by the row's "
+                "expected tool-call count and expected generated-content "
+                "volume: a row that will make several tool calls and draft "
+                "substantial original content is not a small-ceiling task "
+                "even when its loop-class reads `low-tool-turn`. "
+                "**`low-tool-turn` lowers the down-pin bar, not the "
+                "pricing bar**: a genuinely bounded, mechanical edit still "
+                "has to be re-validated — re-running a schema validator, "
+                "re-running the test suite, fixing whatever either turns "
+                "up — and every one of those is a real tool call the "
+                "ceiling must price in, not a free afterthought bolted "
+                "onto an editor's turn; a one-file schema edit gated behind "
+                "a project's own required validation commands is not the "
+                "same size as an isolated text edit with nothing to check "
+                "it against. Example: a unit expected to make 5–10 tool "
+                "calls and draft several hundred words of original content "
+                "should land in the 60,000–90,000 range for a full agentic "
+                "sonnet-tier dispatch, not a few thousand — and a "
+                "`low-tool-turn` unit gated behind a mandatory "
+                "validate-then-fix loop should still price in that loop's "
+                "own tool calls, not just the edit itself; "
+                "`handoff_schema_ref`"
+            ),
         },
     },
     "effort_tax": {
