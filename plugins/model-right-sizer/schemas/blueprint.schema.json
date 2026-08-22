@@ -17,8 +17,8 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "1.1",
-      "description": "Bump alongside this file and the plugin CHANGELOG when the shape changes."
+      "const": "1.2",
+      "description": "Bump alongside this file and the plugin CHANGELOG when the shape changes. 1.2 is a fresh, independent addition of budget.real_work_signals (see $defs.budget) -- it makes no compatibility claim against any other schema_version 1.2 work on a sibling branch that hasn't merged into this history, the same disclaimer 1.1's own status-ledger addition carried."
     },
     "mode": {
       "enum": ["dry_run", "live_blueprint"],
@@ -95,17 +95,52 @@
         "why_not_tier_below": { "type": "string" }
       }
     },
+    "realWorkSignal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "reason"],
+      "properties": {
+        "value": { "type": "number", "minimum": 0, "maximum": 1 },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "One clause. Never a bare number -- same discipline as $defs.score."
+        }
+      }
+    },
+    "realWorkSignals": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The bounded [0.0, 1.0] inputs to eval/token_ceiling_formula.py's compute_token_ceiling()/compute_token_ceiling_additive() -- CODE derives token_ceiling from these, the agent never free-hands the integer. All six are rated on every row this applies to (see budget's own required-when rule below), even the three whose current default WEIGHT in the formula is 0.0 -- rating them anyway is how real calibration data for those signals gets collected for a future validation pass, per tuning/results/2026-08-22-signal-candidates-by-subagent-archetype.md. See that module's docstring for each signal's exact definition and 0.0/1.0 anchors.",
+      "required": [
+        "tool_call_volume",
+        "content_volume",
+        "cross_reference_load",
+        "validation_loop_iterations",
+        "context_ingestion_volume",
+        "investigative_uncertainty"
+      ],
+      "properties": {
+        "tool_call_volume": { "$ref": "#/$defs/realWorkSignal" },
+        "content_volume": { "$ref": "#/$defs/realWorkSignal" },
+        "cross_reference_load": { "$ref": "#/$defs/realWorkSignal" },
+        "validation_loop_iterations": { "$ref": "#/$defs/realWorkSignal" },
+        "context_ingestion_volume": { "$ref": "#/$defs/realWorkSignal" },
+        "investigative_uncertainty": { "$ref": "#/$defs/realWorkSignal" }
+      }
+    },
     "budget": {
       "type": "object",
       "additionalProperties": false,
       "required": ["token_ceiling"],
-      "description": "token_ceiling is always required and always an actual integer, never null or omitted -- use 0 for a row that spends no model tokens at all (e.g. routed entirely through a deterministic query layer). This is what keeps 'budget: {}' or 'budget: {token_ceiling: null}' from satisfying the schema despite Pass A's 'not a vibe' requirement.",
+      "description": "token_ceiling is always required and always an actual integer, never null or omitted -- use 0 for a row that spends no model tokens at all (e.g. routed entirely through a deterministic query layer). This is what keeps 'budget: {}' or 'budget: {token_ceiling: null}' from satisfying the schema despite Pass A's 'not a vibe' requirement. real_work_signals is required whenever token_ceiling is nonzero (the allOf below) -- a real model dispatch derives its ceiling from rated signals plus eval/token_ceiling_formula.py, it does not free-hand the integer; only a token_ceiling: 0 row (nothing dispatched to a model) may omit it.",
       "properties": {
         "token_ceiling": {
           "type": "integer",
           "minimum": 0,
           "description": "0 means explicitly zero model tokens (not 'unspecified')."
         },
+        "real_work_signals": { "$ref": "#/$defs/realWorkSignals" },
         "thinking_budget": {
           "type": ["string", "null"],
           "description": "e.g. '<=8k thinking'. Null only for a stage with no effort dial at all, or 0 token_ceiling."
@@ -117,7 +152,16 @@
           "default": 0.7,
           "description": "Fraction of token_ceiling at which the invoking session should warn the dispatched sub-agent to course-correct before it blows its ceiling. Optional -- omitting it means 'use the default of 0.7'."
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "token_ceiling": { "type": "integer", "exclusiveMinimum": 0 } },
+            "required": ["token_ceiling"]
+          },
+          "then": { "required": ["real_work_signals"] }
+        }
+      ]
     },
     "blueprintRow": {
       "type": "object",

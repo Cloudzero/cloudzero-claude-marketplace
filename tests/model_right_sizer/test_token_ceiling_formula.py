@@ -37,7 +37,7 @@ def test_real_work_scale_is_the_equal_weighted_average_by_default():
 
 def test_real_work_scale_respects_custom_weights():
     # All weight on cross_reference_load -- the other inputs shouldn't matter.
-    scale = tcf.compute_real_work_scale(1.0, 1.0, 0.25, weights=(0.0, 0.0, 1.0, 0.0))
+    scale = tcf.compute_real_work_scale(1.0, 1.0, 0.25, weights=(0.0, 0.0, 1.0, 0.0, 0.0, 0.0))
     assert scale == pytest.approx(0.25)
 
 
@@ -51,28 +51,43 @@ def test_real_work_scale_validation_loop_iterations_defaults_to_zero_weight():
     assert without == pytest.approx(with_new_signal)
 
 
+def test_real_work_scale_context_ingestion_volume_defaults_to_zero_weight():
+    # Same contract as validation_loop_iterations, for the same reason --
+    # context_ingestion_volume is untested (not yet even a rejected
+    # candidate), so its default weight must not silently move the scale.
+    without = tcf.compute_real_work_scale(0.4, 0.6, 0.8)
+    with_new_signal = tcf.compute_real_work_scale(0.4, 0.6, 0.8, 0.0, 1.0)
+    assert without == pytest.approx(with_new_signal)
+
+
+def test_real_work_scale_investigative_uncertainty_defaults_to_zero_weight():
+    without = tcf.compute_real_work_scale(0.4, 0.6, 0.8)
+    with_new_signal = tcf.compute_real_work_scale(0.4, 0.6, 0.8, 0.0, 0.0, 1.0)
+    assert without == pytest.approx(with_new_signal)
+
+
 @pytest.mark.parametrize("bad_value", [-0.01, 1.01, -1.0, 2.0])
-@pytest.mark.parametrize("position", [0, 1, 2, 3])
+@pytest.mark.parametrize("position", [0, 1, 2, 3, 4, 5])
 def test_real_work_scale_rejects_out_of_range_inputs(bad_value, position):
-    args = [0.5, 0.5, 0.5, 0.5]
+    args = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
     args[position] = bad_value
     with pytest.raises(ValueError, match=r"must be in \[0\.0, 1\.0\]"):
         tcf.compute_real_work_scale(*args)
 
 
 def test_real_work_scale_rejects_wrong_number_of_weights():
-    with pytest.raises(ValueError, match="exactly 4"):
+    with pytest.raises(ValueError, match="exactly 6"):
         tcf.compute_real_work_scale(0.5, 0.5, 0.5, weights=(1.0, 1.0))
 
 
 def test_real_work_scale_rejects_negative_weights():
     with pytest.raises(ValueError, match="non-negative"):
-        tcf.compute_real_work_scale(0.5, 0.5, 0.5, weights=(-1.0, 1.0, 1.0, 1.0))
+        tcf.compute_real_work_scale(0.5, 0.5, 0.5, weights=(-1.0, 1.0, 1.0, 1.0, 1.0, 1.0))
 
 
 def test_real_work_scale_rejects_all_zero_weights():
     with pytest.raises(ValueError, match="not all be zero"):
-        tcf.compute_real_work_scale(0.5, 0.5, 0.5, weights=(0.0, 0.0, 0.0, 0.0))
+        tcf.compute_real_work_scale(0.5, 0.5, 0.5, weights=(0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
 
 
 # ---------------------------------------------------------------------------
@@ -193,6 +208,15 @@ def test_additive_token_ceiling_unknown_tier_raises():
         tcf.compute_token_ceiling_additive("claude-made-up-model", 0.5, 0.5, 0.5)
 
 
+def test_additive_real_work_new_signals_default_to_zero_weight():
+    # context_ingestion_volume and investigative_uncertainty must not move
+    # the additive sum by default -- same contract as
+    # validation_loop_iterations, extended to the two untested signals.
+    without = tcf.compute_real_work_additive(0.4, 0.6, 0.8)
+    with_both_new_signals = tcf.compute_real_work_additive(0.4, 0.6, 0.8, 0.0, 1.0, 1.0)
+    assert without == pytest.approx(with_both_new_signals)
+
+
 def test_additive_calibration_status_says_unvalidated():
     # This is the honesty check for the additive model, mirroring
     # test_sonnet_is_the_only_tier_marked_measured for the averaged one --
@@ -270,9 +294,9 @@ def test_gradient_descended_weights_do_not_beat_uniform_weights():
     # whether per-signal differentiation helps.
     raw_gd_weights = (0.9287, 0.8846, 0.9004)
     mean_w = sum(raw_gd_weights) / 3
-    normalized_gd_weights = tuple(w / mean_w for w in raw_gd_weights) + (0.0,)
+    normalized_gd_weights = tuple(w / mean_w for w in raw_gd_weights) + (0.0, 0.0, 0.0)
 
-    uniform_accuracy = additive_accuracy((1.0, 1.0, 1.0, 0.0))
+    uniform_accuracy = additive_accuracy((1.0, 1.0, 1.0, 0.0, 0.0, 0.0))
     gradient_descended_accuracy = additive_accuracy(normalized_gd_weights)
     # Within 2 examples out of 18 -- gradient descent DOES nudge one more
     # example into within_budget (18/18 vs uniform's 17/18), a real if

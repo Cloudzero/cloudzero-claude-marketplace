@@ -30,7 +30,7 @@ removing free-hand arithmetic and content-size guessing from the LLM's job
 entirely, the same way `budget_threshold.py` moved the threshold-crossing
 CHECK out of the LLM's job and into deterministic code.
 
-## The four input signals
+## The six input signals
 
 - `tool_call_volume` — how many real tool calls (search, edit, re-run a
   validator, re-run tests) this unit will plausibly make. 0.0 = a single
@@ -66,6 +66,39 @@ CHECK out of the LLM's job and into deterministic code.
   reasons this signal doesn't capture, so it adds noise more often than it
   adds explanatory power. Do not give it a nonzero default weight without
   new evidence.
+- `context_ingestion_volume` — how much *pre-existing* material (a file, a
+  diff, a prior handoff) this unit must read and hold in context before
+  producing anything, independent of whether it must stay *consistent*
+  with that material. 0.0 = works from a short prompt with no meaningful
+  pre-existing material to ingest; 1.0 = must read and hold a large body
+  of existing content before acting at all. Distinct from
+  `cross_reference_load`: that signal asks whether the OUTPUT must stay
+  faithful to other artifacts; this one asks how much must be READ first,
+  full stop -- a review unit reading a 2,000-line diff to write a 10-line
+  verdict scores high here and near-zero on `cross_reference_load` (there
+  is nothing downstream to stay consistent with). Added 2026-08-22 from
+  the archetype breakdown in
+  `tuning/results/2026-08-22-signal-candidates-by-subagent-archetype.md`,
+  most load-bearing for review/QA units and build units editing inside
+  large pre-existing files. **Defaults to weight `0.0`** -- unlike
+  `validation_loop_iterations`, this signal has not yet been TESTED at
+  all (no rating experiment run against it), so the zero default reflects
+  "unproven," not "tested and found wanting" -- don't conflate the two
+  when reading this module's calibration status.
+- `investigative_uncertainty` — whether this unit's tool-call sequence is
+  searching for something whose existence or shape isn't known going in
+  (open-ended research, "does X exist -- if so, what shape") vs. executing
+  an already-fully-specified sequence of calls. 0.0 = every tool call's
+  target is already known before dispatch; 1.0 = genuinely open-ended
+  search where most calls are exploratory and some will be dead ends.
+  Distinct from `tool_call_volume`: that signal scores HOW MANY calls;
+  this scores how likely each call is to be a productive step vs. a dead
+  end -- two finder units can share a `tool_call_volume` rating while one
+  converges exactly on target and the other burns half its calls on blind
+  alleys. Added 2026-08-22 alongside `context_ingestion_volume`, most
+  load-bearing for finder/discovery units and the exploratory phase of
+  synthesis/judge units. **Defaults to weight `0.0`**, likewise unproven
+  rather than tested-and-rejected.
 
 These map directly onto the causal drivers `dispatch_floor_awareness`
 (see `tuning/knobs.py`) named from real-dispatch evidence but could only
@@ -158,37 +191,57 @@ CALIBRATION_STATUS = {
 }
 
 
+# Canonical signal order shared by every function below -- a single place
+# to add a 7th signal later instead of six call sites drifting out of sync.
+SIGNAL_NAMES = (
+    "tool_call_volume",
+    "content_volume",
+    "cross_reference_load",
+    "validation_loop_iterations",
+    "context_ingestion_volume",
+    "investigative_uncertainty",
+)
+
+
 def compute_real_work_scale(
     tool_call_volume: float,
     content_volume: float,
     cross_reference_load: float,
     validation_loop_iterations: float = 0.0,
+    context_ingestion_volume: float = 0.0,
+    investigative_uncertainty: float = 0.0,
     *,
-    weights: tuple[float, float, float, float] = (1 / 3, 1 / 3, 1 / 3, 0.0),
+    weights: tuple[float, float, float, float, float, float] = (1 / 3, 1 / 3, 1 / 3, 0.0, 0.0, 0.0),
 ) -> float:
-    """Combine the four bounded signals into one [0.0, 1.0] real-work scale
+    """Combine the six bounded signals into one [0.0, 1.0] real-work scale
     via a weighted average. Each input and each weight-adjusted combination
     is validated to stay in [0.0, 1.0] -- callers should adjust `weights`
     only with a stated reason (e.g. a task-shape where cross-referencing
-    dominates), never silently. `validation_loop_iterations` defaults to
-    `0.0` so an existing caller passing only the first three positional
-    args keeps its prior behavior exactly."""
-    for name, value in (
-        ("tool_call_volume", tool_call_volume),
-        ("content_volume", content_volume),
-        ("cross_reference_load", cross_reference_load),
-        ("validation_loop_iterations", validation_loop_iterations),
-    ):
+    dominates), never silently. The last three signals default to `0.0`
+    (both value and weight) so an existing caller passing only the first
+    three or four positional args keeps its prior behavior exactly --
+    `context_ingestion_volume` and `investigative_uncertainty` are UNTESTED
+    candidates (see this module's docstring), not yet earning a nonzero
+    default weight the way `validation_loop_iterations` was tested and
+    rejected for one."""
+    signals = (
+        tool_call_volume,
+        content_volume,
+        cross_reference_load,
+        validation_loop_iterations,
+        context_ingestion_volume,
+        investigative_uncertainty,
+    )
+    for name, value in zip(SIGNAL_NAMES, signals):
         if not 0.0 <= value <= 1.0:
             raise ValueError(f"{name} must be in [0.0, 1.0], got {value!r}")
-    if len(weights) != 4:
-        raise ValueError(f"weights must have exactly 4 entries, got {len(weights)}")
+    if len(weights) != 6:
+        raise ValueError(f"weights must have exactly 6 entries, got {len(weights)}")
     if any(w < 0 for w in weights):
         raise ValueError(f"weights must be non-negative, got {weights!r}")
     total_weight = sum(weights)
     if total_weight == 0:
         raise ValueError("weights must not all be zero")
-    signals = (tool_call_volume, content_volume, cross_reference_load, validation_loop_iterations)
     scale = sum(s * w for s, w in zip(signals, weights)) / total_weight
     # Guard against float drift pushing a legitimate boundary case (e.g.
     # every input and weight at 1.0) a hair outside [0.0, 1.0].
@@ -201,8 +254,10 @@ def compute_token_ceiling(
     content_volume: float,
     cross_reference_load: float,
     validation_loop_iterations: float = 0.0,
+    context_ingestion_volume: float = 0.0,
+    investigative_uncertainty: float = 0.0,
     *,
-    weights: tuple[float, float, float, float] = (1 / 3, 1 / 3, 1 / 3, 0.0),
+    weights: tuple[float, float, float, float, float, float] = (1 / 3, 1 / 3, 1 / 3, 0.0, 0.0, 0.0),
 ) -> int:
     """`token_ceiling = dispatch_floor(tier) + real_work_span(tier) *
     real_work_scale`. The one function a blueprint's Pass A budget bullet
@@ -215,7 +270,13 @@ def compute_token_ceiling(
     if tier not in DISPATCH_FLOORS:
         raise ValueError(f"Unknown tier {tier!r} -- must be one of {sorted(DISPATCH_FLOORS)}")
     scale = compute_real_work_scale(
-        tool_call_volume, content_volume, cross_reference_load, validation_loop_iterations, weights=weights
+        tool_call_volume,
+        content_volume,
+        cross_reference_load,
+        validation_loop_iterations,
+        context_ingestion_volume,
+        investigative_uncertainty,
+        weights=weights,
     )
     return round(DISPATCH_FLOORS[tier] + REAL_WORK_SPAN[tier] * scale)
 
@@ -267,36 +328,43 @@ def compute_real_work_additive(
     content_volume: float,
     cross_reference_load: float,
     validation_loop_iterations: float = 0.0,
+    context_ingestion_volume: float = 0.0,
+    investigative_uncertainty: float = 0.0,
     *,
-    weights: tuple[float, float, float, float] = (1.0, 1.0, 1.0, 0.0),
+    weights: tuple[float, float, float, float, float, float] = (1.0, 1.0, 1.0, 0.0, 0.0, 0.0),
 ) -> float:
-    """Sum (not average) of the four weighted signals -- deliberately NOT
+    """Sum (not average) of the six weighted signals -- deliberately NOT
     bounded to [0.0, 1.0]; ranges from 0 to `sum(weights)`. This is the
     structural fix `compute_real_work_scale`'s normalization was missing:
     real work costs from independent axes (tool calls, content, cross-
-    referencing, validation iterations) are additive, not a severity rating
-    to average. `validation_loop_iterations`' default WEIGHT is `0.0`, not
-    `1.0` like the other three -- `ADDITIVE_TOTAL_SPAN` was fit before this
-    signal existed, so giving it a nonzero default would silently shift
-    every existing prediction with no data behind the shift, AND a fresh
-    rating experiment found it dilutes rather than helps at equal weight
-    (see `tuning/results/2026-08-22-validation-loop-iterations-signal.md`).
-    See this module's `ADDITIVE_CALIBRATION_STATUS` before trusting any
-    result, and that same results file before giving this signal a
-    nonzero weight."""
-    for name, value in (
-        ("tool_call_volume", tool_call_volume),
-        ("content_volume", content_volume),
-        ("cross_reference_load", cross_reference_load),
-        ("validation_loop_iterations", validation_loop_iterations),
-    ):
+    referencing, validation iterations, context ingestion, investigative
+    uncertainty) are additive, not a severity rating to average. The last
+    three signals' default WEIGHT is `0.0`, not `1.0` like the first three
+    -- `ADDITIVE_TOTAL_SPAN` was fit before any of them existed, so giving
+    one a nonzero default would silently shift every existing prediction
+    with no data behind the shift. `validation_loop_iterations` earned its
+    zero through an actual experiment that found it dilutes rather than
+    helps (see `tuning/results/2026-08-22-validation-loop-iterations-signal.md`);
+    `context_ingestion_volume` and `investigative_uncertainty` are simply
+    UNTESTED -- their zero is "unproven," not "tested and rejected." See
+    this module's `ADDITIVE_CALIBRATION_STATUS` before trusting any result
+    at all, and don't give any of the last three signals a nonzero default
+    weight without a dedicated rating experiment first."""
+    signals = (
+        tool_call_volume,
+        content_volume,
+        cross_reference_load,
+        validation_loop_iterations,
+        context_ingestion_volume,
+        investigative_uncertainty,
+    )
+    for name, value in zip(SIGNAL_NAMES, signals):
         if not 0.0 <= value <= 1.0:
             raise ValueError(f"{name} must be in [0.0, 1.0], got {value!r}")
-    if len(weights) != 4:
-        raise ValueError(f"weights must have exactly 4 entries, got {len(weights)}")
+    if len(weights) != 6:
+        raise ValueError(f"weights must have exactly 6 entries, got {len(weights)}")
     if any(w < 0 for w in weights):
         raise ValueError(f"weights must be non-negative, got {weights!r}")
-    signals = (tool_call_volume, content_volume, cross_reference_load, validation_loop_iterations)
     return sum(s * w for s, w in zip(signals, weights))
 
 
@@ -306,16 +374,24 @@ def compute_token_ceiling_additive(
     content_volume: float,
     cross_reference_load: float,
     validation_loop_iterations: float = 0.0,
+    context_ingestion_volume: float = 0.0,
+    investigative_uncertainty: float = 0.0,
     *,
-    weights: tuple[float, float, float, float] = (1.0, 1.0, 1.0, 0.0),
+    weights: tuple[float, float, float, float, float, float] = (1.0, 1.0, 1.0, 0.0, 0.0, 0.0),
 ) -> int:
     """`token_ceiling = dispatch_floor(tier) + additive_total_span(tier) *
-    (sum of the four weighted signals)`. UNVALIDATED -- see
+    (sum of the six weighted signals)`. UNVALIDATED -- see
     `ADDITIVE_CALIBRATION_STATUS`. Provided as a tested candidate, not a
     recommendation to switch `compute_token_ceiling` over to this today."""
     if tier not in DISPATCH_FLOORS:
         raise ValueError(f"Unknown tier {tier!r} -- must be one of {sorted(DISPATCH_FLOORS)}")
     real_work = compute_real_work_additive(
-        tool_call_volume, content_volume, cross_reference_load, validation_loop_iterations, weights=weights
+        tool_call_volume,
+        content_volume,
+        cross_reference_load,
+        validation_loop_iterations,
+        context_ingestion_volume,
+        investigative_uncertainty,
+        weights=weights,
     )
     return round(DISPATCH_FLOORS[tier] + ADDITIVE_TOTAL_SPAN[tier] * real_work)

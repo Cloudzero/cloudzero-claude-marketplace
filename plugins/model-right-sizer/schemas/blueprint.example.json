@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "mode": "dry_run",
   "intent": "Build a Slack bot that summarizes daily standup threads and posts a digest each morning.",
   "price_sheet": {
@@ -56,9 +56,20 @@
       },
       "default_model": "claude-opus-4-8",
       "keep_or_override": "override",
-      "budget": { "token_ceiling": 20000, "thinking_budget": "<=2k thinking" },
+      "budget": {
+        "token_ceiling": 55836,
+        "real_work_signals": {
+          "tool_call_volume": { "value": 0.15, "reason": "Reads one channel's thread and writes a summary -- one or two tool calls, no re-work loop." },
+          "content_volume": { "value": 0.35, "reason": "A short structured summary, not a document -- well under the archetype's high end." },
+          "cross_reference_load": { "value": 0.2, "reason": "Must match digest-summary-v1's field shape but reads nothing else already landed." },
+          "validation_loop_iterations": { "value": 0.0, "reason": "No test suite or validator gates this stage; a wrong summary is caught downstream, not here." },
+          "context_ingestion_volume": { "value": 0.3, "reason": "Must read a full day's thread before summarizing, but one thread, not a large pre-existing codebase." },
+          "investigative_uncertainty": { "value": 0.0, "reason": "The target (summarize this thread) is fully specified; nothing to search for." }
+        },
+        "thinking_budget": "<=2k thinking"
+      },
       "handoff_schema_ref": "digest-summary-v1",
-      "rationale": "Bounded, well-specified summarization; Sonnet at low effort clears the bar for a fraction of the default tier's cost."
+      "rationale": "Bounded, well-specified summarization; Sonnet at low effort clears the bar for a fraction of the default tier's cost. token_ceiling is compute_token_ceiling('claude-sonnet-5', ...)'s output for the rated real_work_signals above, not a free-handed figure -- see eval/token_ceiling_formula.py. Its sonnet calibration is a working n=4 fit (CALIBRATION_STATUS), not a proven constant; treat this number the same way."
     },
     {
       "id": "stage-2",
@@ -104,12 +115,20 @@
         "what_flips_it": "If daily volume exceeds ~50 channels, drop to Haiku on a batch call to hold latency/cost."
       },
       "budget": {
-        "token_ceiling": 20000,
+        "token_ceiling": 55836,
+        "real_work_signals": {
+          "tool_call_volume": { "value": 0.15, "reason": "Reads one channel's thread and writes a summary -- one or two tool calls, no re-work loop." },
+          "content_volume": { "value": 0.35, "reason": "A short structured summary, not a document -- well under the archetype's high end." },
+          "cross_reference_load": { "value": 0.2, "reason": "Must match digest-summary-v1's field shape but reads nothing else already landed." },
+          "validation_loop_iterations": { "value": 0.0, "reason": "No test suite or validator gates this stage; a wrong summary is caught downstream, not here." },
+          "context_ingestion_volume": { "value": 0.3, "reason": "Must read a full day's thread before summarizing, but one thread, not a large pre-existing codebase." },
+          "investigative_uncertainty": { "value": 0.0, "reason": "The target (summarize this thread) is fully specified; nothing to search for." }
+        },
         "thinking_budget": "<=2k thinking",
         "warning_threshold_pct": 0.65
       },
       "handoff_schema_ref": "digest-summary-v1",
-      "rationale": "Same reasoning as stage-1: bounded summarization, Sonnet at low effort.",
+      "rationale": "Same reasoning as stage-1: bounded summarization, Sonnet at low effort. token_ceiling carried over from stage-1's own compute_token_ceiling() output, unchanged by decomposition into a build unit.",
       "status": "done",
       "status_updated_at": "2026-08-21T17:42:03Z"
     }

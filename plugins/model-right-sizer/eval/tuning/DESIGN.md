@@ -735,3 +735,33 @@ through, this time against real review-unit/finder-unit data rather than
 another pass over the same six retired build-unit numbers. Full
 breakdown table and reasoning:
 [`results/2026-08-22-signal-candidates-by-subagent-archetype.md`](results/2026-08-22-signal-candidates-by-subagent-archetype.md).
+
+## Wiring all six signals into the shipped agent, explicitly, before the two new ones are validated (2026-08-22)
+
+Explicit instruction to have the model-right-sizer itself derive all six
+real-work signals for every archetype and feed them into
+`../token_ceiling_formula.py`, rather than leave the archetype breakdown
+above as an unintegrated design doc. This is a deliberate departure from
+this pass's own "test signal-rating reliability first" sequencing for
+`context_ingestion_volume`/`investigative_uncertainty` specifically —
+they ship in the schema and the agent's Pass A instructions with their
+formula weight still at `0.0` (untested, not tested-and-rejected), on the
+premise that requiring every row to rate them is how real calibration
+data for them actually accumulates, rather than waiting for a dedicated
+experiment that may never get prioritized. `schemas/blueprint.schema.json`
+bumped to `1.2` (`budget.real_work_signals`, required whenever
+`token_ceiling` is nonzero); the agent's Pass A gained an explicit item 5
+(rate all six, guided by a per-archetype table, then derive the ceiling
+via `compute_token_ceiling_additive` rather than free-handing it,
+disclosing that formula's own `UNVALIDATED` status every time it's used).
+Also fixed a real regression this caused: `eval/tuning/knobs.py`'s
+`budget_margin` and `dispatch_floor_awareness` knobs anchor on exact
+substrings of the agent file's original budget bullet (item 4) — the
+first draft of this change rewrote that bullet in place and broke both
+anchors (`tests/model_right_sizer/test_tuning_knobs.py` caught it
+immediately, 75 failures). Fixed by restoring item 4 verbatim and adding
+the new signal-derivation content as a distinct item 5 instead of folding
+it into item 4 — the tuning-knob infrastructure from earlier passes still
+targets exactly the wording it was built against. Full validator
+checklist and pytest (430 passed) run clean; see the plugin `CHANGELOG.md`
+for the complete schema/agent/formula diff.

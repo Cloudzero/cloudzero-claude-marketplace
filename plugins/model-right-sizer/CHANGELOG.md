@@ -5,6 +5,63 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 ## Unreleased
 
 ### Added
+- **`schemas/blueprint.schema.json` bumped to `schema_version: "1.2"`: `budget.real_work_signals`.**
+  A fresh, independent addition (no compatibility claim against any other
+  `schema_version: "1.2"` work on a sibling branch, same disclaimer 1.1's
+  status-ledger addition carried). New `$defs.realWorkSignal` (`{value:
+  0.0-1.0, reason}`, same "never a bare number" discipline as `$defs.score`)
+  and `$defs.realWorkSignals` (all six of `tool_call_volume`,
+  `content_volume`, `cross_reference_load`, `validation_loop_iterations`,
+  `context_ingestion_volume`, `investigative_uncertainty` required). `budget`
+  gains an optional `real_work_signals` property plus a new `allOf`/`if`/`then`
+  requiring it whenever `token_ceiling` is nonzero (same conditional idiom as
+  `routingMapRow`'s `status`/`status_updated_at` pair) — a real model
+  dispatch's `token_ceiling` must now be traceable to rated signals, not a
+  free-handed integer; only a `token_ceiling: 0` row (nothing dispatched to a
+  model) may omit it. This is the schema-level half of moving `token_ceiling`
+  computation from "the LLM invents an integer" to "the LLM rates bounded
+  [0.0, 1.0] signals, deterministic code computes the integer" — see
+  `eval/token_ceiling_formula.py`'s own docstring and
+  `eval/tuning/results/2026-08-22-signal-rating-formula-validation.md` for
+  why. `blueprint.example.json` updated to `schema_version: "1.2"` with
+  `stage-1`/`unit-1` now carrying a worked `real_work_signals` block and a
+  `token_ceiling` (55,836, up from an illustrative 20,000) that is the actual
+  output of `compute_token_ceiling("claude-sonnet-5", ...)` for those ratings,
+  not a hand-picked round number.
+- **`eval/token_ceiling_formula.py` extended from four to six signals**:
+  `context_ingestion_volume` and `investigative_uncertainty`, derived from a
+  breakdown of token-consumption drivers across sub-agent archetypes (build,
+  review, finder/discovery, synthesis/panel, query-shaped — see
+  `eval/tuning/results/2026-08-22-signal-candidates-by-subagent-archetype.md`).
+  All four public functions (`compute_real_work_scale`,
+  `compute_token_ceiling`, `compute_real_work_additive`,
+  `compute_token_ceiling_additive`) take the two new signals as additional
+  optional positional args (default `0.0`) with default WEIGHT `0.0` in both
+  the averaged and additive models, preserving every existing caller's
+  behavior exactly. Unlike `validation_loop_iterations` (tested against a
+  fresh 3-draw rating pass and found to dilute rather than help — see
+  `-validation-loop-iterations-signal.md`), these two are simply UNTESTED —
+  their zero weight is "unproven," not "tested and rejected," and the
+  docstring says so explicitly to avoid conflating the two.
+- **`agents/model-right-sizer.md`'s Pass A gains a new item 5**: rate all six
+  `real_work_signals` per row (including the three at zero default weight,
+  so real calibration data accumulates for a future validation pass), guided
+  by a per-archetype table naming which signals usually carry a row's cost
+  for that shape; then derive `token_ceiling` from the ratings via
+  `eval/token_ceiling_formula.py` rather than free-handing it — preferring a
+  `Task`-delegated code-execution sub-agent (mirroring the existing
+  pricing-fetch delegation pattern), falling back to reading the module's
+  constants and reproducing the formula by hand with an "unverified this
+  run" disclosure if no such delegate is available. Uses
+  `compute_token_ceiling_additive` (better empirically, `UNVALIDATED`
+  calibration) over `compute_token_ceiling` (proven worse capacity ceiling),
+  with the `UNVALIDATED` status required in `uncertainty_ledger.assumptions`
+  on every blueprint that uses it. Item 4's original "not a vibe" sentence
+  is unchanged verbatim (both to keep it correct and because
+  `eval/tuning/knobs.py`'s `budget_margin`/`dispatch_floor_awareness` knobs
+  anchor on exact substrings of it).
+
+### Added
 - **`schemas/blueprint.schema.json` bumped to `schema_version: "1.1"`** with
   two independent additions. (1) A status ledger on `work_routing_map[]`
   rows: `status` (enum `not_started` / `dispatched` / `in_progress` /

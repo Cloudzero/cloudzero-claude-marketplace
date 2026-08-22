@@ -46,7 +46,7 @@ def test_composition_metrics_on_the_worked_blueprint_example():
     assert result["query_shaped_rate"] == pytest.approx(0.5)
     assert result["what_flips_it_present_rate"] == pytest.approx(1.0)
     assert result["mean_confidence"] == pytest.approx((72 + 90) / 2)
-    assert result["mean_token_ceiling"] == pytest.approx((20000 + 0) / 2)
+    assert result["mean_token_ceiling"] == pytest.approx((55836 + 0) / 2)
 
 
 def test_composition_metrics_detects_lever_mentions_in_rationale_text():
