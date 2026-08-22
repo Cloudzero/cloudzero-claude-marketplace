@@ -281,3 +281,91 @@ def test_gradient_descended_weights_do_not_beat_uniform_weights():
     # swing on n=18 is exactly the kind of difference that shouldn't be
     # read as genuine per-signal learning.
     assert abs(uniform_accuracy - gradient_descended_accuracy) <= 2 / len(wo.TRAINING_EXAMPLES)
+
+
+# Fresh 3-draw blind rating of all four signals together, for the same six
+# real units -- NOT the stale 3-signal draws test_additive_formula_reaches_*
+# and test_gradient_descended_weights_* reuse. Rated specifically to test
+# validation_loop_iterations on independent data, per
+# tuning/results/2026-08-22-validation-loop-iterations-signal.md. Keep this
+# in sync with that file if the draws are ever re-rated.
+_VALIDATION_LOOP_SIGNAL_DRAWS = {
+    "unit-1": [(0.55, 0.30, 0.30, 0.80), (0.45, 0.25, 0.20, 0.65), (0.50, 0.35, 0.25, 0.70)],
+    "unit-2": [(0.30, 0.35, 0.30, 0.10), (0.30, 0.35, 0.30, 0.10), (0.35, 0.40, 0.35, 0.15)],
+    "unit-3": [(0.45, 0.50, 0.85, 0.15), (0.60, 0.55, 0.80, 0.50), (0.55, 0.45, 0.75, 0.30)],
+    "unit-4": [(0.40, 0.50, 0.65, 0.15), (0.50, 0.55, 0.75, 0.40), (0.45, 0.45, 0.70, 0.25)],
+    "unit-5": [(0.55, 0.50, 0.55, 0.35), (0.50, 0.45, 0.75, 0.35), (0.60, 0.55, 0.65, 0.40)],
+    "unit-6": [(0.65, 0.40, 0.90, 0.90), (0.60, 0.40, 0.85, 0.75), (0.60, 0.45, 0.80, 0.85)],
+}
+_VALIDATION_LOOP_REAL_ACTUAL = {
+    "unit-1": 76_292,
+    "unit-2": 56_932,
+    "unit-3": 95_445,
+    "unit-4": 92_374,
+    "unit-5": 104_219,
+    "unit-6": 99_532,
+}
+
+
+def _mean(values):
+    return sum(values) / len(values)
+
+
+def _stdev(values):
+    m = _mean(values)
+    return (sum((v - m) ** 2 for v in values) / (len(values) - 1)) ** 0.5
+
+
+def _pearson(xs, ys):
+    mx, my = _mean(xs), _mean(ys)
+    cov = sum((x - mx) * (y - my) for x, y in zip(xs, ys))
+    sx = sum((x - mx) ** 2 for x in xs) ** 0.5
+    sy = sum((y - my) ** 2 for y in ys) ** 0.5
+    return cov / (sx * sy)
+
+
+def test_validation_loop_iterations_is_noisier_than_the_other_three_signals():
+    # Protects Finding 1 of 2026-08-22-validation-loop-iterations-signal.md:
+    # across a fresh, independent 3-draw rating pass, validation_loop_iterations
+    # runs meaningfully noisier (CV = stdev/mean) than tool_call_volume,
+    # content_volume, or cross_reference_load. This is real evidence AGAINST
+    # giving it a nonzero default weight, not just caution -- if a future
+    # re-rating closes this gap, this test should fail and prompt revisiting
+    # the default, not be loosened to keep passing.
+    mean_cv_by_signal = [[], [], [], []]
+    for draws in _VALIDATION_LOOP_SIGNAL_DRAWS.values():
+        for signal_index in range(4):
+            values = [draw[signal_index] for draw in draws]
+            mean_cv_by_signal[signal_index].append(_stdev(values) / _mean(values))
+    tool_call_cv, content_cv, cross_ref_cv, validation_loop_cv = (_mean(cvs) for cvs in mean_cv_by_signal)
+    other_three_mean_cv = _mean([tool_call_cv, content_cv, cross_ref_cv])
+    assert validation_loop_cv > 2 * other_three_mean_cv, (
+        f"validation_loop_iterations CV ({validation_loop_cv:.3f}) is no longer "
+        f"clearly noisier than the other three signals' mean CV "
+        f"({other_three_mean_cv:.3f}) -- re-check whether "
+        "2026-08-22-validation-loop-iterations-signal.md's conclusion still holds "
+        "before changing this signal's default weight."
+    )
+
+
+def test_validation_loop_iterations_dilutes_the_existing_signal_correlation():
+    # Protects Finding 2: naively summing validation_loop_iterations in at
+    # equal weight makes the sum's correlation with real cost WORSE, not
+    # better, than the original three signals alone -- the core evidence
+    # behind keeping its default weight at 0.0 in compute_real_work_additive
+    # / compute_token_ceiling_additive.
+    units = sorted(_VALIDATION_LOOP_SIGNAL_DRAWS)
+    averaged = {unit: tuple(_mean(v) for v in zip(*_VALIDATION_LOOP_SIGNAL_DRAWS[unit])) for unit in units}
+    actuals = [_VALIDATION_LOOP_REAL_ACTUAL[unit] for unit in units]
+    sum_of_three = [sum(averaged[unit][:3]) for unit in units]
+    sum_of_four = [sum(averaged[unit]) for unit in units]
+
+    r_three = _pearson(sum_of_three, actuals)
+    r_four = _pearson(sum_of_four, actuals)
+    assert r_four < r_three, (
+        f"Adding validation_loop_iterations at equal weight no longer dilutes the "
+        f"3-signal sum's correlation with real cost (3-signal r={r_three:.3f}, "
+        f"4-signal r={r_four:.3f}) -- if this reverses, the default weight of 0.0 "
+        "in compute_real_work_additive/compute_token_ceiling_additive may deserve "
+        "reconsidering; don't just delete this test."
+    )

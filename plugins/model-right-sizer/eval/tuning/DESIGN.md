@@ -684,3 +684,24 @@ maxed-out training number further: `validation_loop_iterations`,
 `investigative_uncertainty`. Full derivation, the overfitting-check table,
 and the reasoning behind each candidate signal:
 [`results/2026-08-22-additive-formula-and-signal-expansion.md`](results/2026-08-22-additive-formula-and-signal-expansion.md).
+
+## First candidate tested: `validation_loop_iterations` — real signal, not a helpful default (2026-08-22)
+
+Wired into the API (4-argument signals/weights, default value AND default
+weight `0.0`, fully backward-compatible), then tested against a fresh,
+independently-rated 3-draw pass (not the stale 3-signal draws) for the
+same six real units. Result: the signal runs ~2.5x noisier than the other
+three (mean CV 25.8% vs. 9.7–10.6%), correlates weakly with real cost
+alone (r=0.344), and *dilutes* the existing 3-signal sum's correlation
+when added at equal weight (0.910 → 0.865). Root cause: it correctly
+flags exactly the 2 of 6 units genuinely gated behind a validate-then-fix
+loop (a schema/changelog validator, a test suite) but the other 4 units
+are expensive for reasons it doesn't capture (cross-referencing, general
+volume) — so most of the time it adds noise, not coverage. The shipped
+default weight of `0.0` stays as-is, now backed by evidence rather than
+just caution; both findings are permanent regression tests
+(`test_validation_loop_iterations_is_noisier_than_the_other_three_signals`,
+`test_validation_loop_iterations_dilutes_the_existing_signal_correlation`).
+Full write-up, including an honest note that the accuracy-based comparison
+saturated near ceiling and was NOT decisive either way:
+[`results/2026-08-22-validation-loop-iterations-signal.md`](results/2026-08-22-validation-loop-iterations-signal.md).

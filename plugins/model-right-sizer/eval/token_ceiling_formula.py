@@ -54,9 +54,18 @@ CHECK out of the LLM's job and into deterministic code.
   proposed candidates) — every one of the five under-estimated real units
   in this pass's own training data was gated behind a real validate-then-
   fix loop; the one correctly-estimated unit had none. **Defaults to
-  weight `0.0` in `compute_token_ceiling_additive`** until real rating
-  data justifies a nonzero contribution — see
-  `tuning/results/2026-08-22-validation-loop-iterations-signal.md`.
+  weight `0.0` in `compute_token_ceiling_additive`, and a fresh 3-draw
+  rating experiment confirms that default is correct, not just cautious**
+  — see `tuning/results/2026-08-22-validation-loop-iterations-signal.md`.
+  That experiment found `validation_loop_iterations` runs ~2.5x noisier
+  than the other three signals (mean CV 25.8% vs. 9.7-10.6%), correlates
+  weakly with real cost alone (r=0.344), and DILUTES the existing signal
+  sum's correlation when added at equal weight (0.910 → 0.865) — it
+  correctly flags 2 of the 6 real training units (a schema/changelog
+  validator, a test suite's fix loop) but the other 4 are expensive for
+  reasons this signal doesn't capture, so it adds noise more often than it
+  adds explanatory power. Do not give it a nonzero default weight without
+  new evidence.
 
 These map directly onto the causal drivers `dispatch_floor_awareness`
 (see `tuning/knobs.py`) named from real-dispatch evidence but could only
@@ -269,10 +278,12 @@ def compute_real_work_additive(
     to average. `validation_loop_iterations`' default WEIGHT is `0.0`, not
     `1.0` like the other three -- `ADDITIVE_TOTAL_SPAN` was fit before this
     signal existed, so giving it a nonzero default would silently shift
-    every existing prediction with no data behind the shift. See this
-    module's `ADDITIVE_CALIBRATION_STATUS` before trusting any result,
-    and `tuning/results/2026-08-22-validation-loop-iterations-signal.md`
-    before giving this signal a nonzero weight."""
+    every existing prediction with no data behind the shift, AND a fresh
+    rating experiment found it dilutes rather than helps at equal weight
+    (see `tuning/results/2026-08-22-validation-loop-iterations-signal.md`).
+    See this module's `ADDITIVE_CALIBRATION_STATUS` before trusting any
+    result, and that same results file before giving this signal a
+    nonzero weight."""
     for name, value in (
         ("tool_call_volume", tool_call_volume),
         ("content_volume", content_volume),
