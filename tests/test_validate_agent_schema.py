@@ -346,6 +346,54 @@ def test_nested_member_mentioned_elsewhere_in_stamp_does_not_count_as_restated()
     assert any("findings" in e and "fix" in e and "does not restate" in e for e in errors)
 
 
+def test_nested_member_named_only_in_trailing_prose_does_not_count_as_restated():
+    """Greptile issue (round 10): the round-7 fix scoped nested-member
+    matching to the field's own segment, but a segment can still contain
+    trailing PROSE about the field (an aside after the typed declaration),
+    and `_contains_phrase` doesn't distinguish "restated in the typed shape"
+    from "mentioned in commentary about the typed shape". A stamp that drops
+    `fix` from findings' actual declaration but adds an aside like "-- we
+    intentionally do not include a fix suggestion this round" mentions the
+    word `fix` in findings' own segment -- and previously passed, even though
+    the aside is explicitly saying the member was left OUT, not restating
+    it."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["stamp_markdown"] = instance["stamp_markdown"].replace(
+        'findings: [{id, dimension, severity: enum[P1, P2, hygiene], location: "service:line", claim: string, fix: string}]',
+        'findings: [{id, dimension, severity: enum[P1, P2, hygiene], location: "service:line", claim: string}]'
+        " -- we intentionally do not include a fix suggestion this round",
+    )
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("findings" in e and "fix" in e and "does not restate" in e for e in errors)
+
+
+def test_nested_member_named_after_sentence_boundary_does_not_count_as_restated():
+    """Same bug, sentence-period variant instead of a `--` aside -- both are
+    real joiners this repo's own convention uses to move from a field's typed
+    declaration into prose about it, so both need to be closed."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["stamp_markdown"] = instance["stamp_markdown"].replace(
+        'findings: [{id, dimension, severity: enum[P1, P2, hygiene], location: "service:line", claim: string, fix: string}]',
+        'findings: [{id, dimension, severity: enum[P1, P2, hygiene], location: "service:line", claim: string}].'
+        " This version omits a fix suggestion field",
+    )
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("findings" in e and "fix" in e and "does not restate" in e for e in errors)
+
+
+def test_structural_clause_is_unaffected_when_no_prose_boundary_present():
+    """The checked-in worked example states every field's shape as one dense,
+    boundary-free clause -- confirm the new truncation is a no-op for it, so
+    the round-10 fix doesn't cost any false rejections on the common case."""
+    assert validate_agent_schema.validate(SCHEMA, EXAMPLE) == []
+
+
 def test_shared_field_name_between_in_and_out_sections_does_not_truncate_segment():
     """Greptile issue (round 8): a field name can be shared between the
     **In** and **Out** sections of a stamp (e.g. `evidence` naming both the

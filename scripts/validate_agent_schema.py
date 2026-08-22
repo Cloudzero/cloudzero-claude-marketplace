@@ -49,7 +49,12 @@ Checks:
     against the out_field's free-text `type`/`description`, the same way
     `stamp_markdown` restatement is checked -- `out_fields[].type` is an
     agent-authored shape description, not structured JSON, so there's no
-    deeper schema to validate against.
+    deeper schema to validate against. The stamp-side half of this check
+    only credits a mention found in the field's STRUCTURAL clause (its typed
+    declaration), never in trailing prose about that field -- a stamp that
+    drops a required member from the typed shape doesn't get to satisfy the
+    check by mentioning the member's name in an aside, even one explicitly
+    saying it was left out.
 
 Usage:
   uv run --no-project --with jsonschema scripts/validate_agent_schema.py                  # validate the checked-in worked example
@@ -256,6 +261,32 @@ def _contains_phrase(haystack: str, needle: str) -> bool:
 
 _OUT_MARKER = re.compile(r"\*\*Out\*\*")
 
+# Where a field's STRUCTURAL declaration (the typed shape, e.g.
+# `findings: [{id, ..., fix}]`) ends and human-authored PROSE about that
+# field begins, per this repo's own worked-example convention: either a
+# sentence boundary (a period followed by whitespace/end-of-string) or a
+# `--`/em-dash aside (the exact joiner the checked-in example itself uses for
+# a gloss, e.g. `leave_alone: [{location, reason}] -- known-noisy errors...`).
+# Greptile round 10: nested-member matching ran against the field's WHOLE
+# segment (structural declaration + any trailing prose), so a stamp could
+# drop a required member from the actual typed shape while still mentioning
+# its name in an explanatory aside -- even an aside explicitly saying the
+# member was LEFT OUT (e.g. "-- we intentionally do not include a fix
+# suggestion this round") still credited `fix` as restated. Truncating to the
+# structural clause before matching closes that: only the typed declaration
+# itself can satisfy a required-member check, never commentary about it.
+_PROSE_BOUNDARY = re.compile(r"\.(?:\s|$)|\s--\s|\s—\s")
+
+
+def _structural_clause(segment: str) -> str:
+    """`segment` truncated at the first prose boundary (see _PROSE_BOUNDARY)
+    -- the field's typed declaration only, with any trailing human-authored
+    aside or follow-on sentence dropped. Returns `segment` unchanged if no
+    boundary is found (the common case: this repo's convention states a
+    field's shape as one dense, period-free clause)."""
+    boundary = _PROSE_BOUNDARY.search(segment)
+    return segment[: boundary.start()] if boundary else segment
+
 
 def _field_restatement_segment(stamp: str, field_name: str, all_field_names) -> str:
     """The slice of the stamp that actually restates `field_name` -- from its
@@ -398,7 +429,7 @@ def validate(schema: dict, instance: dict) -> list[str]:
             if out_field is None:
                 continue  # already reported above as a missing required field
             shape_text = f"{out_field.get('type', '')} {out_field.get('description', '')}"
-            stamp_segment = _field_restatement_segment(stamp, array_field_name, list(out_field_names))
+            stamp_segment = _structural_clause(_field_restatement_segment(stamp, array_field_name, list(out_field_names)))
             for nested_name in required_nested:
                 if not _contains_phrase(shape_text, nested_name):
                     errors.append(
