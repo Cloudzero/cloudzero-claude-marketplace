@@ -705,3 +705,33 @@ just caution; both findings are permanent regression tests
 Full write-up, including an honest note that the accuracy-based comparison
 saturated near ceiling and was NOT decisive either way:
 [`results/2026-08-22-validation-loop-iterations-signal.md`](results/2026-08-22-validation-loop-iterations-signal.md).
+
+## Breaking down token consumption by sub-agent archetype, not just by task (2026-08-22)
+
+Asked to break down what drives token consumption in each sub-agent and
+derive signals from that, rather than keep reasoning from one task's six
+build units. Worked from `model-right-sizer.md`'s own decomposition list
+(build stage, review stage, finder → verifier fan-out, synthesis/panel
+stage, query-shaped stage) and named the dominant token driver per
+archetype. Two gaps repeated across multiple archetypes (not just one
+task's guess): (1) **`context_ingestion_volume`** — how much pre-existing
+material a unit must read before acting, distinct from
+`cross_reference_load`'s "must stay consistent with" (a review unit
+reading a large diff has near-zero cross-referencing but high ingestion
+cost); (2) **`investigative_uncertainty`** — whether a unit's tool calls
+are searching for something not known to exist vs. executing an
+already-specified sequence, distinct from `tool_call_volume`'s raw count
+(two finders can share a call count and differ entirely in how many of
+those calls were dead ends). Deliberately did NOT re-propose the other
+two candidates from the prior signal-expansion pass
+(`shared_file_blast_radius`, `voice_or_precision_consistency_requirement`)
+since neither showed up as a repeated cross-archetype gap the way these
+two did — a `Less is More` call, not an oversight, especially with
+`validation_loop_iterations` as a fresh example of a plausible-sounding
+signal that measured out to hurt. Neither new candidate is wired into
+`token_ceiling_formula.py` yet — both still need the same
+validate-before-integrate treatment every signal in this pass has gone
+through, this time against real review-unit/finder-unit data rather than
+another pass over the same six retired build-unit numbers. Full
+breakdown table and reasoning:
+[`results/2026-08-22-signal-candidates-by-subagent-archetype.md`](results/2026-08-22-signal-candidates-by-subagent-archetype.md).
