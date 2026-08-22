@@ -595,3 +595,26 @@ carried forward as the working point but are **not yet proposed as a
 `*-final-winner.patch`** — per `overfitting_guard.REQUIRED_GATE_NOTE`, that
 requires a clean `genuine_win` first, and both held-out tasks have now been
 read more than once.
+
+## A different mechanism, not another wording pass: `token_ceiling_formula.py` (2026-08-22)
+
+Rather than keep searching `knobs.py`'s wording space against the same
+retired task, tested a structurally different fix: instead of the LLM
+free-handing a raw `token_ceiling` integer, have it rate three bounded
+[0.0, 1.0] signals (`tool_call_volume`, `content_volume`,
+`cross_reference_load` — the same KIND of judgment call
+`signals.effectiveness/efficiency/difficulty` already make reliably) and
+let deterministic code (`../token_ceiling_formula.py`) compute the integer.
+A first, completely untuned validation (3 blind draws rating only the
+signals, against the same six chief-of-staff actuals) found: noise reduced
+but modestly, not dramatically (mean CV 12.9% vs. the 10–30% found for raw
+integers); the formula matched level 3's `accuracy_rate` (0.167) on its
+first attempt with zero tuning; and the misses clustered tightly (1.21–1.32
+ratio on 5/6 units), suggesting one uniform under-calibrated constant
+rather than scattered per-unit errors. Deliberately did NOT re-fit the
+formula's constants against this same result — that would be fitting to
+the same retired six numbers a second time. Full write-up:
+[`results/2026-08-22-signal-rating-formula-validation.md`](results/2026-08-22-signal-rating-formula-validation.md).
+Not yet wired into the schema or the shipped agent file — this was a
+validation-first step; a fresh held-out task's real actuals should confirm
+the ~1.25x gap before any recalibration or schema integration.

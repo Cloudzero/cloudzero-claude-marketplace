@@ -69,6 +69,25 @@ explicitly flagged as such below, not a second real calibration. Haiku has
 zero real per-unit dispatches from this task and is placeholder-only.
 Do not treat the opus/haiku spans as validated until real low-scale
 dispatches exist for those tiers.
+
+## First validation result (2026-08-22)
+
+Three blind draws asking an LLM to rate the three signals (not a raw
+token count) for the same six real chief-of-staff units found: (1) signal
+rating carries real but MODEST noise reduction vs. raw token estimates --
+mean CV 12.9% vs. the 10-30% this project's wording-tuning passes found for
+raw integers, at the low end of that range, not a dramatic collapse; (2)
+the formula, fed the averaged signals with ZERO tuning, matched the best
+wording-tuned knob level's `accuracy_rate` (0.167) on its first attempt;
+(3) 5 of 6 units missed high but TIGHTLY clustered at ratio 1.21-1.32,
+consistent with `REAL_WORK_SPAN` being uniformly a bit small rather than
+per-unit ratings being wrong -- a real, disclosable hypothesis for the next
+fix, NOT yet acted on here (recalibrating against these same six retired
+numbers a second time would be re-fitting to the same fixed dataset, not
+validating against anything new). See
+`tuning/results/2026-08-22-signal-rating-formula-validation.md` for the
+full data. Next real step: a fresh held-out task's real actuals, not
+another pass over this one.
 """
 from __future__ import annotations
 
