@@ -476,3 +476,41 @@ content-generation-heavy work — the same shape of miss as `t1`'s exclusion and
 decomposition explosion, on the budget-magnitude axis instead of the decomposition axis. The
 skill built from this test — and its own documentation of this gap — lives at
 [`../../skills/repo-slack-channel/SKILL.md`](../../skills/repo-slack-channel/SKILL.md).
+
+## Pass 6 — closing the gap, and guarding against overfitting (2026-08-22)
+
+A dedicated research pass reviewed best practices for composing an agent
+instruction `.md` file and evaluated the delta against the shipped
+`agents/model-right-sizer.md`. Its top finding causally matched the 2.8x miss
+above: the budget bullet demands `token_ceiling` be "an actual integer... not
+a vibe" with no method for deriving it — no dispatch-overhead-floor concept,
+no scaling by tool-call count or content volume. Added a 6th knob,
+`dispatch_floor_awareness`, encoding that fix. Full write-up, including an
+important semantic correction (the new wording makes `token_ceiling`
+floor-INCLUSIVE, so it must be compared against raw actual spend, not the
+floor-net actual the other five knobs' comparisons use) and the pass's two
+dry-run results (a calibrated one that turned out to have read the exact
+prior real outcome via the calibration ledger, and a blind one that didn't):
+[`results/2026-08-22-pass6-dispatch-floor-awareness.md`](results/2026-08-22-pass6-dispatch-floor-awareness.md).
+
+**Guarding against overfitting.** The calibrated dry-run's clean-looking win
+turned out to be partly attributable to the dry-run agent finding and reading
+`results/2026-08-22-novel-use-case-validation.md` — this exact task's own
+real prior outcome — rather than to the new wording alone. That is a real
+contamination path this project's own methodology creates: Pass A item 8
+always instructs reading a calibration history if one exists, and after
+enough validation passes, every task this experiment tests against has one
+written up somewhere readable. `overfitting_guard.py` formalizes the fix: a
+held-out task pool disjoint from the coordinate-ascent benchmark, plus
+`assess_generalization()`, which requires a **blind** dry-run (calibration
+access explicitly withheld) to also land acceptably before a settings
+combination can be proposed for merge — a calibrated-only win is
+`calibration_masked`, not a `genuine_win`. Pass 6's own blind check came back
+ambiguous (its verdict depends on a decomposition choice that differed from
+what was actually measured, not a flaw in the reasoning) — reported as such,
+not rounded up to a clean pass. The current best-known settings
+(`budget_margin=-1, effort_tax=1, calibration_aggressiveness=1,
+calibration_decay=0, pass_b_feedback=1, dispatch_floor_awareness=2`) are
+carried forward as the working point but are **not yet proposed as a
+`*-final-winner.patch`** — per `overfitting_guard.REQUIRED_GATE_NOTE`, that
+requires a clean `genuine_win` first.

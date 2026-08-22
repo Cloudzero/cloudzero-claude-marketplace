@@ -58,11 +58,18 @@ HOLDOUT_TASKS = {
         ),
         "real_outcome_doc": "results/2026-08-22-novel-use-case-validation.md",
         "note": (
-            "First held-out task. Already used once -- its real outcome is "
-            "now documented, which is exactly the contamination risk this "
-            "module exists to catch on every future pass. Add a genuinely "
-            "fresh held-out task before relying on this one again for a "
-            "clean blind check."
+            "First held-out task. Already used twice (pass 6's calibrated + "
+            "blind dry-runs, see results/2026-08-22-pass6-dispatch-floor-"
+            "awareness.md) -- its real outcome is documented and was found "
+            "by name in the calibrated run, exactly the contamination risk "
+            "this module exists to catch. Pass 6's blind run also chose a "
+            "different task decomposition than the one actually measured "
+            "(split channel-discovery from provisioning, where the real "
+            "dispatch bundled both), making that check's verdict genuinely "
+            "ambiguous rather than a clean pass/fail. Add a fresh held-out "
+            "task -- ideally one bounded enough that decomposition choice "
+            "can't create that ambiguity -- before relying on this entry "
+            "for a clean blind check again."
         ),
     },
 }
