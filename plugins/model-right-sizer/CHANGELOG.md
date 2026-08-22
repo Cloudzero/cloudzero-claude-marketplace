@@ -4,6 +4,18 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 
 ## Unreleased
 
+### Removed
+- **`skills/repo-slack-channel`** — retired. This was the first real
+  dogfooding build used to generalization-test the tuned knobs against a
+  novel, non-synthetic intent (`results/2026-08-22-novel-use-case-
+  validation.md`), and it also became a contamination risk once its real
+  outcome got read by name inside a supposedly-blind dry-run twice (the
+  exact failure mode `eval/tuning/overfitting_guard.py` exists to catch).
+  Its `HOLDOUT_TASKS["repo-slack-channel-provisioning"]` entry and every
+  dated results file that reports on it stay in place as the historical
+  record — only the shipped skill itself is removed, since this repo never
+  intended it as a permanent product feature.
+
 ### Added
 - **`eval/token_ceiling_formula.py` published as `FORMULA_VERSION = "1.0.0"`**
   — this module's first formal version, tracking the signal set and
