@@ -4,6 +4,26 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 
 ## Unreleased
 
+### Added
+- **`eval/token_ceiling_formula.py`: `AGENT_TOOL_HARNESS_FLOORS` +
+  `rebase_onto_canonical_floor()`** — closes v1.0.0 gap #6. Promotes the
+  ad hoc two-harness floor-reconciliation arithmetic from
+  `tuning/results/2026-08-22-fresh-held-out-task-signal-and-formula-
+  validation.md` into a real, tested utility (canonical-frame re-basing,
+  not mean/max — see the function's own docstring for why). 11 new test
+  cases in `tests/model_right_sizer/test_token_ceiling_formula.py`,
+  including a real-computed per-tier drift check that found haiku's two
+  floor measurements disagree by 27.23% — outside the "5-15%" band
+  informally claimed elsewhere, and fresh evidence for gap #1. Built and
+  dispatched for real as a dogfooding test of
+  `model-right-sizer-budget-guard`'s threshold-warning mechanism against
+  live sub-agent dispatches — see
+  `tuning/results/2026-08-22-budget-guard-real-dogfooding-test.md` for the
+  real numbers, including one real case where an injected budget warning
+  changed a dispatched sub-agent's actual decision. `FORMULA_VERSION`
+  deliberately stays at `1.0.0` pending a real
+  `model-right-sizer-release-report` run for v1.1.0.
+
 ### Removed
 - **`skills/repo-slack-channel`** — retired. This was the first real
   dogfooding build used to generalization-test the tuned knobs against a

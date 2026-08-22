@@ -163,6 +163,8 @@ __all__ = [
     "ADDITIVE_CALIBRATION_STATUS",
     "compute_real_work_additive",
     "compute_token_ceiling_additive",
+    "AGENT_TOOL_HARNESS_FLOORS",
+    "rebase_onto_canonical_floor",
 ]
 
 # This module's own version, independent of the plugin-wide version in
@@ -181,6 +183,20 @@ __all__ = [
 # in a dated `tuning/results/*-release.md` file, not just in this comment --
 # see `tuning/results/2026-08-22-token-ceiling-formula-v1.0.0-release.md`
 # for v1.0.0's own.
+#
+# v1.0.0 -> v1.1.0 (this bump): closes gap #6 of that same v1.0.0 release
+# report (the two-harness floor reconciliation) by adding
+# `AGENT_TOOL_HARNESS_FLOORS` and `rebase_onto_canonical_floor`. None of the
+# three bump-policy bullets above names "new utility function/constant"
+# directly -- this isn't a recalibration of an existing constant (not
+# PATCH), doesn't touch any signal or its weight (not the MINOR case as
+# literally written), and removes nothing, changes no existing nonzero
+# weight's meaning, and switches no preferred formula (not MAJOR). Treated
+# as MINOR by the same semver spirit the MINOR bullet already applies to
+# "a new signal added at weight 0.0": purely additive, backward-compatible
+# surface area with zero effect on any existing constant or function's
+# output -- `DISPATCH_FLOORS`, `REAL_WORK_SPAN`, `ADDITIVE_TOTAL_SPAN`, and
+# every existing function's behavior are byte-for-byte unchanged.
 FORMULA_VERSION = "1.0.0"
 
 # Zero-tool-call dispatch floors, per model tier -- see
@@ -192,6 +208,21 @@ DISPATCH_FLOORS = {
     "claude-haiku-4-5": 25_664,
     "claude-sonnet-5": 40_669,
     "claude-opus-4-8": 38_260,
+}
+
+# A SECOND, independent zero-tool-call floor measurement, taken on the
+# `Agent`-tool dispatch harness (three no-op probes, n=1-per-tier) during
+# the fresh-held-out-task pass -- see
+# `tuning/results/2026-08-22-fresh-held-out-task-signal-and-formula-validation.md`'s
+# "Floor reconciliation" section and gap #6 of
+# `tuning/results/2026-08-22-token-ceiling-formula-v1.0.0-release.md`. NOT a
+# replacement for `DISPATCH_FLOORS` -- it exists only so `rebase_onto_canonical_floor`
+# below can translate a raw actual measured on THIS harness onto the
+# canonical `DISPATCH_FLOORS` frame for comparison.
+AGENT_TOOL_HARNESS_FLOORS = {
+    "claude-haiku-4-5": 32_653,
+    "claude-sonnet-5": 42_512,
+    "claude-opus-4-8": 42_416,
 }
 
 # The additional real-work token range a scale of 0.0 -> 1.0 spans, on top
@@ -447,3 +478,64 @@ def compute_token_ceiling_additive(
         weights=weights,
     )
     return round(DISPATCH_FLOORS[tier] + ADDITIVE_TOTAL_SPAN[tier] * real_work)
+
+
+# ---------------------------------------------------------------------------
+# Two-harness floor reconciliation (closes gap #6 of
+# `tuning/results/2026-08-22-token-ceiling-formula-v1.0.0-release.md`)
+# ---------------------------------------------------------------------------
+def rebase_onto_canonical_floor(
+    raw_actual: int,
+    tier: str,
+    foreign_harness_floors: dict[str, int],
+) -> int:
+    """Re-base a raw actual token count, measured on some OTHER dispatch
+    harness than the one `DISPATCH_FLOORS` was measured on, onto
+    `DISPATCH_FLOORS`'s frame -- replacing the ad hoc by-hand arithmetic
+    (`reconciled = (raw - this_harness_floor[tier]) + DISPATCH_FLOORS[tier]`)
+    that
+    `tuning/results/2026-08-22-fresh-held-out-task-signal-and-formula-validation.md`'s
+    "Floor reconciliation" section performed manually for four real units.
+
+    Args:
+        raw_actual: the real token count as measured on the FOREIGN harness
+            (e.g. a unit dispatched via the `Agent` tool).
+        tier: one of `DISPATCH_FLOORS`' keys.
+        foreign_harness_floors: that OTHER harness's own per-tier zero-tool
+            floor measurement -- e.g. `AGENT_TOOL_HARNESS_FLOORS` -- i.e.
+            the floor `raw_actual` was actually measured against, NOT
+            `DISPATCH_FLOORS` itself. Passing `DISPATCH_FLOORS` here (there
+            is nothing foreign to reconcile) raises `ValueError`.
+
+    Design decision, already made -- see gap #6 of
+    `tuning/results/2026-08-22-token-ceiling-formula-v1.0.0-release.md` --
+    state it, don't re-litigate it here: this function adopts
+    CANONICAL-FRAME RE-BASING (translate the foreign actual onto
+    `DISPATCH_FLOORS`), NOT mean-of-both-floors and NOT max-of-both-floors.
+    `DISPATCH_FLOORS` is the frame `REAL_WORK_SPAN` and `ADDITIVE_TOTAL_SPAN`
+    are already fit against -- averaging or maxing the two floor sets would
+    silently shift what every existing prediction from those spans means,
+    with no new calibration evidence behind the shift. If the canonical
+    frame itself ever needs to move, that is a re-fit of `DISPATCH_FLOORS`
+    (and everything fit against it), which is a different, much larger
+    undertaking than this function performs.
+
+    IMPORTANT: the return value is a REBASED ACTUAL, useful only for
+    comparing one already-measured raw number against the canonical frame
+    (e.g. checking it against `compute_token_ceiling_additive`'s output for
+    that same unit). It is NOT itself a new dispatch floor, and must never
+    be fed back into `DISPATCH_FLOORS`, `REAL_WORK_SPAN`, or
+    `ADDITIVE_TOTAL_SPAN` as a drop-in replacement calibration constant --
+    that would require an actual re-fit against real evidence, not a
+    one-line translation of a single already-measured actual.
+    """
+    if tier not in DISPATCH_FLOORS:
+        raise ValueError(f"Unknown tier {tier!r} -- must be one of {sorted(DISPATCH_FLOORS)}")
+    if foreign_harness_floors is DISPATCH_FLOORS:
+        raise ValueError(
+            "foreign_harness_floors must be a DIFFERENT harness's floor set -- "
+            "DISPATCH_FLOORS is already the canonical frame, so there is nothing to reconcile"
+        )
+    if tier not in foreign_harness_floors:
+        raise ValueError(f"foreign_harness_floors is missing tier {tier!r}")
+    return round(raw_actual - foreign_harness_floors[tier] + DISPATCH_FLOORS[tier])

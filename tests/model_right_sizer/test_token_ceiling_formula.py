@@ -622,6 +622,91 @@ def test_averaged_model_still_fails_on_the_second_held_out_task():
     )
 
 
+# ---------------------------------------------------------------------------
+# rebase_onto_canonical_floor / AGENT_TOOL_HARNESS_FLOORS -- two-harness
+# floor reconciliation (closes gap #6 of
+# 2026-08-22-token-ceiling-formula-v1.0.0-release.md)
+# ---------------------------------------------------------------------------
+# The four real reconciled actuals from the "Floor reconciliation" section of
+# tuning/results/2026-08-22-fresh-held-out-task-signal-and-formula-validation.md
+# -- the load-bearing regression tests: they confirm the function reproduces
+# the by-hand arithmetic that section performed manually, not just that it
+# runs without error.
+_REBASE_REGRESSION_ANCHORS = {
+    "unit-core-module": ("claude-sonnet-5", 86_465, 84_622),
+    "unit-tests": ("claude-sonnet-5", 82_789, 80_946),
+    "unit-cli": ("claude-haiku-4-5", 51_427, 44_438),
+    "unit-docs-integration": ("claude-sonnet-5", 86_022, 84_179),
+}
+
+
+@pytest.mark.parametrize("unit", list(_REBASE_REGRESSION_ANCHORS))
+def test_rebase_onto_canonical_floor_reproduces_the_real_reconciled_actuals(unit):
+    tier, raw, reconciled = _REBASE_REGRESSION_ANCHORS[unit]
+    assert tcf.rebase_onto_canonical_floor(raw, tier, tcf.AGENT_TOOL_HARNESS_FLOORS) == reconciled
+
+
+def test_rebase_returns_an_int():
+    result = tcf.rebase_onto_canonical_floor(86_465, "claude-sonnet-5", tcf.AGENT_TOOL_HARNESS_FLOORS)
+    assert isinstance(result, int)
+
+
+def test_rebase_is_identity_when_the_foreign_floor_numerically_equals_the_canonical_one():
+    # A foreign harness whose floor for a tier happens to numerically match
+    # DISPATCH_FLOORS' -- a genuinely different dict object, not literally
+    # DISPATCH_FLOORS itself (that's the explicit-error case below) -- must
+    # rebase to exactly the same raw number: a net-zero rebase.
+    same_valued_floors = dict(tcf.DISPATCH_FLOORS)
+    assert same_valued_floors is not tcf.DISPATCH_FLOORS
+    for tier in tcf.DISPATCH_FLOORS:
+        assert tcf.rebase_onto_canonical_floor(99_999, tier, same_valued_floors) == 99_999
+
+
+def test_agent_tool_harness_floors_has_every_dispatch_floor_tier():
+    # Same honesty check as test_every_dispatch_floor_tier_has_a_span_and_a_
+    # calibration_status above, extended to the second harness's floor set --
+    # rebase_onto_canonical_floor needs every tier present to be usable at all.
+    assert set(tcf.AGENT_TOOL_HARNESS_FLOORS) == set(tcf.DISPATCH_FLOORS)
+
+
+def test_agent_tool_harness_floors_drift_is_real_but_modest_per_tier():
+    # Computed directly from the two floor dicts (not hardcoded from the
+    # write-up's prose) -- the "Floor reconciliation" section characterizes
+    # this loosely as "close enough (5-15%)", but the actual computed haiku
+    # drift is ~27%, outside that band; pin the real numbers rather than the
+    # prose's summary so a future edit to either floor dict is caught here.
+    drift = {
+        tier: abs(tcf.AGENT_TOOL_HARNESS_FLOORS[tier] - tcf.DISPATCH_FLOORS[tier]) / tcf.DISPATCH_FLOORS[tier]
+        for tier in tcf.DISPATCH_FLOORS
+    }
+    assert drift["claude-sonnet-5"] == pytest.approx(0.0453, abs=0.001)
+    assert drift["claude-opus-4-8"] == pytest.approx(0.1086, abs=0.001)
+    assert drift["claude-haiku-4-5"] == pytest.approx(0.2723, abs=0.001)
+    # Every tier's foreign floor reads HIGHER than the canonical one, and
+    # none is wildly out of range (e.g. 2x+, which would suggest a different
+    # mechanism entirely rather than n=1-per-tier noise on the same one).
+    assert all(0 < d < 0.30 for d in drift.values())
+
+
+def test_rebase_unknown_tier_raises():
+    with pytest.raises(ValueError, match="Unknown tier"):
+        tcf.rebase_onto_canonical_floor(50_000, "claude-made-up-model", tcf.AGENT_TOOL_HARNESS_FLOORS)
+
+
+def test_rebase_foreign_harness_floors_missing_the_requested_tier_raises():
+    incomplete = {"claude-sonnet-5": 42_512}  # no opus/haiku entries
+    with pytest.raises(ValueError, match="missing tier"):
+        tcf.rebase_onto_canonical_floor(50_000, "claude-opus-4-8", incomplete)
+
+
+def test_rebase_rejects_dispatch_floors_itself_as_foreign_harness_floors():
+    # Passing DISPATCH_FLOORS itself means there is nothing foreign to
+    # reconcile -- an explicit design decision the function's own docstring
+    # calls out, not an oversight to silently no-op past.
+    with pytest.raises(ValueError, match="already the canonical frame"):
+        tcf.rebase_onto_canonical_floor(50_000, "claude-sonnet-5", tcf.DISPATCH_FLOORS)
+
+
 def test_formula_version_is_published_and_documented():
     # v1.0.0 (2026-08-22) is this module's first formally published
     # version -- its exact configuration and a ranked gap list live in a
