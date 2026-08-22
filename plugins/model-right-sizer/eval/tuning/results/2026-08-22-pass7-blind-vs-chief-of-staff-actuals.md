@@ -176,10 +176,68 @@ needs averaging multiple blind draws per candidate before scoring, which
 costs proportionally more dispatches per iteration, not another single-shot
 guess.
 
+## Iteration 4 — 3-draw averaging exposes that iteration 2's "win" was mostly noise
+
+Asked to keep pushing toward a 90% target, and warned that single-draw
+iterations couldn't reliably distinguish signal from noise, the methodology
+changed: 3 independent blind draws per candidate, averaged per unit before
+scoring, rather than trusting one draw.
+
+**Re-measured level 3 (the setting iteration 2 called a "win") with 2 more
+independent blind draws**, added to iteration 2's original draw:
+
+| unit | draw A | draw B | draw C | mean | stdev | real actual | ratio (mean) | class |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| schema/changelog | 50,000 | 55,000 | 65,000 | 56,667 | 7,638 | 76,292 | 1.346 | `over_budget` |
+| `budget_threshold.py` module | 65,000 | 45,000 | 50,000 | 53,333 | 10,408 | 56,932 | 1.067 | `over_budget` |
+| threshold-warning agent-file | 85,000 | 90,000 | 58,000 | 77,667 | 17,214 | 95,445 | 1.229 | `over_budget` |
+| status-ledger agent-file | 75,000 | 80,000 | 52,000 | 69,000 | 14,933 | 92,374 | 1.339 | `over_budget` |
+| budget-guard skill | 110,000 | 105,000 | 120,000 | 111,667 | 7,638 | 104,219 | 0.933 | `within_budget` |
+| test coverage | 60,000 | 55,000 | 85,000 | 66,667 | 16,073 | 99,532 | 1.493 | `over_budget` |
+
+**True (3-draw-averaged) `accuracy_rate` for level 3 is 0.167, not the 0.333
+iteration 2 reported from a single draw.** `mean_loss` = 0.246, close to
+iteration 2's single-draw 0.256 — the *loss* estimate happened to be
+roughly right, but the *classification count* iteration 2's "win" rested on
+was an artifact of one lucky draw (module and skill both happened to land
+just inside `within_budget` on that one draw; across 3 draws, module is
+`over_budget` on 2 of 3 individual draws, and only the mean survives at
+0.933 for skill). Per-unit standard deviations run 10–30% of the mean on
+four of six units — comparable in size to the wording effects both
+iteration 2's accept and iteration 3's reject were decided on. **This
+retroactively weakens confidence in iteration 2's accept and iteration 3's
+reject alike**, though it doesn't reverse either decision: mean_loss
+(0.256 → 0.246, a real if small improvement over level 2's single draw of
+0.448) still points the same direction level 3 was chosen for, and level
+4's regression was large enough (accuracy 0.333→0.167 on a single-draw
+comparison against level 3, corroborated by level 4 also scoring the same
+0.167 as level 3's OWN 3-draw truth) that it isn't purely explained by
+noise either — level 4 didn't clearly beat level 3's true average, which is
+itself grounds enough to have rejected it.
+
+**The averaged ratios also show a real, non-noise signal underneath the
+variance**: every unit except the skill sits between 1.07 and 1.49 — a
+persistent, moderate systematic under-estimate, not values scattered evenly
+around 1.0. That's a legitimate target for a further wording move, distinct
+from chasing any single draw's specific numbers.
+
+**Candidate level 5**: rather than repeat level 4's mistake (naming exactly
+two qualifying shapes, which plausibly narrowed the model's generalization
+instead of widening it), level 5 keeps level 3's text and adds a
+general-purpose correction explicitly framed as *not* a checklist: "treat a
+30–90% upward correction as the norm for any sonnet-tier `low-tool-turn` or
+`agentic` unit doing real editing-plus-validation work... not the exception
+it would be if only a couple of shapes qualified," with a concrete 1.3–1.9×
+multiplier range grounded in this iteration's own averaged ratios. Also
+evaluated across 3 blind draws for a fair, noise-aware comparison against
+level 3's true average — see the next section for the result.
+
 ## Honest scope note
 
 This is a real-actuals check on n=6 within one task, not a benchmark sweep —
 consistent with every other write-up in this directory, treat the pattern as
-directional evidence, not a generalizable conclusion, and watch whether
-iteration 2's fix actually moves the aggregate or just shuffles which unit
-misses worst.
+directional evidence, not a generalizable conclusion. The 3-draw-averaging
+finding in iteration 4 is itself the most important scope caveat in this
+entire pass: single-draw dry-run comparisons on this task carry noise
+comparable in size to the effects being measured, and every single-draw
+result in iterations 1–3 above should be read with that in mind.
