@@ -618,3 +618,32 @@ the same retired six numbers a second time. Full write-up:
 Not yet wired into the schema or the shipped agent file — this was a
 validation-first step; a fresh held-out task's real actuals should confirm
 the ~1.25x gap before any recalibration or schema integration.
+
+## Gradient descent on the 3 signal weights — a proven ceiling, not a bug (2026-08-22)
+
+Asked to derive the three signal weights via a real gradient-descent
+pipeline (offline, no LLM dispatch — training data is the 18 raw signal
+readings already collected) and tune toward 90% accuracy.
+`../tuning/weight_optimizer.py` implements this for real: analytic
+gradients through the convex-combination formula, gradient-checked against
+finite differences (`tests/model_right_sizer/test_weight_optimizer.py`),
+batch gradient descent for thousands of epochs.
+
+Result, both proven mathematically before training and confirmed
+empirically after: **90% is not reachable by tuning these weights alone.**
+`compute_real_work_scale` is a convex combination, so it can never predict
+a scale above the per-example max of the three signals — and even the
+theoretical best case (100% weight on whichever signal is highest, per
+example) leaves 5 of 6 units `over_budget` on this data, capping accuracy
+at ~16.7% before any training runs. A real, converged, gradient-checked
+training run (loss 0.0625 → 0.0433, plateaus by epoch ~500 of 5,000) landed
+exactly there: final training accuracy 16.7%, identical to the equal-
+weights baseline. The pipeline is correct; the target was mathematically
+unreachable with the parameters it was scoped to tune. Full derivation and
+results: [`results/2026-08-22-weight-gradient-descent.md`](results/2026-08-22-weight-gradient-descent.md).
+
+Moving past this ceiling needs either training `REAL_WORK_SPAN`/
+`DISPATCH_FLOORS` too (more free parameters against the same 18 rows —
+real overfitting risk on an already tiny, already-retired dataset) or
+fresh real dispatch data. Neither done here; reported as a legitimate
+negative result, not a bug to keep chasing.
