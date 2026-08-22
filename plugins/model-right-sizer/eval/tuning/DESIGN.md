@@ -765,3 +765,33 @@ it into item 4 — the tuning-knob infrastructure from earlier passes still
 targets exactly the wording it was built against. Full validator
 checklist and pytest (430 passed) run clean; see the plugin `CHANGELOG.md`
 for the complete schema/agent/formula diff.
+
+## Re-running the signal-validation experiment with the two new signals — and catching a contamination bug in the process (2026-08-22)
+
+Asked to re-run the `validation_loop_iterations`-style experiment for
+`context_ingestion_volume` and `investigative_uncertainty`. The first
+attempt self-authored the "blind" draws inline, already holding the real
+actual costs and this repo's own write-up explaining exactly why each
+unit missed its budget — a suspiciously clean r=0.989 was the tell that
+the ratings had been reverse-engineered from the answer, not predicted
+blind. Discarded before being reported; re-run properly with three
+genuinely independent `Agent`-dispatched raters, each given only a
+forward-looking task spec and the signal definitions, no access to real
+actuals or this repo's retired write-ups. Result, on the corrected data:
+**`investigative_uncertainty` looks promising** (adding it to the
+existing 4-signal sum's correlation with real cost: 0.910 → 0.980) while
+**`context_ingestion_volume` repeats `validation_loop_iterations`'s exact
+dilution failure** (0.910 → 0.880 once summed in, despite a respectable
+0.766 standalone correlation). Noise (CV) also came in lower across every
+signal than any prior estimate in this pass — itself a signal that
+earlier "blind" draws, self-authored the same contaminated way, may have
+overstated noise, not just this run's correlation. Also flagged as
+structurally circular, not just uninformative: the accuracy-based
+comparison on this dataset checks the shipped formula against the exact
+six real actuals `ADDITIVE_TOTAL_SPAN` was already fit to, so it proves
+nothing either way — only the correlation analysis is real evidence
+here. Neither new signal's default weight changed (`0.0` stays correct
+for both); `investigative_uncertainty` is now the stronger of the two
+candidates for a future fresh-held-out-task validation. Full write-up,
+including the contamination catch itself as the headline finding:
+[`results/2026-08-22-second-signal-experiment-genuinely-blind.md`](results/2026-08-22-second-signal-experiment-genuinely-blind.md).

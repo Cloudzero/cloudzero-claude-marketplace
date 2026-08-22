@@ -393,3 +393,99 @@ def test_validation_loop_iterations_dilutes_the_existing_signal_correlation():
         "in compute_real_work_additive/compute_token_ceiling_additive may deserve "
         "reconsidering; don't just delete this test."
     )
+
+
+# Genuinely blind 3-draw rating of all six signals, from three independently
+# dispatched sub-agents (the Agent tool) given only a forward-looking task
+# spec and the signal definitions -- NOT self-authored in a context that
+# already held the real actuals, unlike an earlier discarded attempt (see
+# tuning/results/2026-08-22-second-signal-experiment-genuinely-blind.md for
+# why that distinction matters). Unit ids/tiers/actuals match
+# tuning/results/2026-08-22-chief-of-staff-budget-guard-build.md directly.
+_BLIND_6SIGNAL_DRAWS = {
+    "unit-schema-ledger-budget-fields": [
+        (0.35, 0.15, 0.25, 0.3, 0.3, 0.1),
+        (0.35, 0.15, 0.3, 0.3, 0.3, 0.1),
+        (0.35, 0.15, 0.3, 0.3, 0.25, 0.1),
+    ],
+    "unit-budget-threshold-library": [
+        (0.15, 0.15, 0.05, 0.1, 0.05, 0.05),
+        (0.2, 0.15, 0.05, 0.15, 0.05, 0.05),
+        (0.15, 0.15, 0.05, 0.1, 0.05, 0.05),
+    ],
+    "unit-status-ledger-instructions": [
+        (0.5, 0.5, 0.75, 0.3, 0.75, 0.2),
+        (0.5, 0.6, 0.75, 0.2, 0.8, 0.2),
+        (0.5, 0.55, 0.75, 0.25, 0.75, 0.3),
+    ],
+    "unit-threshold-warning-instructions": [
+        (0.5, 0.45, 0.75, 0.3, 0.75, 0.25),
+        (0.5, 0.55, 0.75, 0.2, 0.8, 0.25),
+        (0.5, 0.55, 0.8, 0.25, 0.75, 0.35),
+    ],
+    "unit-skill-budget-guard": [
+        (0.6, 0.5, 0.35, 0.25, 0.5, 0.75),
+        (0.6, 0.5, 0.3, 0.25, 0.4, 0.75),
+        (0.6, 0.5, 0.3, 0.3, 0.45, 0.75),
+    ],
+    "unit-test-coverage": [
+        (0.45, 0.3, 0.6, 0.6, 0.5, 0.15),
+        (0.5, 0.35, 0.7, 0.6, 0.5, 0.25),
+        (0.5, 0.3, 0.7, 0.6, 0.55, 0.3),
+    ],
+}
+_BLIND_6SIGNAL_REAL_ACTUAL = {
+    "unit-schema-ledger-budget-fields": 76_292,
+    "unit-budget-threshold-library": 56_932,
+    "unit-status-ledger-instructions": 92_374,
+    "unit-threshold-warning-instructions": 95_445,
+    "unit-skill-budget-guard": 104_219,
+    "unit-test-coverage": 99_532,
+}
+
+
+def test_investigative_uncertainty_improves_the_existing_signal_correlation_on_blind_data():
+    # Protects the one positive finding of the genuinely blind re-run
+    # (2026-08-22-second-signal-experiment-genuinely-blind.md): adding
+    # investigative_uncertainty to the 4-signal sum at equal weight
+    # improves correlation with real cost, the opposite of what
+    # validation_loop_iterations and context_ingestion_volume both do.
+    # This does NOT justify a nonzero default weight by itself (n=6, one
+    # task, one archetype, the same retired dataset every other constant
+    # here is fit to) -- it protects the finding that motivates testing
+    # this signal further, not a claim that it's validated.
+    units = sorted(_BLIND_6SIGNAL_DRAWS)
+    averaged = {unit: tuple(_mean(v) for v in zip(*_BLIND_6SIGNAL_DRAWS[unit])) for unit in units}
+    actuals = [_BLIND_6SIGNAL_REAL_ACTUAL[unit] for unit in units]
+    sum_of_four = [sum(averaged[unit][:4]) for unit in units]
+    sum_with_investigative_uncertainty = [sum(averaged[unit][:4]) + averaged[unit][5] for unit in units]
+
+    r_four = _pearson(sum_of_four, actuals)
+    r_with_iu = _pearson(sum_with_investigative_uncertainty, actuals)
+    assert r_with_iu > r_four, (
+        f"investigative_uncertainty no longer improves the 4-signal sum's correlation "
+        f"with real cost on the genuinely blind dataset (4-signal r={r_four:.3f}, "
+        f"+investigative_uncertainty r={r_with_iu:.3f}) -- re-check whether "
+        "2026-08-22-second-signal-experiment-genuinely-blind.md's finding still holds."
+    )
+
+
+def test_context_ingestion_volume_dilutes_the_existing_signal_correlation_on_blind_data():
+    # Protects the negative finding: context_ingestion_volume repeats
+    # validation_loop_iterations's exact dilution failure on genuinely
+    # blind data -- a respectable standalone correlation that still makes
+    # the combined sum worse once added at equal weight.
+    units = sorted(_BLIND_6SIGNAL_DRAWS)
+    averaged = {unit: tuple(_mean(v) for v in zip(*_BLIND_6SIGNAL_DRAWS[unit])) for unit in units}
+    actuals = [_BLIND_6SIGNAL_REAL_ACTUAL[unit] for unit in units]
+    sum_of_four = [sum(averaged[unit][:4]) for unit in units]
+    sum_with_context_ingestion = [sum(averaged[unit][:4]) + averaged[unit][4] for unit in units]
+
+    r_four = _pearson(sum_of_four, actuals)
+    r_with_cig = _pearson(sum_with_context_ingestion, actuals)
+    assert r_with_cig < r_four, (
+        f"context_ingestion_volume no longer dilutes the 4-signal sum's correlation "
+        f"with real cost on the genuinely blind dataset (4-signal r={r_four:.3f}, "
+        f"+context_ingestion_volume r={r_with_cig:.3f}) -- if this reverses, its "
+        "default weight of 0.0 may deserve reconsidering; don't just delete this test."
+    )
