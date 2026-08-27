@@ -114,17 +114,22 @@ audited.
 - **Local path or current repo** (`<target>` is a filesystem path, or was
   omitted) → use it directly, no clone. `cd` into it (or stay put if
   omitted) and detect the default branch with **no repo argument**:
-  `gh repo view --json defaultBranchRef` — passing the local path or an
-  empty string as `gh repo view`'s argument fails outright, since that
-  argument must be an `OWNER/REPO` slug or a URL, never a filesystem path;
-  omitting the argument entirely is what makes `gh` read the *current
-  directory's own* git remote instead.
+  ```bash
+  default_branch=$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name')
+  ```
+  — passing the local path or an empty string as `gh repo view`'s argument
+  fails outright, since that argument must be an `OWNER/REPO` slug or a URL,
+  never a filesystem path; omitting the argument entirely is what makes `gh`
+  read the *current directory's own* git remote instead.
 - **GitHub slug/URL** (`<target>` is `org/repo` or a full URL) → detect the
-  default branch first — `gh repo view "$target" --json defaultBranchRef`
-  is correct here, since `$target` really is a resolvable identifier — then
-  look for an existing local clone, but **verify it before reusing it**: a
-  directory that merely matches the repo's basename is not proof it's the
-  same repo, or that it's safe to touch.
+  default branch first:
+  ```bash
+  default_branch=$(gh repo view "$target" --json defaultBranchRef --jq '.defaultBranchRef.name')
+  ```
+  — passing `"$target"` is correct here, since it really is a resolvable
+  identifier — then look for an existing local clone, but **verify it
+  before reusing it**: a directory that merely matches the repo's basename
+  is not proof it's the same repo, or that it's safe to touch.
   ```bash
   normalize_slug() {
     echo "$1" | sed -E 's#^(https?://[^/]+/|git@[^:]+:)##; s#\.git$##'
