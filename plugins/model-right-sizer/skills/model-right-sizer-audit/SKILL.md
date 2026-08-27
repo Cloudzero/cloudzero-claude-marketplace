@@ -126,6 +126,12 @@ unquoted interpolation here means a crafted target or ref alters the
 command actually run on the machine doing the audit, not just the one being
 audited.
 
+**If `--base <branch>` was passed, it overrides detection below and is what
+step 5 branches off of and opens the PR against — `default_branch="$base"`
+in either bullet's snippet, skipping the `gh repo view` call entirely.**
+Every example below assumes no override; substitute the caller's value
+when one was given.
+
 - **Local path or current repo** (`<target>` is a filesystem path, or was
   omitted) → use it directly, no clone. `cd` into it (or stay put if
   omitted) and **require a clean working tree before doing anything else**:
@@ -137,7 +143,7 @@ audited.
     exit 1
   fi
   original_branch=$(git rev-parse --abbrev-ref HEAD)
-  default_branch=$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name')
+  default_branch="${base:-$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name')}"
   ```
   — passing the local path or an empty string as `gh repo view`'s argument
   fails outright, since that argument must be an `OWNER/REPO` slug or a URL,
@@ -161,7 +167,7 @@ audited.
 - **GitHub slug/URL** (`<target>` is `org/repo` or a full URL) → detect the
   default branch first:
   ```bash
-  default_branch=$(gh repo view "$target" --json defaultBranchRef --jq '.defaultBranchRef.name')
+  default_branch="${base:-$(gh repo view "$target" --json defaultBranchRef --jq '.defaultBranchRef.name')}"
   ```
   — passing `"$target"` is correct here, since it really is a resolvable
   identifier — then **always clone fresh into a scratch directory**. Never
@@ -213,6 +219,11 @@ inline in the orchestrating session; it doesn't warrant a sub-agent dispatch
 of its own.
 
 ### 2. Find every real call site, and decompose each by intent
+
+**If `--scope <path>` was passed, the sweep below covers only that
+file/directory — never the whole repo.** This is the one flag this step
+needs to honor; skipping it silently defeats the entire point of offering
+a scoped first run against an unfamiliar codebase (see Invocation).
 
 A "real LLM call" is a place code (or an agent/skill definition) actually
 **invokes** a model to do work — not a place a model's name is merely
@@ -612,6 +623,16 @@ back and restore it now before reporting the failure; don't leave that for
 caller's checkout on the generated audit branch is exactly the defect this
 step exists to prevent, regardless of why the run ended.
 
+**GitHub slug/URL runs only: remove `$scratch_dir` after a successful run**
+(`rm -rf "$scratch_dir"`, once the PR is open or, under `--no-pr`, once the
+JSON has been printed). It served only to construct the PR; nothing later
+needs it, and leaving it behind is an unbounded disk-usage leak across
+repeated runs — every invocation gets its own fresh scratch clone (see step
+1) with nothing to deduplicate against. Skip the cleanup if the run failed
+partway through: the caller may need to inspect that checkout to debug what
+happened, and this is the one target kind where the checkout being removed
+costs nothing *except* that debuggability.
+
 - The PR URL (or, under `--no-pr`, just the validated JSON).
 - Counts: real calls found, overrides suggested, kept-as-is, and how many
   were cross-provider references vs. real Claude-default verdicts.
@@ -659,6 +680,16 @@ step exists to prevent, regardless of why the run ended.
   success, `--no-pr`, or an early failure alike. The GitHub slug/URL path
   is exempt: it always works in a disposable scratch clone with nothing to
   restore.
+- **Every flag in Invocation has to actually change behavior somewhere, not
+  just appear in that list.** `--base` overrides `$default_branch`
+  detection in step 1 and is what step 5 opens the PR against; `--scope`
+  narrows step 2's sweep to one file/directory. A flag documented but never
+  read is the same defect class as a schema field accepted and never used
+  — it just fails silently instead of loudly.
+- **Clean up the one disposable resource this skill creates.** A GitHub
+  slug/URL run's `$scratch_dir` is removed after a successful run (step 7)
+  — not before, and not on a failed run, where the caller may need it to
+  debug.
 - **Never invent a model ID or price**, and never invent a non-Claude
   price — a non-Claude call gets a labeled cross-provider *reference* (say
   so explicitly in that row's `rationale`), not a fabricated keep/override
