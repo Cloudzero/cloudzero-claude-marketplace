@@ -142,13 +142,27 @@ when one was given.
          "them first, or point <target> at a fresh clone instead." >&2
     exit 1
   fi
-  original_branch=$(git rev-parse --abbrev-ref HEAD)
+  original_branch=$(git symbolic-ref --quiet --short HEAD || git rev-parse HEAD)
   default_branch="${base:-$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name')}"
   ```
   — passing the local path or an empty string as `gh repo view`'s argument
   fails outright, since that argument must be an `OWNER/REPO` slug or a URL,
   never a filesystem path; omitting the argument entirely is what makes `gh`
   read the *current directory's own* git remote instead.
+
+  **`git symbolic-ref`, not `git rev-parse --abbrev-ref HEAD`, for capturing
+  the starting point.** A checkout can start in detached HEAD (no branch at
+  all) as easily as on a named branch — `git rev-parse --abbrev-ref HEAD`
+  returns the *literal string* `"HEAD"` in that case, not a real ref.
+  Restoring with `git checkout "HEAD"` later doesn't return to the original
+  commit; by then HEAD has moved (the audit checked out `$default_branch`,
+  then the audit branch), so it silently checks out wherever HEAD already
+  is — a no-op that looks like a restore. `git symbolic-ref --quiet --short
+  HEAD` returns the branch name when there is one and fails (empty,
+  nonzero) when detached, so the `||` fallback captures the exact commit
+  SHA instead — `git checkout "$original_branch"` later does the right
+  thing either way: checks out the branch name, or re-detaches at the same
+  commit.
 
   **This checkout is the caller's real working tree, not a scratch clone —
   unlike the GitHub slug/URL path below, there is no fresh-clone option
@@ -569,7 +583,13 @@ never happens.
   README uses exactly that phrasing as its headline example (see that
   file's "Example interactions"). Require the flag, not an inferred intent,
   so the documented example and the actual default behavior are the same
-  gated flow.
+  gated flow. **If the caller reviews the gate and declines** (a third way
+  this step ends, distinct from `--no-pr` above and from reaching step 6
+  clean): on a local-path/current-repo run, `git checkout
+  "$original_branch"`; on a GitHub slug/URL run, `rm -rf "$scratch_dir"` —
+  same two cleanups as everywhere else in this step, reached from a third
+  door. The audit branch (or scratch clone) already exists by the time the
+  caller sees the gate; a "no" doesn't undo that on its own.
 - **Render the PR-body summary table — deterministically, from the
   committed JSON, not by hand:**
   ```
