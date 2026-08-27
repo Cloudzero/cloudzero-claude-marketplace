@@ -140,11 +140,21 @@ audited.
     && [ "$(echo "$candidate_slug" | tr '[:upper:]' '[:lower:]')" \
        = "$(echo "$target_slug" | tr '[:upper:]' '[:lower:]')" ] \
     && [ -z "$(git -C "$candidate" status --porcelain)" ]; then
-    ( cd "$candidate" && git fetch && git checkout "$default_branch" && git pull )
+    repo_path="$candidate"
   else
     gh repo clone "$target" "$scratch_dir/$repo_name"
+    repo_path="$scratch_dir/$repo_name"
   fi
+  cd "$repo_path" && git fetch && git checkout "$default_branch" && git pull
   ```
+  **`cd` into `$repo_path` outside any subshell** — every step from here on
+  (branch creation, the discovery pass, the blueprint write, the push, the
+  PR) assumes the working directory *is* the target checkout. Running the
+  fetch/checkout/pull inside a `( ... )` subshell, or cloning without a
+  following `cd`, leaves the shell sitting in whatever directory it started
+  in once that line returns — every later step would then silently run
+  against the *caller's* repo instead of the requested target.
+
   Compare the **normalized, exact `owner/repo` slug**, never a raw
   substring match — `grep -qi "$target"` against the remote URL would
   wrongly accept `acme/foobar` as a match for a target of `acme/foo`,
