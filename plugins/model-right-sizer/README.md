@@ -132,11 +132,23 @@ anything. Full blast radius per skill:
 - `model-right-sizer-audit` is **not purely read-only against the target
   repo** — it's the one exception in this plugin. It writes a single new
   file (`model-right-sizing-blueprint.json`, at the target repo's root) and
-  opens a PR there, but never edits any existing file, never touches real
-  application config, and gates on showing the assembled blueprint to the
-  user before committing — unless the caller already explicitly
-  pre-authorized opening the PR for the run. It respects `--no-pr` (print
-  the JSON to chat, write nothing) for a repo you don't have push access to.
+  opens a PR there, but never edits any existing file and never touches
+  real application config. It gates on showing the assembled blueprint to
+  the user before committing; that gate is skipped **only** by the explicit
+  `--yes` flag, never by how the request happens to be phrased. It respects
+  `--no-pr` (print the JSON to chat, write nothing) for a repo you don't
+  have push access to.
+
+  **On a local-path or current-repo run, the target repo is your own
+  working checkout, and the git side effects land there.** The skill
+  refuses to start unless the working tree is clean, then creates and
+  checks out `craft/model-right-sizing-audit-<date>`, commits the blueprint
+  to it, pushes, and opens the PR — restoring your original branch (or
+  detached commit) before it reports. Nothing outside the blueprint file is
+  ever committed, and the branch it leaves behind is the one backing the
+  PR. Point `<target>` at an `org/repo` slug instead and none of this
+  touches your checkout: that path always clones fresh into a scratch
+  directory and removes it when the run ends.
 
 See the repo-level [SECURITY.md](../../SECURITY.md) for how to report vulnerabilities.
 

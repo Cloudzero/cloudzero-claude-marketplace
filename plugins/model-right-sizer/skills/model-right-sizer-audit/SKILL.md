@@ -111,6 +111,44 @@ step for exactly what this does and does not exempt).
 > that it can be someone else's repo (see "When to use" above), so its
 > contents are exactly as trustworthy as any other unauthenticated input.
 
+## Cleanup contract
+
+**Every exit from this skill runs the cleanup for its target kind — success,
+early stop, decline, or failure alike.** State it once here; the steps below
+point back at this section rather than restating the commands, so a new exit
+point added later inherits the rule instead of needing its own copy of it.
+
+| Target kind | On every exit |
+|---|---|
+| Local path / current repo | `git checkout "$original_branch"` |
+| GitHub slug / URL | `rm -rf "$scratch_dir"` |
+
+The exits are not just step 7. A run can stop at: step 2's zero-call result
+(a clean, successful stop, not a failure), step 5's `--no-pr` print-and-stop,
+step 5's gate decline, step 7's normal end, or a failure at any step from 2
+through 6. Only the last of those five is an error, and all five need the
+same cleanup — deferring it to "step 7" strands it on every run that never
+reaches step 7, which is most of the ways this skill can end.
+
+**A gate decline needs two more things**, because by then the blueprint file
+is written and the audit branch exists:
+
+```bash
+git checkout -- model-right-sizing-blueprint.json 2>/dev/null \
+  || rm -f model-right-sizing-blueprint.json
+git checkout "$original_branch"
+git branch -D "craft/model-right-sizing-audit-$(date +%Y-%m-%d)"
+```
+
+Reverting the file matters because leaving it as an untracked-or-modified
+change would fail the *next* run's own cleanliness check — a decline
+shouldn't leave the checkout in a state that blocks the audit it just
+declined. Deleting the branch matters for the same reason it's safe to:
+the commit happens *after* the gate, so on a decline that branch carries
+nothing, and leaving it behind litters the caller's repo with an empty
+`craft/` branch per declined run. On a GitHub slug/URL run, skip both —
+`rm -rf "$scratch_dir"` already takes the file and the branch with it.
+
 ---
 
 ## Steps
@@ -174,15 +212,8 @@ when one was given.
   generated audit branch. Fail loudly and stop instead of guessing whether
   it's safe to proceed on dirty state.
 
-  **`git checkout "$original_branch"` at the moment this run stops being a
-  local-path/current-repo run — whichever step that happens at, not only
-  at step 7.** Step 7 names the normal end of a full run, but it is not the
-  only exit: step 5's `--no-pr` path prints the JSON and stops right there,
-  and a failure in steps 2-4 stops wherever it happens. Neither of those is
-  "step 7," and deferring the restore to a step the run never reaches is
-  how the checkout gets left on the generated audit branch anyway.
-  Restoring is one command — run it at whichever step is actually last,
-  don't wait for a later step that may not come.
+  `$original_branch` is what the Cleanup contract restores on this target
+  kind, at whichever step this run actually ends — see that section.
 - **GitHub slug/URL** (`<target>` is `org/repo` or a full URL) → detect the
   default branch first:
   ```bash
@@ -221,9 +252,11 @@ when one was given.
   a PR" in the *target* repo). A basename match is also not proof of
   identity on its own: `grep -qi "$target"` against a candidate's remote
   URL would wrongly accept `acme/foobar` as a match for a target of
-  `acme/foo`, since `foo` is literally a substring of `foobar` — the exact
-  match `normalize_slug` plus a case-insensitive equality check (still used
-  above for `target_slug` itself) is meant to prevent. One clone per run
+  `acme/foo`, since `foo` is literally a substring of `foobar` — the kind
+  of false match an exact, normalized slug comparison is meant to prevent.
+  No such comparison survives above: with the reuse path gone there is
+  nothing to compare a candidate against, and `normalize_slug` is now used
+  only to derive `repo_name` for the clone destination. One clone per run
   costs a few extra seconds; guessing at a local directory to reuse costs
   someone their working tree. If a future revision wants a reuse path back
   for speed, it needs an explicit opt-in flag — never the default — and the
@@ -238,12 +271,6 @@ inline in the orchestrating session; it doesn't warrant a sub-agent dispatch
 of its own.
 
 ### 2. Find every real call site, and decompose each by intent
-
-**If this step (or any step through 6) fails on a local-path/current-repo
-run: `git checkout "$original_branch"` before reporting the failure.** Don't
-count on remembering step 1's rule five steps later — this is the concrete
-command, restated here because this is a step it could actually be needed
-at.
 
 **If `--scope <path>` was passed, the sweep below covers only that
 file/directory — never the whole repo.** This is the one flag this step
@@ -390,13 +417,8 @@ non-severable phase keeps the file's existing `frontmatter_tier_keyword`
 there is no split to eventually apply.
 
 If the sweep finds **zero** real calls, stop here and report that plainly
-— but first, on a local-path/current-repo run, `git checkout
-"$original_branch"`. This is a clean, successful stop, not a failure, so
-the "if this step fails" reminder above doesn't obviously cover it; naming
-it separately is the fix. The audit branch was already checked out in
-step 1 whether or not step 2 finds anything to act on — a zero-call
-result is still a result, and it still leaves the caller on the wrong
-branch if this restore is skipped.
+— running the Cleanup contract first. A zero-call result is still a result,
+and it still leaves the caller on the audit branch if cleanup is skipped.
 
 **Model note (efficiency):** reading real code for call sites and
 job-intent is genuinely agentic work (multi-file, judgment-bearing) — treat
@@ -411,11 +433,6 @@ generic discovery agent already has the right tool-scoping (read/search,
 no edits) for this step.
 
 ### 3. Dry-run EACH candidate separately — delegate, don't score it yourself
-
-**If this step fails on a local-path/current-repo run:
-`git checkout "$original_branch"` before reporting the failure.** (Same
-rule as step 2 — restated here, not cross-referenced, since this is
-another step it could actually fire at.)
 
 For every candidate from step 2, invoke `/model-right-sizer-dryrun` **on
 its own** — one call, one dry-run. Do not hand the whole candidate list to
@@ -468,9 +485,6 @@ can and does produce materially different verdicts across personas
 precisely because each one got its own dry-run instead of a shared one.
 
 ### 4. Assemble ONE schema-conformant blueprint — no rendering, no model
-
-**If this step fails on a local-path/current-repo run:
-`git checkout "$original_branch"` before reporting the failure.**
 
 Merge the N dry-runs into a single document conforming to
 `model-right-sizer`'s `blueprint.schema.json` v1.0 — this merge is
@@ -548,17 +562,13 @@ validates clean.
 
 ### 5. Write the blueprint and open the PR
 
-**If any bullet below fails — the write, the gate, `gh pr create` itself
-erroring — on a local-path/current-repo run: `git checkout
-"$original_branch"` before reporting the failure.** That's a third way
-this step can end besides its own two named exits (`--no-pr` below, or
-reaching step 6 clean); it needs the same treatment as those two, not
-silent reliance on an earlier step's rule.
+This step has three exits — `--no-pr` below, a gate decline, or reaching
+step 6 clean — plus failure at any bullet. All four run the Cleanup
+contract; the decline case additionally reverts the blueprint file and
+deletes the audit branch, per that section.
 
-Skip this step under `--no-pr`: print the validated JSON to chat, then —
-before stopping — do whichever cleanup this run's target kind needs: a
-local-path/current-repo run runs `git checkout "$original_branch"`; a
-GitHub slug/URL run runs `rm -rf "$scratch_dir"`. This is a named early
+Skip this step under `--no-pr`: print the validated JSON to chat, then run
+the Cleanup contract before stopping. This is a named early
 exit, not a deferred cleanup for step 7 to handle — `--no-pr` never
 reaches step 7, so anything left waiting there for this target simply
 never happens.
@@ -585,20 +595,10 @@ never happens.
   so the documented example and the actual default behavior are the same
   gated flow. **If the caller reviews the gate and declines** (a third way
   this step ends, distinct from `--no-pr` above and from reaching step 6
-  clean): first, `git checkout -- model-right-sizing-blueprint.json 2>/dev/null
-  || rm -f model-right-sizing-blueprint.json` — reverts it to its
-  last-committed content if an earlier run had already committed one,
-  otherwise just deletes the file this run wrote, since the blueprint's own
-  write already happened above regardless of what the gate decides and a
-  decline doesn't undo it. Restoring `$original_branch` alone leaves that
-  file sitting there as an untracked-or-modified change, which would fail
-  the *next* run's own cleanliness check (step 1) — decline shouldn't leave
-  the checkout in a state that blocks the audit it just declined. Then: on
-  a local-path/current-repo run, `git checkout "$original_branch"`; on a
-  GitHub slug/URL run, `rm -rf "$scratch_dir"` — same two cleanups as
-  everywhere else in this step, reached from a third door. The audit
-  branch (or scratch clone) already exists by the time the caller sees the
-  gate; a "no" doesn't undo that on its own.
+  clean): run the Cleanup contract's decline case — it reverts the
+  blueprint file, restores `$original_branch`, and deletes the audit
+  branch. The blueprint write and the branch both already happened by the
+  time the caller sees the gate; a "no" doesn't undo either on its own.
 - **Render the PR-body summary table — deterministically, from the
   committed JSON, not by hand:**
   ```
@@ -667,11 +667,11 @@ never happens.
 
 ### 6. Confirm the PR is actually clear before reporting done
 
-**If this step fails on a local-path/current-repo run:
-`git checkout "$original_branch"` before reporting the failure.** The PR
-itself is already open at this point (step 5 pushed it) — restoring here
-doesn't touch that; it only prevents the caller's own checkout from
-sitting on the audit branch while this step's polling loop errors out.
+**If this step fails, run the Cleanup contract before reporting the
+failure.** The PR itself is already open at this point (step 5 pushed it)
+— restoring the caller's branch here doesn't touch that; it only prevents
+their checkout from sitting on the audit branch while this step's polling
+loop errors out.
 
 "PR open" is not "done." Poll `gh pr checks <pr-number>` until every check
 reaches a genuinely terminal state — a single empty poll doesn't mean
@@ -686,16 +686,14 @@ session on a sleep loop; a plain retry loop works fine too if it doesn't.
 ### 7. Report
 
 This step is the closing point of a **completed, PR-opened run only** —
-`--no-pr` stops at step 5 and never reaches here (that step names its own
-cleanup); a run that fails at any earlier step also stops there, not here
-(step 1's standing rule covers that case). Do not treat either of those as
-"handled at step 7" — they aren't, because this step never runs for them.
+`--no-pr` stops at step 5 and never reaches here, and a run that fails at
+any earlier step also stops there, not here — the Cleanup contract covers
+both. Do not treat either of those as "handled at step 7" — they aren't,
+because this step never runs for them.
 
-For a run that DOES reach this point: **local path / current repo runs
-restore `$original_branch`** (`git checkout "$original_branch"`) and
-**GitHub slug/URL runs remove `$scratch_dir`** (`rm -rf "$scratch_dir"`) —
-same two cleanups as step 5's `--no-pr` line, on the same two target kinds,
-just reached from the other exit. Do this before reporting anything below.
+For a run that DOES reach this point: run the Cleanup contract before
+reporting anything below. Same two cleanups as every other exit, just
+reached from the normal door.
 
 - The PR URL (or, under `--no-pr`, just the validated JSON).
 - Counts: real calls found, overrides suggested, kept-as-is, and how many
@@ -740,10 +738,10 @@ just reached from the other exit. Do this before reporting anything below.
   at repo root.
 - **A local-path/current-repo run never ends on a different branch than it
   started on.** Require a clean working tree before touching it (step 1),
-  record `$original_branch`, and restore it before reporting (step 7) —
-  success, `--no-pr`, or an early failure alike. The GitHub slug/URL path
-  is exempt: it always works in a disposable scratch clone with nothing to
-  restore.
+  record `$original_branch`, and restore it at whichever step the run
+  actually ends — see the Cleanup contract, which is the single statement
+  of that rule for every exit. The GitHub slug/URL path is exempt: it
+  always works in a disposable scratch clone with nothing to restore.
 - **Every flag in Invocation has to actually change behavior somewhere, not
   just appear in that list.** `--base` overrides `$default_branch`
   detection in step 1 and is what step 5 opens the PR against; `--scope`
