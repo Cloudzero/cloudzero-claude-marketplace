@@ -375,7 +375,14 @@ non-severable phase keeps the file's existing `frontmatter_tier_keyword`
 `pin_syntax` and is never marked `shared_frontmatter_key_needs_split`, since
 there is no split to eventually apply.
 
-If the sweep finds **zero** real calls, stop here and report that plainly.
+If the sweep finds **zero** real calls, stop here and report that plainly
+— but first, on a local-path/current-repo run, `git checkout
+"$original_branch"`. This is a clean, successful stop, not a failure, so
+the "if this step fails" reminder above doesn't obviously cover it; naming
+it separately is the fix. The audit branch was already checked out in
+step 1 whether or not step 2 finds anything to act on — a zero-call
+result is still a result, and it still leaves the caller on the wrong
+branch if this restore is skipped.
 
 **Model note (efficiency):** reading real code for call sites and
 job-intent is genuinely agentic work (multi-file, judgment-bearing) — treat
