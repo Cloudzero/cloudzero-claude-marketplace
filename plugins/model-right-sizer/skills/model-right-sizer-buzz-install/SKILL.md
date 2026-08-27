@@ -87,8 +87,14 @@ exactly one source of truth.
    there's nothing to patch until an agent exists.
 
 4. **Insert or refresh a marker-delimited pointer paragraph** in every
-   persona source file found in step 3 — append-only, idempotent (check for
-   the marker before inserting, skip files that already have it):
+   persona source file found in step 3 — append-only per file, but *refresh*
+   is real: if the marker is already present, replace only the text between
+   the markers with the current wording below (so a later change to this
+   skill's pointer text reaches every previously-patched file on re-run,
+   same as `model-right-sizer-install`'s own step 4); if the marker is
+   absent, insert it fresh at the point described below. Never skip a file
+   just because the marker already exists — that would make "re-run the
+   skill to refresh," which the marker comment itself promises, false.
 
    ```markdown
    <!-- model-right-sizer-buzz-mandate:begin (managed by model-right-sizer-buzz-install — do not hand-edit; re-run the skill to refresh) -->
@@ -113,15 +119,24 @@ exactly one source of truth.
    — don't hand-edit the JSON directly, or the next regeneration will
    silently drop the change.
 
-6. **Flag, don't perform, the live-push step.** Patching source files
-   changes what a *newly created or re-drafted* Buzz agent will say — it
-   does **not** update an already-saved, live teammate's actual system
-   prompt in Buzz Desktop. That requires `buzz agents draft-update` per
-   agent, each one landing as an owner-reviewed draft the human must save.
-   That's a bigger, more visible action than editing source files (N owner
-   reviews, one per affected agent) — tell the user how many personas were
-   patched and that pushing them live is a separate step requiring their
-   go-ahead; do not run `draft-update` without it.
+6. **Flag, don't perform, the live-push step — and don't confuse source
+   files with live agents.** Patching source files changes what a *newly
+   created or re-drafted* Buzz agent will say — it does **not** update an
+   already-saved, live teammate's actual system prompt in Buzz Desktop. The
+   number of source files patched in step 4 is **not** the number of live
+   agents needing a push: a source file may not have been drafted yet, may
+   have been saved under a different display name, or may have no live
+   counterpart at all. Don't report or assume a 1:1 count. Instead, check
+   the actual live roster before reporting — e.g. `buzz channels members`
+   (or `buzz agents`, whichever this workspace's CLI exposes) — and match it
+   against the patched source files by name. If the live roster can't be
+   checked (no CLI access, ambiguous naming), say so explicitly rather than
+   presenting the source-file count as if it were the live-agent count.
+   Whatever the real number turns out to be, pushing it live requires
+   `buzz agents draft-update` per agent, each landing as an owner-reviewed
+   draft the human must save — a bigger, more visible action than editing
+   source files, so it needs the human's go-ahead; do not run
+   `draft-update` without it.
 
 7. **Verify, don't assume.** Re-read every file you touched (the `AGENTS.md`
    mandate block from step 2, and every persona pointer from step 4) and
@@ -129,10 +144,11 @@ exactly one source of truth.
 
 8. **Report**: whether this was confirmed a Buzz Nest; whether the
    `AGENTS.md` mandate was freshly stamped or already present; which persona
-   source files got the pointer paragraph (and which, if any, were skipped
-   as already patched); whether a regeneration step ran; and the exact count
-   of live agents still needing a `draft-update` to actually pick this up,
-   with a clear ask before running that.
+   source files got the pointer paragraph (inserted fresh vs. refreshed vs.
+   already up to date); whether a regeneration step ran; and — kept
+   separate, per step 6 — both the source-file count and the actual live
+   count (or an honest "couldn't verify the live roster") before asking for
+   a go-ahead on `draft-update`.
 
 ## Why this is a separate skill, not a branch inside `model-right-sizer-install`
 
