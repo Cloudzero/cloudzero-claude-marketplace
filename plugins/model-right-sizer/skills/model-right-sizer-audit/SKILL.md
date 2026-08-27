@@ -160,10 +160,15 @@ when one was given.
   generated audit branch. Fail loudly and stop instead of guessing whether
   it's safe to proceed on dirty state.
 
-  **Remember `$original_branch` for the rest of this run — this target
-  kind is the only one that ever needs to restore it (step 7 closes the
-  loop).** Recording it costs nothing here; forgetting it is how a clean
-  working tree still ends the run on the wrong branch.
+  **`git checkout "$original_branch"` at the moment this run stops being a
+  local-path/current-repo run — whichever step that happens at, not only
+  at step 7.** Step 7 names the normal end of a full run, but it is not the
+  only exit: step 5's `--no-pr` path prints the JSON and stops right there,
+  and a failure in steps 2-4 stops wherever it happens. Neither of those is
+  "step 7," and deferring the restore to a step the run never reaches is
+  how the checkout gets left on the generated audit branch anyway.
+  Restoring is one command — run it at whichever step is actually last,
+  don't wait for a later step that may not come.
 - **GitHub slug/URL** (`<target>` is `org/repo` or a full URL) → detect the
   default branch first:
   ```bash
@@ -508,8 +513,13 @@ validates clean.
 
 ### 5. Write the blueprint and open the PR
 
-Skip this step under `--no-pr`; print the validated JSON to chat instead
-and stop.
+Skip this step under `--no-pr`: print the validated JSON to chat, then —
+before stopping — do whichever cleanup this run's target kind needs: a
+local-path/current-repo run runs `git checkout "$original_branch"`; a
+GitHub slug/URL run runs `rm -rf "$scratch_dir"`. This is a named early
+exit, not a deferred cleanup for step 7 to handle — `--no-pr` never
+reaches step 7, so anything left waiting there for this target simply
+never happens.
 
 - Write the validated document to `model-right-sizing-blueprint.json` **at
   the target checkout's root** — not `docs/`, not any subdirectory. The
@@ -612,26 +622,17 @@ session on a sleep loop; a plain retry loop works fine too if it doesn't.
 
 ### 7. Report
 
-**Local path / current repo runs only: restore `$original_branch` first —
-before reporting anything, success or failure alike.** This is the one
-target kind operating on the caller's own working tree (the GitHub
-slug/URL path always works in a disposable scratch clone — nothing to
-restore there). If this run stopped early at any earlier step — a failed
-dry-run, a validation error, anything short of reaching this point — go
-back and restore it now before reporting the failure; don't leave that for
-"later," since there usually isn't a later in the same turn. Leaving the
-caller's checkout on the generated audit branch is exactly the defect this
-step exists to prevent, regardless of why the run ended.
+This step is the closing point of a **completed, PR-opened run only** —
+`--no-pr` stops at step 5 and never reaches here (that step names its own
+cleanup); a run that fails at any earlier step also stops there, not here
+(step 1's standing rule covers that case). Do not treat either of those as
+"handled at step 7" — they aren't, because this step never runs for them.
 
-**GitHub slug/URL runs only: remove `$scratch_dir` after a successful run**
-(`rm -rf "$scratch_dir"`, once the PR is open or, under `--no-pr`, once the
-JSON has been printed). It served only to construct the PR; nothing later
-needs it, and leaving it behind is an unbounded disk-usage leak across
-repeated runs — every invocation gets its own fresh scratch clone (see step
-1) with nothing to deduplicate against. Skip the cleanup if the run failed
-partway through: the caller may need to inspect that checkout to debug what
-happened, and this is the one target kind where the checkout being removed
-costs nothing *except* that debuggability.
+For a run that DOES reach this point: **local path / current repo runs
+restore `$original_branch`** (`git checkout "$original_branch"`) and
+**GitHub slug/URL runs remove `$scratch_dir`** (`rm -rf "$scratch_dir"`) —
+same two cleanups as step 5's `--no-pr` line, on the same two target kinds,
+just reached from the other exit. Do this before reporting anything below.
 
 - The PR URL (or, under `--no-pr`, just the validated JSON).
 - Counts: real calls found, overrides suggested, kept-as-is, and how many
