@@ -585,11 +585,20 @@ never happens.
   so the documented example and the actual default behavior are the same
   gated flow. **If the caller reviews the gate and declines** (a third way
   this step ends, distinct from `--no-pr` above and from reaching step 6
-  clean): on a local-path/current-repo run, `git checkout
-  "$original_branch"`; on a GitHub slug/URL run, `rm -rf "$scratch_dir"` —
-  same two cleanups as everywhere else in this step, reached from a third
-  door. The audit branch (or scratch clone) already exists by the time the
-  caller sees the gate; a "no" doesn't undo that on its own.
+  clean): first, `git checkout -- model-right-sizing-blueprint.json 2>/dev/null
+  || rm -f model-right-sizing-blueprint.json` — reverts it to its
+  last-committed content if an earlier run had already committed one,
+  otherwise just deletes the file this run wrote, since the blueprint's own
+  write already happened above regardless of what the gate decides and a
+  decline doesn't undo it. Restoring `$original_branch` alone leaves that
+  file sitting there as an untracked-or-modified change, which would fail
+  the *next* run's own cleanliness check (step 1) — decline shouldn't leave
+  the checkout in a state that blocks the audit it just declined. Then: on
+  a local-path/current-repo run, `git checkout "$original_branch"`; on a
+  GitHub slug/URL run, `rm -rf "$scratch_dir"` — same two cleanups as
+  everywhere else in this step, reached from a third door. The audit
+  branch (or scratch clone) already exists by the time the caller sees the
+  gate; a "no" doesn't undo that on its own.
 - **Render the PR-body summary table — deterministically, from the
   committed JSON, not by hand:**
   ```
