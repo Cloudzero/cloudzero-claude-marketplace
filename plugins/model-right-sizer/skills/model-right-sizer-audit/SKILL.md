@@ -130,8 +130,8 @@ through 6. Only the last of those five is an error, and all five need the
 same cleanup — deferring it to "step 7" strands it on every run that never
 reaches step 7, which is most of the ways this skill can end.
 
-**A gate decline needs two more things**, because by then the blueprint file
-is written and the audit branch exists:
+**Every exit BEFORE step 5's commit bullet actually runs needs two more
+things**, whether or not the blueprint file exists yet:
 
 ```bash
 git checkout -- model-right-sizing-blueprint.json 2>/dev/null \
@@ -140,14 +140,35 @@ git checkout "$original_branch"
 git branch -D "$audit_branch"
 ```
 
-Reverting the file matters because leaving it as an untracked-or-modified
-change would fail the *next* run's own cleanliness check — a decline
-shouldn't leave the checkout in a state that blocks the audit it just
-declined. Deleting the branch matters for the same reason it's safe to:
-the commit happens *after* the gate, so on a decline that branch carries
-nothing, and leaving it behind litters the caller's repo with an empty
-`craft/` branch per declined run. On a GitHub slug/URL run, skip both —
-`rm -rf "$scratch_dir"` already takes the file and the branch with it.
+**This is a wider set than just "decline."** It's every exit where the
+audit branch carries no commit yet: step 2's zero-call stop, a failure at
+any step from 2 through 4, step 5's gate decline, and a failure inside
+step 5 itself before its "commit, push, `gh pr create`" bullet runs. What
+distinguishes these from a normal completion is whether the commit already
+happened — not whether the caller said no. An earlier version of this
+contract tied the extra cleanup to "decline" specifically and missed the
+other four; a zero-call or steps-2-4 failure left the same empty `craft/`
+branch behind, uncaught until it was.
+
+The revert-or-remove line is safe to run even when the file was never
+written (a zero-call stop, or a failure before step 5's write bullet):
+`git checkout --` on a path that isn't tracked fails harmlessly into the
+`rm -f` fallback, which is a no-op on a path that doesn't exist either.
+Reverting the file (when it does exist) matters because leaving it as an
+untracked-or-modified change would fail the *next* run's own cleanliness
+check. Deleting the branch matters because it carries nothing worth
+keeping at any of these five exits, and leaving it behind litters the
+caller's repo with an empty branch per non-completing run.
+
+**Once step 5's commit/push/PR-create bullet has actually run, the branch
+is the real deliverable and must be kept** — a failure in step 6 (the
+PR-checks poll) only runs the base two-row table above, never this block;
+deleting `$audit_branch` at that point would delete the very branch the
+already-open PR is backed by.
+
+On a GitHub slug/URL run, skip this whole block regardless of which exit
+it is — `rm -rf "$scratch_dir"` already takes the file and the branch with
+it, since both live inside the scratch clone being removed.
 
 ---
 
@@ -618,7 +639,7 @@ never happens.
   so the documented example and the actual default behavior are the same
   gated flow. **If the caller reviews the gate and declines** (a third way
   this step ends, distinct from `--no-pr` above and from reaching step 6
-  clean): run the Cleanup contract's decline case — it reverts the
+  clean): run the Cleanup contract's pre-commit block — it reverts the
   blueprint file, restores `$original_branch`, and deletes the audit
   branch. The blueprint write and the branch both already happened by the
   time the caller sees the gate; a "no" doesn't undo either on its own.
@@ -690,11 +711,13 @@ never happens.
 
 ### 6. Confirm the PR is actually clear before reporting done
 
-**If this step fails, run the Cleanup contract before reporting the
-failure.** The PR itself is already open at this point (step 5 pushed it)
-— restoring the caller's branch here doesn't touch that; it only prevents
-their checkout from sitting on the audit branch while this step's polling
-loop errors out.
+**If this step fails, run the Cleanup contract's base table only — NOT its
+pre-commit block.** The PR is already open at this point (step 5 pushed
+it); running the pre-commit block's `git branch -D "$audit_branch"` here
+would delete the very branch that open PR is backed by. Restoring
+`$original_branch` (or removing `$scratch_dir`) doesn't touch the PR — it
+only prevents the caller's checkout from sitting on the audit branch while
+this step's polling loop errors out.
 
 "PR open" is not "done." Poll `gh pr checks <pr-number>` until every check
 reaches a genuinely terminal state — a single empty poll doesn't mean
@@ -714,9 +737,12 @@ any earlier step also stops there, not here — the Cleanup contract covers
 both. Do not treat either of those as "handled at step 7" — they aren't,
 because this step never runs for them.
 
-For a run that DOES reach this point: run the Cleanup contract before
-reporting anything below. Same two cleanups as every other exit, just
-reached from the normal door.
+For a run that DOES reach this point: run the Cleanup contract's base
+table only — checkout restore or scratch-dir removal, same as step 6.
+**Never the pre-commit block here either** — this is the one exit where
+the commit has definitely already landed and the PR is definitely already
+open; deleting `$audit_branch` at this point is the same mistake as doing
+it in step 6, just at the very last step instead of the second-to-last.
 
 - The PR URL (or, under `--no-pr`, just the validated JSON).
 - Counts: real calls found, overrides suggested, kept-as-is, and how many
