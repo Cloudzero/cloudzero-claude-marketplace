@@ -129,6 +129,15 @@ that scaling by forcing a full blueprint on every micro-edit.
      `AGENTS.md` isn't invented as a target unless the repo already has
      one.
 
+   **If the targeted `AGENTS.md` is a Buzz Nest** (its content opens with a
+   `# Buzz Nest` heading — a persistent workspace created by Buzz Desktop,
+   github.com/block/buzz), stamping it here is necessary but not
+   sufficient: Buzz's multi-agent delegate pattern needs one more,
+   Buzz-specific step this skill deliberately doesn't cover — see
+   [`model-right-sizer-buzz-install`](../model-right-sizer-buzz-install/SKILL.md)
+   for why and what to do next. Still stamp the mandate here regardless;
+   that skill builds on this one, it doesn't replace it.
+
    Say in your step 6 report which file(s) you found and which you
    targeted — don't let this decision happen silently.
 
@@ -215,6 +224,10 @@ this skill's text to do it.
 - [`model-right-sizer-dryrun`](../model-right-sizer-dryrun/SKILL.md) — the
   skill this mandate's "before" hook now runs directly to produce the JSON
   blueprint; see its own file for what it returns and why.
+- [`model-right-sizer-buzz-install`](../model-right-sizer-buzz-install/SKILL.md)
+  — run *after* this skill when the target is a Buzz Nest; closes the
+  sub-agent-delegate propagation gap this skill's `AGENTS.md` stamp alone
+  doesn't cover.
 - [`README.md`](../../README.md) — "Using it" / "Importing it into another
   repo without duplicating it" — how to get the agent file itself into a
   target repo, the same pattern this skill's file follows.

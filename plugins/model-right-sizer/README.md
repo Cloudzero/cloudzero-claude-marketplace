@@ -24,6 +24,7 @@ This directory is a self-contained **Claude Code plugin** within the CloudZero m
 - [`schemas/blueprint.schema.json`](schemas/blueprint.schema.json) (+ [`blueprint.example.json`](schemas/blueprint.example.json)) — the strict JSON Schema the agent's Pass A (the right-sizing blueprint) must conform to, and a worked instance. Defined once here; the agent and the `model-right-sizer-dryrun` skill both point at it instead of restating the shape. Enforced, not just documented: [`../../scripts/validate_blueprint.py`](../../scripts/validate_blueprint.py) validates the worked example in CI and is the same validator `model-right-sizer-dryrun` runs against its own output before handing a blueprint to an orchestrator.
 - [`skills/model-right-sizer-install/SKILL.md`](skills/model-right-sizer-install/SKILL.md) — a companion skill that stamps a narrow, organization-agnostic mandate onto a *target* repo's `CLAUDE.md`, `AGENTS.md`, or both (whichever the repo actually has): run `model-right-sizer-dryrun` before every substantive task and hand its JSON blueprint to the orchestrator, then consult `model-right-sizer` directly for a usage report after. It also installs this plugin itself if the agent/skill aren't already discoverable there. Beyond that, it's just the mandate — no broader development process — so it can be adopted independently of whatever flow (if any) the target repo already runs.
 - [`skills/model-right-sizer-dryrun/SKILL.md`](skills/model-right-sizer-dryrun/SKILL.md) — a companion skill that previews the agent's JSON blueprint for a free-text intent, without building anything.
+- [`skills/model-right-sizer-buzz-install/SKILL.md`](skills/model-right-sizer-buzz-install/SKILL.md) — a companion skill that extends the mandate into a Buzz Nest (a multi-agent workspace created by [Buzz Desktop](https://github.com/block/buzz)): runs `model-right-sizer-install` first, then closes a Buzz-specific gap — every Buzz teammate delegates to its real agent via a sub-agent spawn that doesn't inherit the calling session's `AGENTS.md`, so this skill patches the persona's own system prompt with a pointer instead.
 - [`eval/`](eval/) — the deterministic formula/citation checks for this plugin's research grounding: a committed answer key (`citation_ledger.json`) plus pure-function implementations of every cited formula (`token_economics.py`, `reasoning_budget.py`) and a standalone drift checker (`check_citations.py`). Corresponding pytest suites live at the repo root under `tests/model_right_sizer/`. See [`eval/README.md`](eval/README.md).
 - [`CHANGELOG.md`](CHANGELOG.md) — dated entries for every change to the agent core or its companion skills. Update this in the same PR as the change.
 
@@ -38,7 +39,7 @@ Install it from the CloudZero marketplace — add the marketplace once, then ins
 /plugin install model-right-sizer@cloudzero
 ```
 
-That installs the agent (`agents/model-right-sizer.md`) and both companion skills (`skills/model-right-sizer-install/`, `skills/model-right-sizer-dryrun/`) together. Adding the marketplace also makes the [`cost-analyst`](../cost-analyst/) plugin available (`/plugin install cost-analyst@cloudzero`). To try it before installing, or to iterate on a local checkout, load it directly for a session instead:
+That installs the agent (`agents/model-right-sizer.md`) and all three companion skills (`skills/model-right-sizer-install/`, `skills/model-right-sizer-dryrun/`, `skills/model-right-sizer-buzz-install/`) together. Adding the marketplace also makes the [`cost-analyst`](../cost-analyst/) plugin available (`/plugin install cost-analyst@cloudzero`). To try it before installing, or to iterate on a local checkout, load it directly for a session instead:
 
 ```
 claude --plugin-dir /path/to/cloudzero-claude-marketplace/plugins/model-right-sizer
@@ -47,6 +48,8 @@ claude --plugin-dir /path/to/cloudzero-claude-marketplace/plugins/model-right-si
 Once installed, the agent needs no special tools beyond `Read`, `Grep`, `Glob`, `WebFetch`, and `Task` (used to delegate the live model-pricing fetch to a cheap sub-agent tier, when your framework supports dispatching one — otherwise it falls back to fetching with `WebFetch` directly) — it never edits files; it only reads context and reports.
 
 To also enforce that the agent gets consulted on every substantive turn, run the `model-right-sizer-install` skill once against the repo you want to onboard (it's a companion in this same plugin, so installing the plugin is enough — just invoke the skill in the target repo). It writes a marker-delimited mandate block into that repo's `CLAUDE.md`, `AGENTS.md`, or both (detected, not assumed — see the skill's step 3) — idempotent and append-only, safe to re-run to refresh the wording.
+
+If the target is a **Buzz Nest** instead of an ordinary repo, run `model-right-sizer-buzz-install` right after — it builds on `model-right-sizer-install`'s `AGENTS.md` stamp rather than duplicating it, then closes the propagation gap specific to Buzz's multi-agent delegate pattern (see that skill's own file for why a plain `AGENTS.md` stamp isn't enough there).
 
 ### Dropping the files in manually instead
 

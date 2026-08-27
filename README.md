@@ -29,7 +29,7 @@ The flagship plugin providing comprehensive cost analysis capabilities:
 A model-selection economist for Claude Code that keeps AI spend as intentional as cloud spend:
 - The `model-right-sizer` agent scores each task on effectiveness need vs. efficiency pressure vs. difficulty, and recommends the smallest Claude model (plus effort and token budget) that clears the bar
 - Runs as a bookend around work: a right-sizing blueprint before, a model-usage report after
-- Companion skills to preview the routing map for an intent (`model-right-sizer-dryrun`) and to stamp a standing right-sizing mandate onto a repo (`model-right-sizer-install`)
+- Companion skills to preview the routing map for an intent (`model-right-sizer-dryrun`), to stamp a standing right-sizing mandate onto a repo (`model-right-sizer-install`), and to extend that mandate into a multi-agent Buzz Nest (`model-right-sizer-buzz-install`)
 
 See the [Model Right Sizer README](plugins/model-right-sizer/README.md) for full details.
 
