@@ -31,11 +31,13 @@ _TIER_WORDS = ("opus", "sonnet", "haiku", "fable")
 
 
 def _tier_label(model_id: str) -> str:
-    """Human-scannable label for a `pick.*.model` value, including the two
-    non-tier sentinels the schema allows (`deterministic_query_layer`,
-    and the audit-specific `inherit_session_model` — see this skill's
-    uncertainty_ledger for why that second one exists: a stage that
-    evaluates a model rather than using one has no tier of its own)."""
+    """Human-scannable label for a `pick.*.model` value. Handles the one
+    sentinel `blueprint.schema.json` actually documents
+    (`deterministic_query_layer`), plus `inherit_session_model` defensively
+    — that second value is NOT currently defined by the schema (only
+    `deterministic_query_layer` is), so this is speculative handling for a
+    possible future sentinel, not a documented one. Falls back to the raw id
+    verbatim for anything else, rather than guessing."""
     if model_id == "deterministic_query_layer":
         return "no model"
     if model_id == "inherit_session_model":

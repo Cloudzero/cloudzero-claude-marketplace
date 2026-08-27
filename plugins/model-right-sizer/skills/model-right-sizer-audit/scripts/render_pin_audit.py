@@ -82,22 +82,44 @@ def _tier_keyword(model_id: str) -> str:
 
 def _model_label(model_id: str) -> str:
     """Human-readable label for a `pick.*.model` value, including the one
-    non-model sentinel the schema allows (`deterministic_query_layer`)."""
+    non-model sentinel the schema allows (`deterministic_query_layer`).
+
+    Never raises. A cross-provider reference pick (a `gpt-*`, `gemini-*`, ...
+    id in `pick.primary.model` or `pick.runner_up.model`) has no Claude tier
+    keyword to extract, and that is an expected, documented outcome (SKILL.md
+    step 3: "a call whose current model isn't Claude gets a cross-provider
+    reference pick"), not a defect worth crashing the whole render over.
+    Falls back to the raw id verbatim — the same graceful degradation
+    `render_pr_table.py`'s own `_tier_label` already uses for an
+    unrecognized id, rather than letting `_tier_keyword`'s ValueError
+    propagate out of a display-only helper."""
     if model_id == _DETERMINISTIC_QUERY_LAYER:
         return "deterministic query layer, no model"
-    return _tier_keyword(model_id)
+    try:
+        return _tier_keyword(model_id)
+    except ValueError:
+        return model_id
 
 
-def _format_literal(model_id: str, effort: str | None, pin_syntax: str) -> str:
-    """Render a suggested model+effort pick in the same idiom as the pin it replaces."""
+def _format_literal(model_id: str, pin_syntax: str) -> str:
+    """Render a suggested model pick in the same idiom as the pin it
+    replaces. This is the SUBSTITUTABLE literal only — effort is rendered
+    separately (see `_with_effort`, used only for the human-readable
+    "Suggested" cell) and never folded in here: most `pin_syntax` values have
+    no adjacent "effort:" token in the source file to fold it into, and doing
+    so would repeat the exact mistake the `frontmatter_tier_keyword` branch
+    below used to make."""
     if pin_syntax == "frontmatter_tier_keyword":
-        # Assumes the key literally IS `model:` — correct for a repo
-        # following that convention, wrong for a repo using a different key
-        # (e.g. `producer:`). A candidate on a differently-keyed frontmatter
-        # line belongs under `bare_value` below instead: narrow
-        # current_pin_literal to just the value, so the key is never part
-        # of what gets replaced.
-        return f"model: {_tier_keyword(model_id)}"
+        # Bare tier keyword only. `current_pin_literal` for this pin_syntax
+        # is itself the bare value (e.g. "opus"), per SKILL.md step 2's
+        # minimal-substitutable-token rule — the frontmatter's `model:` key
+        # is not part of what current_pin_literal names, so it can't be part
+        # of what replaces it either. Returning "model: {tier}" here used to
+        # produce a non-substitutable edit: pasted over the bare token `opus`,
+        # it left a duplicated key in the file (`model: model: sonnet`). A
+        # candidate on a differently-keyed frontmatter line (e.g. `producer:`)
+        # belongs under `bare_value` below instead.
+        return _tier_keyword(model_id)
     if pin_syntax == "full_model_id":
         return model_id
     if pin_syntax == "cli_flag":
@@ -117,6 +139,20 @@ def _format_literal(model_id: str, effort: str | None, pin_syntax: str) -> str:
     if pin_syntax == "sdk_string_literal":
         return f'"{model_id}"'
     raise ValueError(f"unknown pin_syntax {pin_syntax!r}")
+
+
+def _with_effort(label: str, effort: str | None) -> str:
+    """Append the effort annotation to a human-readable label — never to an
+    `_format_literal` return value. Uses the same ` @{effort}` convention
+    `render_pr_table.py`'s `_pick_cell` already established for this plugin,
+    so the two renderers agree on how effort reads. This is display-only:
+    effort has no reliable adjacent token in the source file for most
+    `pin_syntax` values, so it can't be folded into the copy-paste-literal
+    "Exact edit" column without risking the same non-substitutable-edit bug
+    fixed in `_format_literal` above — surfacing it here (never silently
+    dropping it, as this script used to) is the fix that doesn't reintroduce
+    that one."""
+    return f"{label} @{effort}" if effort else label
 
 
 def _has_line_break(text: str) -> bool:
@@ -222,6 +258,7 @@ def render(candidates: list[dict], blueprint_rows: list[dict], target_label: str
         is_query_layer_pick = pick["primary"]["model"] == _DETERMINISTIC_QUERY_LAYER
         current = cand["current_pin_literal"]
         is_keep = row["keep_or_override"] != "override"
+        effort = pick["primary"].get("effort")
 
         if is_query_layer_pick:
             # There is no equivalent literal on the suggested side — the
@@ -233,9 +270,7 @@ def render(candidates: list[dict], blueprint_rows: list[dict], target_label: str
             suggested = None
         else:
             try:
-                suggested = _format_literal(
-                    pick["primary"]["model"], pick["primary"].get("effort"), cand["pin_syntax"]
-                )
+                suggested = _format_literal(pick["primary"]["model"], cand["pin_syntax"])
             except ValueError as exc:
                 suggested = f"⚠️ {exc}"
 
@@ -259,7 +294,12 @@ def render(candidates: list[dict], blueprint_rows: list[dict], target_label: str
             # renders any non-None pair as a `-`/`+` diff — telling the
             # reviewer to replace a pin the table, one section up, just
             # labeled "no change".
-            appendix.append((idx, current, None if is_keep else suggested))
+            appendix.append((
+                idx,
+                current,
+                None if is_keep else suggested,
+                None if (is_keep or is_query_layer_pick) else effort,
+            ))
             current_cell = f"*(see appendix #{idx})*"
         else:
             current_cell = _code_span(current)
@@ -277,7 +317,10 @@ def render(candidates: list[dict], blueprint_rows: list[dict], target_label: str
             suggested_cell = f"*(see appendix #{idx})*"
             edit_cell = f"see appendix #{idx}"
         else:
-            suggested_cell = _code_span(suggested)
+            # `_with_effort` annotates the human-readable cell only — the
+            # "Exact edit" column stays the bare substitutable literal, per
+            # `_format_literal`'s own contract.
+            suggested_cell = _code_span(_with_effort(suggested, effort))
             edit_cell = f"{_code_span(current)} → {_code_span(suggested)}"
 
         record = {
@@ -340,8 +383,16 @@ def render(candidates: list[dict], blueprint_rows: list[dict], target_label: str
             "unaltered diff instead.)*"
         )
         parts.append("")
-        for idx, current, suggested in appendix:
-            parts.append(f"### #{idx}")
+        for idx, current, suggested, appendix_effort in appendix:
+            heading = f"### #{idx}"
+            if suggested is not None and appendix_effort:
+                # Same reason as the main-table `_with_effort` call — an
+                # appendix entry is a fenced diff of the literal alone, so
+                # the effort recommendation has to surface in the heading
+                # text instead, or it goes missing here the same way it used
+                # to go missing everywhere else.
+                heading += f" (suggested effort: {appendix_effort})"
+            parts.append(heading)
             if suggested is None:
                 # A structural fix (query-layer pick) has no counterpart
                 # literal to diff against — show the current value alone,

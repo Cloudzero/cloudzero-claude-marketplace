@@ -163,7 +163,10 @@ account data is involved anywhere in this repo.
   intent (including a flat skill's own step sequence, where severable),
   dry-runs each one independently, and commits one schema-conformant
   `model-right-sizing-blueprint.json` at the repo's root via a PR — never a
-  markdown table standing in for the real audit.
+  markdown table standing in for the real audit. Phrasing it this way does
+  **not** skip the review gate — the skill shows the assembled blueprint
+  before opening the PR regardless of how the request is worded; only the
+  explicit `--yes` flag skips that gate.
 
 ## Limitations
 
