@@ -137,7 +137,7 @@ is written and the audit branch exists:
 git checkout -- model-right-sizing-blueprint.json 2>/dev/null \
   || rm -f model-right-sizing-blueprint.json
 git checkout "$original_branch"
-git branch -D "craft/model-right-sizing-audit-$(date +%Y-%m-%d)"
+git branch -D "$audit_branch"
 ```
 
 Reverting the file matters because leaving it as an untracked-or-modified
@@ -261,10 +261,22 @@ when one was given.
   someone their working tree. If a future revision wants a reuse path back
   for speed, it needs an explicit opt-in flag — never the default — and the
   Action scope note has to say so.
-- Unless `--no-pr`, create the working branch now:
-  `craft/model-right-sizing-audit-$(date +%Y-%m-%d)` off `"$default_branch"`,
+- Unless `--no-pr`, create the working branch now, off `"$default_branch"`,
   checked out. Don't share this branch with unrelated work already sitting
   on the checkout — keep it isolated to this audit.
+  ```bash
+  audit_branch="craft/model-right-sizing-audit-$(date +%Y-%m-%d)"
+  git checkout -b "$audit_branch" "$default_branch"
+  ```
+  **Capture the name into `$audit_branch` here; never re-derive it later by
+  calling `date` again.** `$(date +%Y-%m-%d)` is not stable across a run —
+  an audit begun before midnight and declined after it recomputes to the
+  *next* day's name, so the Cleanup contract's `git branch -D` would target
+  a branch that never existed and silently leave the real one behind. The
+  leftover then collides with tomorrow's run, whose `checkout -b` fails on
+  a name already taken. Same capture-don't-recompute rule as
+  `$original_branch` above, for the same reason: a value read twice from a
+  moving source is two different values.
 
 This step is pure mechanical git/`gh` plumbing — no model judgment. Run it
 inline in the orchestrating session; it doesn't warrant a sub-agent dispatch
