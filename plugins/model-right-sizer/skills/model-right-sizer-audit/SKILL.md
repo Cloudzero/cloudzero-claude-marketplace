@@ -265,18 +265,29 @@ when one was given.
   checked out. Don't share this branch with unrelated work already sitting
   on the checkout — keep it isolated to this audit.
   ```bash
-  audit_branch="craft/model-right-sizing-audit-$(date +%Y-%m-%d)"
+  audit_branch="craft/model-right-sizing-audit-$(date +%Y-%m-%d-%H%M%S)"
   git checkout -b "$audit_branch" "$default_branch"
   ```
   **Capture the name into `$audit_branch` here; never re-derive it later by
-  calling `date` again.** `$(date +%Y-%m-%d)` is not stable across a run —
+  calling `date` again.** A recomputed `date` is not stable across a run —
   an audit begun before midnight and declined after it recomputes to the
   *next* day's name, so the Cleanup contract's `git branch -D` would target
-  a branch that never existed and silently leave the real one behind. The
-  leftover then collides with tomorrow's run, whose `checkout -b` fails on
-  a name already taken. Same capture-don't-recompute rule as
-  `$original_branch` above, for the same reason: a value read twice from a
-  moving source is two different values.
+  a branch that never existed and silently leave the real one behind. Same
+  capture-don't-recompute rule as `$original_branch` above, for the same
+  reason: a value read twice from a moving source is two different values.
+
+  **Seconds, not just the date, for the same reason a step earlier in this
+  file already needed them: uniqueness, not just readability.** A date-only
+  name (`...-audit-2026-08-27`) collides the moment the same local checkout
+  is audited twice in one day — the first run's branch is still there (it
+  backs an open PR, or a decline hasn't cleaned it up yet), so the second
+  run's `checkout -b` fails on a name already taken. `%H%M%S` keeps the date
+  prefix for readability/sorting while making same-day reruns the norm, not
+  the edge case, without adding a collision-check loop to what is otherwise
+  a straight-line sequence of git commands. Not collision-proof for two
+  runs launched in the same second — if concurrent runs against the same
+  checkout become a real scenario, that needs its own explicit guard, not
+  an assumption this timestamp already covers it.
 
 This step is pure mechanical git/`gh` plumbing — no model judgment. Run it
 inline in the orchestrating session; it doesn't warrant a sub-agent dispatch
