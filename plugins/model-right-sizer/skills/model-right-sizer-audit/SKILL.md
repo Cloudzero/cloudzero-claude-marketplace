@@ -128,14 +128,30 @@ audited.
 
 - **Local path or current repo** (`<target>` is a filesystem path, or was
   omitted) → use it directly, no clone. `cd` into it (or stay put if
-  omitted) and detect the default branch with **no repo argument**:
+  omitted) and **require a clean working tree before doing anything else**:
   ```bash
+  if [ -n "$(git status --porcelain)" ]; then
+    echo "model-right-sizer-audit creates and checks out its own branch" \
+         "here — this checkout has uncommitted changes. Commit or stash" \
+         "them first, or point <target> at a fresh clone instead." >&2
+    exit 1
+  fi
   default_branch=$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name')
   ```
   — passing the local path or an empty string as `gh repo view`'s argument
   fails outright, since that argument must be an `OWNER/REPO` slug or a URL,
   never a filesystem path; omitting the argument entirely is what makes `gh`
   read the *current directory's own* git remote instead.
+
+  **This checkout is the caller's real working tree, not a scratch clone —
+  unlike the GitHub slug/URL path below, there is no fresh-clone option
+  here.** Without the cleanliness check, step 1's later branch-creation
+  bullet runs unconditionally against whatever is currently checked out:
+  uncommitted changes can carry into the audit commit alongside the
+  blueprint file, a conflicting `git checkout` can abort the audit
+  mid-step, and either way the caller's checkout ends up switched onto the
+  generated audit branch. Fail loudly and stop instead of guessing whether
+  it's safe to proceed on dirty state.
 - **GitHub slug/URL** (`<target>` is `org/repo` or a full URL) → detect the
   default branch first:
   ```bash
