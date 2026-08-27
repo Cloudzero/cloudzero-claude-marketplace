@@ -43,13 +43,20 @@ the real agent's `subagent_type`, relay the result, and reply via
 `buzz messages send`. That sub-agent spawn only receives the **target
 agent's own definition** as its system prompt. It does **not** inherit the
 calling session's `AGENTS.md`, however good the mandate block sitting inside
-it is. This was verified directly: a live spawn of a real `model-right-sizer`
-sub-agent, asked to report its own starting context, confirmed zero mention
-of `AGENTS.md` or any mandate block — its own words, "if you're checking
-whether a mandate mechanism propagates into spawned sub-agents — it did not
-reach me." Stamping `AGENTS.md` alone is therefore necessary but not
-sufficient in a Buzz Nest; it reaches a fresh top-level session rooted
-there, but not the delegate hop every Buzz persona makes on every request.
+it is. This was verified directly on 2026-08-27: a live spawn of a real
+`model-right-sizer` sub-agent, asked to report its own starting context,
+confirmed zero mention of `AGENTS.md` or any mandate block — its own words,
+"if you're checking whether a mandate mechanism propagates into spawned
+sub-agents — it did not reach me." Stamping `AGENTS.md` alone is therefore
+necessary but not sufficient in a Buzz Nest; it reaches a fresh top-level
+session rooted there, but not the delegate hop every Buzz persona makes on
+every request. (The same dogfooding run also surfaced this gap for
+`xdp-tools`'s own `buzz-bridge` skill — see its `SKILL.md` step 6, Topology
+B item 5, "Standing mandates," which independently closes the identical
+propagation gap for the xdp-tools roster's own Buzz personas. That's a
+different generation pipeline than this skill targets by default, which is
+why step 4 above checks for its unmarked pointer before inserting a
+marker-wrapped duplicate.)
 
 The fix isn't more `AGENTS.md` editing — it's teaching the **persona's own
 system prompt** to read `AGENTS.md` itself, before it delegates. That's a
@@ -96,6 +103,17 @@ exactly one source of truth.
    just because the marker already exists — that would make "re-run the
    skill to refresh," which the marker comment itself promises, false.
 
+   **Before inserting fresh, check for an equivalent UNMARKED pointer** —
+   some generation pipelines (e.g. `buzz-bridge`'s own Topology B persona
+   template, item 5 "Standing mandates") already bake in the same sentence
+   as a permanent, named template item with no marker of its own, precisely
+   so it survives regeneration without needing this skill at all. Grep the
+   file for the pointer's own text ("read this Nest's `AGENTS.md` for...")
+   before assuming the marker's absence means the paragraph is missing. If
+   an equivalent unmarked pointer is already present, don't insert a second,
+   marker-wrapped copy of the same sentence — note in step 8's report that
+   this file's generation template already covers it, and move on.
+
    ```markdown
    <!-- model-right-sizer-buzz-mandate:begin (managed by model-right-sizer-buzz-install — do not hand-edit; re-run the skill to refresh) -->
    **Standing mandates.** Before your first substantive action in a channel
@@ -132,6 +150,17 @@ exactly one source of truth.
    against the patched source files by name. If the live roster can't be
    checked (no CLI access, ambiguous naming), say so explicitly rather than
    presenting the source-file count as if it were the live-agent count.
+
+   **A name match alone still isn't enough — check the live prompt's actual
+   content, not just that a same-named agent exists.** A live agent matched
+   by name may already carry the current pointer (nothing to push, don't
+   count it), may carry a stale/older version of it (needs a push, and say
+   so explicitly rather than lumping it in as "unpatched"), or may carry
+   none at all (needs a push). Reading a live agent's saved system prompt
+   back isn't always possible from this CLI — if it isn't, say plainly that
+   the count is a name-match upper bound, not a confirmed content diff,
+   rather than implying every matched name definitely needs `draft-update`.
+
    Whatever the real number turns out to be, pushing it live requires
    `buzz agents draft-update` per agent, each landing as an owner-reviewed
    draft the human must save — a bigger, more visible action than editing
