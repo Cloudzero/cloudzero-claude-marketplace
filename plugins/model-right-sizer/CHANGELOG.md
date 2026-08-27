@@ -20,6 +20,70 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   this one is not purely read-only against the *target* repo: it writes
   the one blueprint file and opens a PR there, gated on user confirmation
   before committing.
+- **Token Economics (arXiv:2605.09104) as a third research-grounded layer.**
+  A new "Economic formalization" section in `agents/model-right-sizer.md`
+  formalizes the effectiveness-vs-efficiency split itself as the paper's
+  `min TC s.t. Y ≥ Z` constrained cost-minimization objective, maps the
+  nested-CES production function and elasticity-of-substitution onto why
+  model tier and tokens trade off (and why they stop trading off past a
+  model floor — the paper's "Memory Wall"), and maps the paper's shadow-price
+  formulas onto two levers already in the rubric: latency-as-cost on
+  agentic loops (`w·τ_inf`) and message-schema debt (`ΔC_coord`). Also
+  grounds the deterministic-query-layer lever in a literal amortization
+  test (the paper's GraphRAG capital-leverage inequality,
+  `I_graph/Q < ΔY`).
+- **`eval/` — deterministic formula and citation checks for all three
+  research-grounded papers.** Every numeric claim the agent file attributes
+  to IBPO, BudgetThinker, or Token Economics is now checked against a
+  committed answer key (`eval/citation_ledger.json`) instead of trusted on
+  sight, and every formula those papers state or the agent's own rubric
+  assumes (the CES production/cost functions, shadow prices, the MRTS-at-
+  optimum condition, the GraphRAG leverage inequality, budget-adherence
+  classification, the agentic-down-pin promote/revert gate, IBPO's
+  accuracy-per-compute arithmetic) is implemented as a pure, stdlib-only
+  Python function in `eval/token_economics.py` / `eval/reasoning_budget.py`
+  — run by code, never re-derived by an LLM. `eval/check_citations.py` runs
+  four independent checks per claim: (1) literal presence of the cited
+  formula/number in the agent file's own prose (`exact_substring` — this
+  caught a real bug: the agent file's CES equation had transcribed `K^ρ`/`M^ρ`
+  as `K^p`/`M^p`); (2) recomputed arithmetic against the claimed figure; (3)
+  the literal formula (`formula_expr`, evaluated on `sample_inputs`) against
+  actually *calling* the function it claims to implement; and (4) that same
+  `formula_expr`'s free variables against an independently-declared
+  `source_variables` set, so `formula_expr` and the implementation can't
+  silently drift together in the same wrong direction without also
+  falsifying a third, separately-authored field. Together this makes a
+  `source_quote`/`implemented_by` pair enforced, not just documented — what
+  it does *not* do is machine-verify `source_quote` against the live arXiv
+  PDF, which stays a human/primary-source check performed at authoring time
+  (named explicitly, the same way `verifiable: false` names its own gap).
+  Each `sample_inputs` entry also carries an independently hand-computed
+  `expected_output` (fourth review pass), diffed against both `formula_expr`'s
+  evaluation and the implementation's return value — this is what catches
+  `formula_expr` and the implementation being edited TOGETHER to the same
+  wrong structure (a sign flip, a swapped pairing) that keeps the same
+  variable names and so would otherwise pass every other check silently.
+  The checker and both modules are exercised by the pytest suite under
+  `tests/model_right_sizer/` at the repo root, including tamper tests
+  proving each check actually catches drift — one deliberately constructed
+  so a dropped term's sample value is 0 (invisible to the arithmetic check)
+  to show why the variable-coverage check is a distinct layer, and one that
+  monkeypatches the implementation to match a tampered formula_expr to show
+  the expected_output diff is what catches a coordinated drift, not the
+  other two checks. `check_citations.py`'s own docstring is explicit that
+  this narrows, but doesn't formally close, the residual gap of a
+  sufficiently coordinated multi-field edit -- true closure would mean
+  re-deriving the paper's math from an independent symbolic source at CI
+  time, out of scope here. One claim — IBPO's "~2x the
+  accuracy-per-compute of self-consistency" — is explicitly marked
+  `verifiable: false` pending the paper's own self-consistency baseline
+  figure, rather than assumed true. `ces_production` and
+  `ces_production_cobb_douglas_limit` also guard `L**beta` against `L=0`
+  combined with a negative `beta` (the same zero-base/negative-exponent
+  `ZeroDivisionError` pattern already fixed for `K`/`M`, found on a second
+  review pass after the K/M fix landed) — a residual boundary the
+  K/M-specific guard didn't cover, since labor has no rigid-complementarity
+  escape hatch to fall back on the way K/M do.
 - `schemas/blueprint.schema.json` — a strict JSON Schema (draft 2020-12,
   `additionalProperties: false` throughout) for Pass A, the right-sizing
   blueprint. Requires every `blueprint_rows[]` entry to carry all
