@@ -225,6 +225,12 @@ of its own.
 
 ### 2. Find every real call site, and decompose each by intent
 
+**If this step (or any step through 6) fails on a local-path/current-repo
+run: `git checkout "$original_branch"` before reporting the failure.** Don't
+count on remembering step 1's rule five steps later — this is the concrete
+command, restated here because this is a step it could actually be needed
+at.
+
 **If `--scope <path>` was passed, the sweep below covers only that
 file/directory — never the whole repo.** This is the one flag this step
 needs to honor; skipping it silently defeats the entire point of offering
@@ -385,6 +391,11 @@ no edits) for this step.
 
 ### 3. Dry-run EACH candidate separately — delegate, don't score it yourself
 
+**If this step fails on a local-path/current-repo run:
+`git checkout "$original_branch"` before reporting the failure.** (Same
+rule as step 2 — restated here, not cross-referenced, since this is
+another step it could actually fire at.)
+
 For every candidate from step 2, invoke `/model-right-sizer-dryrun` **on
 its own** — one call, one dry-run. Do not hand the whole candidate list to
 one dispatch and ask for a combined verdict; do not call the
@@ -436,6 +447,9 @@ can and does produce materially different verdicts across personas
 precisely because each one got its own dry-run instead of a shared one.
 
 ### 4. Assemble ONE schema-conformant blueprint — no rendering, no model
+
+**If this step fails on a local-path/current-repo run:
+`git checkout "$original_branch"` before reporting the failure.**
 
 Merge the N dry-runs into a single document conforming to
 `model-right-sizer`'s `blueprint.schema.json` v1.0 — this merge is
@@ -512,6 +526,13 @@ paraphrase of it kept here. Do not write the file anywhere until it
 validates clean.
 
 ### 5. Write the blueprint and open the PR
+
+**If any bullet below fails — the write, the gate, `gh pr create` itself
+erroring — on a local-path/current-repo run: `git checkout
+"$original_branch"` before reporting the failure.** That's a third way
+this step can end besides its own two named exits (`--no-pr` below, or
+reaching step 6 clean); it needs the same treatment as those two, not
+silent reliance on an earlier step's rule.
 
 Skip this step under `--no-pr`: print the validated JSON to chat, then —
 before stopping — do whichever cleanup this run's target kind needs: a
@@ -609,6 +630,12 @@ never happens.
   before writing the file; they are not shell variables.
 
 ### 6. Confirm the PR is actually clear before reporting done
+
+**If this step fails on a local-path/current-repo run:
+`git checkout "$original_branch"` before reporting the failure.** The PR
+itself is already open at this point (step 5 pushed it) — restoring here
+doesn't touch that; it only prevents the caller's own checkout from
+sitting on the audit branch while this step's polling loop errors out.
 
 "PR open" is not "done." Poll `gh pr checks <pr-number>` until every check
 reaches a genuinely terminal state — a single empty poll doesn't mean
