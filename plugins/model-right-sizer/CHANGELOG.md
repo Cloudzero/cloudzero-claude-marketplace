@@ -16,7 +16,14 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   `model-right-sizer-install` first, then patches the Buzz persona's own
   system-prompt source file(s) with a short, marker-delimited pointer
   paragraph (never a copy of the mandate text) instructing it to read
-  `AGENTS.md` before its first substantive action each session.
+  `AGENTS.md` before its first substantive action each session. Checks for
+  an equivalent unmarked pointer before inserting its own, since at least
+  one other Buzz-hosted agent roster (`Cloudzero/project-xdp-tools`'s
+  `buzz-bridge` skill) independently discovered and closed this identical
+  propagation gap the same way, by baking the pointer into its own
+  persona-generation template — this isn't a novel defect specific to this
+  plugin, just the same class of gap wherever a Buzz persona delegates via
+  a sub-agent spawn.
   `model-right-sizer-install` itself gained a short callout pointing here
   when its target `AGENTS.md` turns out to be a Buzz Nest.
 - **Token Economics (arXiv:2605.09104) as a third research-grounded layer.**
