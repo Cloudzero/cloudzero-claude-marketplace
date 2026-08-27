@@ -136,6 +136,7 @@ audited.
          "them first, or point <target> at a fresh clone instead." >&2
     exit 1
   fi
+  original_branch=$(git rev-parse --abbrev-ref HEAD)
   default_branch=$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name')
   ```
   — passing the local path or an empty string as `gh repo view`'s argument
@@ -152,6 +153,11 @@ audited.
   mid-step, and either way the caller's checkout ends up switched onto the
   generated audit branch. Fail loudly and stop instead of guessing whether
   it's safe to proceed on dirty state.
+
+  **Remember `$original_branch` for the rest of this run — this target
+  kind is the only one that ever needs to restore it (step 7 closes the
+  loop).** Recording it costs nothing here; forgetting it is how a clean
+  working tree still ends the run on the wrong branch.
 - **GitHub slug/URL** (`<target>` is `org/repo` or a full URL) → detect the
   default branch first:
   ```bash
@@ -595,6 +601,17 @@ session on a sleep loop; a plain retry loop works fine too if it doesn't.
 
 ### 7. Report
 
+**Local path / current repo runs only: restore `$original_branch` first —
+before reporting anything, success or failure alike.** This is the one
+target kind operating on the caller's own working tree (the GitHub
+slug/URL path always works in a disposable scratch clone — nothing to
+restore there). If this run stopped early at any earlier step — a failed
+dry-run, a validation error, anything short of reaching this point — go
+back and restore it now before reporting the failure; don't leave that for
+"later," since there usually isn't a later in the same turn. Leaving the
+caller's checkout on the generated audit branch is exactly the defect this
+step exists to prevent, regardless of why the run ended.
+
 - The PR URL (or, under `--no-pr`, just the validated JSON).
 - Counts: real calls found, overrides suggested, kept-as-is, and how many
   were cross-provider references vs. real Claude-default verdicts.
@@ -636,6 +653,12 @@ session on a sleep loop; a plain retry loop works fine too if it doesn't.
 - **Read-only against the target's real configuration.** The only file this
   skill ever writes in the target repo is `model-right-sizing-blueprint.json`
   at repo root.
+- **A local-path/current-repo run never ends on a different branch than it
+  started on.** Require a clean working tree before touching it (step 1),
+  record `$original_branch`, and restore it before reporting (step 7) —
+  success, `--no-pr`, or an early failure alike. The GitHub slug/URL path
+  is exempt: it always works in a disposable scratch clone with nothing to
+  restore.
 - **Never invent a model ID or price**, and never invent a non-Claude
   price — a non-Claude call gets a labeled cross-provider *reference* (say
   so explicitly in that row's `rationale`), not a fabricated keep/override
