@@ -80,6 +80,15 @@ def _tier_keyword(model_id: str) -> str:
     )
 
 
+def _has_tier_keyword(model_id: str) -> bool:
+    """True if `model_id` contains one of the real Claude tier words — the
+    same substring check `_tier_keyword` makes, exposed as a boolean so a
+    caller can branch on it (`is_cross_provider_pick` in `render()`) without
+    a try/except for ordinary control flow."""
+    lowered = model_id.lower()
+    return any(word in lowered for word in _TIER_WORDS)
+
+
 def _model_label(model_id: str) -> str:
     """Human-readable label for a `pick.*.model` value, including the one
     non-model sentinel the schema allows (`deterministic_query_layer`).
@@ -256,17 +265,30 @@ def render(candidates: list[dict], blueprint_rows: list[dict], target_label: str
 
         pick = row["pick"]
         is_query_layer_pick = pick["primary"]["model"] == _DETERMINISTIC_QUERY_LAYER
+        # A cross-provider reference pick (gpt-5, gemini-..., or a sentinel
+        # this schema doesn't document like inherit_session_model) has no
+        # real Claude tier and isn't the one sentinel _format_literal knows
+        # how to leave alone either — SKILL.md step 4 is explicit that a
+        # cross-provider-reference row gets no routing-map row, because
+        # there is no real edit to apply yet, only a reference pick. Before
+        # this check existed, `_format_literal` happily formatted a
+        # syntactically valid but semantically wrong literal for most
+        # pin_syntax values (only `frontmatter_tier_keyword` ever validated
+        # the model id at all), so a reader could copy-paste "gpt-5" into
+        # an Anthropic SDK call.
+        is_cross_provider_pick = not is_query_layer_pick and not _has_tier_keyword(
+            pick["primary"]["model"]
+        )
         current = cand["current_pin_literal"]
         is_keep = row["keep_or_override"] != "override"
         effort = pick["primary"].get("effort")
 
-        if is_query_layer_pick:
-            # There is no equivalent literal on the suggested side — the
-            # right-sizer's pick is "stop calling a model here at all," a
-            # structural fix (e.g. read this value from config instead of
-            # hardcoding it), not a token-for-token substitution. `None`
-            # (not a placeholder string) signals "no counterpart literal"
-            # to the appendix renderer below.
+        if is_query_layer_pick or is_cross_provider_pick:
+            # Neither has a real, pasteable edit to apply yet — a structural
+            # fix (query layer) or a reference pick with no counterpart on
+            # this provider (cross-provider) alike. `None` (not a
+            # placeholder string) signals "no counterpart literal" to the
+            # appendix renderer below.
             suggested = None
         else:
             try:
@@ -298,7 +320,7 @@ def render(candidates: list[dict], blueprint_rows: list[dict], target_label: str
                 idx,
                 current,
                 None if is_keep else suggested,
-                None if (is_keep or is_query_layer_pick) else effort,
+                None if (is_keep or is_query_layer_pick or is_cross_provider_pick) else effort,
             ))
             current_cell = f"*(see appendix #{idx})*"
         else:
@@ -313,6 +335,9 @@ def render(candidates: list[dict], blueprint_rows: list[dict], target_label: str
         elif is_query_layer_pick:
             suggested_cell = "*(structural fix — see Why; no literal substitution)*"
             edit_cell = "*(no literal substitution — see Why)*"
+        elif is_cross_provider_pick:
+            suggested_cell = "*(cross-provider reference — see Why)*"
+            edit_cell = "*(reference pick only — no live edit)*"
         elif needs_appendix:
             suggested_cell = f"*(see appendix #{idx})*"
             edit_cell = f"see appendix #{idx}"

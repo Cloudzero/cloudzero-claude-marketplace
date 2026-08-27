@@ -205,3 +205,83 @@ def test_render_does_not_crash_on_inherit_session_model_pick():
     doc, counts = m.render(candidates, blueprint_rows, "acme/foo")
     assert counts["keep"] == 1
     assert "inherit_session_model" in doc
+
+
+# ---------------------------------------------------------------------------
+# Residual from the bug-3 fix (follow-up review, pullrequestreview-5043316140):
+# a cross-provider PRIMARY pick on an override row must not render a
+# pasteable "Exact edit" — SKILL.md step 4 says a cross-provider-reference
+# row has no live edit to apply, only a reference pick.
+# ---------------------------------------------------------------------------
+
+
+def test_has_tier_keyword():
+    assert m._has_tier_keyword("claude-opus-5") is True
+    assert m._has_tier_keyword("gpt-5") is False
+    assert m._has_tier_keyword("inherit_session_model") is False
+    assert m._has_tier_keyword(m._DETERMINISTIC_QUERY_LAYER) is False
+
+
+def test_cross_provider_primary_pick_gets_no_live_edit():
+    """Reproduces the reviewer's exact repro: a gpt-5 primary on an override
+    row used to render a real, copy-pasteable "Exact edit" once the bug-3
+    crash was fixed -- the crash was masking this semantic gap."""
+    candidates = [
+        {
+            "candidate_id": "c1",
+            "file": "a.py",
+            "line": 1,
+            "component": "scorer",
+            "current_pin_literal": "claude-opus-5",
+            "pin_syntax": "sdk_string_literal",
+            "job_description": "score a thing",
+        }
+    ]
+    blueprint_rows = [
+        {
+            "id": "c1",
+            "keep_or_override": "override",
+            "rationale": "CROSS-PROVIDER REFERENCE ONLY - not a live edit",
+            "pick": {
+                "primary": {"model": "gpt-5", "effort": "low", "confidence": 75},
+                "runner_up": {"model": "claude-haiku-4-5", "confidence": 25},
+            },
+        }
+    ]
+    doc, counts = m.render(candidates, blueprint_rows, "acme/foo")
+    assert counts["override"] == 1
+    # No pasteable literal anywhere in the row -- neither "Suggested" nor
+    # "Exact edit" hands over something a reader could paste into an SDK call.
+    assert '"gpt-5"' not in doc
+    assert "cross-provider reference — see Why" in doc
+    assert "reference pick only — no live edit" in doc
+
+
+def test_inherit_session_model_override_also_gets_no_live_edit():
+    """Same treatment as the cross-provider case, not the pasteable-literal
+    path a keep row would otherwise mask -- covers the reviewer's smaller,
+    related note about the two renderers disagreeing on this sentinel."""
+    candidates = [
+        {
+            "candidate_id": "c1",
+            "file": "a.py",
+            "line": 1,
+            "component": "scorer",
+            "current_pin_literal": "claude-opus-5",
+            "pin_syntax": "sdk_string_literal",
+            "job_description": "score a thing",
+        }
+    ]
+    blueprint_rows = [
+        {
+            "id": "c1",
+            "keep_or_override": "override",
+            "rationale": "inherits caller's session model, not a real edit",
+            "pick": {
+                "primary": {"model": "inherit_session_model", "confidence": 60},
+            },
+        }
+    ]
+    doc, counts = m.render(candidates, blueprint_rows, "acme/foo")
+    assert counts["override"] == 1
+    assert "reference pick only — no live edit" in doc
