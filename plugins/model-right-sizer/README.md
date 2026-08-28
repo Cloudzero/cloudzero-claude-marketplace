@@ -24,6 +24,7 @@ This directory is a self-contained **Claude Code plugin** within the CloudZero m
 - [`schemas/blueprint.schema.json`](schemas/blueprint.schema.json) (+ [`blueprint.example.json`](schemas/blueprint.example.json)) — the strict JSON Schema the agent's Pass A (the right-sizing blueprint) must conform to, and a worked instance. Defined once here; the agent and the `model-right-sizer-dryrun` skill both point at it instead of restating the shape. Enforced, not just documented: [`../../scripts/validate_blueprint.py`](../../scripts/validate_blueprint.py) validates the worked example in CI and is the same validator `model-right-sizer-dryrun` runs against its own output before handing a blueprint to an orchestrator.
 - [`skills/model-right-sizer-install/SKILL.md`](skills/model-right-sizer-install/SKILL.md) — a companion skill that stamps a narrow, organization-agnostic mandate onto a *target* repo's `CLAUDE.md`, `AGENTS.md`, or both (whichever the repo actually has): run `model-right-sizer-dryrun` before every substantive task and hand its JSON blueprint to the orchestrator, then consult `model-right-sizer` directly for a usage report after. It also installs this plugin itself if the agent/skill aren't already discoverable there. Beyond that, it's just the mandate — no broader development process — so it can be adopted independently of whatever flow (if any) the target repo already runs.
 - [`skills/model-right-sizer-dryrun/SKILL.md`](skills/model-right-sizer-dryrun/SKILL.md) — a companion skill that previews the agent's JSON blueprint for a free-text intent, without building anything.
+- [`skills/model-right-sizer-audit/SKILL.md`](skills/model-right-sizer-audit/SKILL.md) — a companion skill that retroactively audits every real model call already shipped in a target repo — one dry-run per decomposed call, via `model-right-sizer-dryrun` — and commits a single schema-conformant blueprint back to that repo through a PR. See its own "Action scope" note: unlike the other two skills, it writes one file and opens a PR in the *target* repo, not just this one.
 - [`eval/`](eval/) — the deterministic formula/citation checks for this plugin's research grounding: a committed answer key (`citation_ledger.json`) plus pure-function implementations of every cited formula (`token_economics.py`, `reasoning_budget.py`) and a standalone drift checker (`check_citations.py`). Corresponding pytest suites live at the repo root under `tests/model_right_sizer/`. See [`eval/README.md`](eval/README.md).
 - [`CHANGELOG.md`](CHANGELOG.md) — dated entries for every change to the agent core or its companion skills. Update this in the same PR as the change.
 
@@ -38,7 +39,7 @@ Install it from the CloudZero marketplace — add the marketplace once, then ins
 /plugin install model-right-sizer@cloudzero
 ```
 
-That installs the agent (`agents/model-right-sizer.md`) and both companion skills (`skills/model-right-sizer-install/`, `skills/model-right-sizer-dryrun/`) together. Adding the marketplace also makes the [`cost-analyst`](../cost-analyst/) plugin available (`/plugin install cost-analyst@cloudzero`). To try it before installing, or to iterate on a local checkout, load it directly for a session instead:
+That installs the agent (`agents/model-right-sizer.md`) and all three companion skills (`skills/model-right-sizer-install/`, `skills/model-right-sizer-dryrun/`, `skills/model-right-sizer-audit/`) together. Adding the marketplace also makes the [`cost-analyst`](../cost-analyst/) plugin available (`/plugin install cost-analyst@cloudzero`). To try it before installing, or to iterate on a local checkout, load it directly for a session instead:
 
 ```
 claude --plugin-dir /path/to/cloudzero-claude-marketplace/plugins/model-right-sizer
@@ -70,8 +71,11 @@ See the **"Extending this agent for your own organization"** section at the bott
 ## Prerequisites
 
 None. This plugin is an agent definition, a JSON Schema for its blueprint
-output, and two companion skills — no runtime dependencies, no code that
-calls an LLM or CloudZero API directly.
+output, and three companion skills — no runtime dependencies, no code that
+calls an LLM or CloudZero API directly. `model-right-sizer-audit` does
+orchestrate the `gh` CLI and `git` against a target repo (see its own
+Prerequisites), but that's an external tool it shells out to, not a
+dependency this plugin bundles or requires an API key for.
 It's read by whatever agent runtime loads it (Claude Code, or a compatible
 Claude-Agent-SDK-based runtime), which supplies its own model access. No API
 keys are required by the plugin itself. `eval/` is the one directory with
@@ -107,9 +111,13 @@ ship.
 
 ## Action scope
 
-Read-only, by design. The agent's tool grant is `Read, Grep, Glob, WebFetch,
-Task` — `Task` lets it delegate the model-pricing fetch to a sub-agent; it
-never edits or writes files. Its companion skills' blast radius:
+Read-only by design at the agent level. The agent's tool grant is `Read,
+Grep, Glob, WebFetch, Task` — `Task` lets it delegate the model-pricing
+fetch to a sub-agent; it never edits or writes files. Two of the three
+companion skills inherit that same read-only discipline against the target
+repo's real configuration; the third (`model-right-sizer-audit`) writes one
+new file and opens a PR, gated on explicit confirmation before it commits
+anything. Full blast radius per skill:
 
 - `model-right-sizer-install` writes the same marker-delimited mandate block
   into a target repo's `CLAUDE.md`, `AGENTS.md`, or both — whichever exist —
@@ -121,6 +129,26 @@ never edits or writes files. Its companion skills' blast radius:
   instructions if plugin install isn't available) — the only action it
   takes outside those marker-delimited blocks.
 - `model-right-sizer-dryrun` writes nothing; it only returns the JSON blueprint (unless the user explicitly asks it to save one to a file).
+- `model-right-sizer-audit` is **not purely read-only against the target
+  repo** — it's the one exception in this plugin. It writes a single new
+  file (`model-right-sizing-blueprint.json`, at the target repo's root) and
+  opens a PR there, but never edits any existing file and never touches
+  real application config. It gates on showing the assembled blueprint to
+  the user before committing; that gate is skipped **only** by the explicit
+  `--yes` flag, never by how the request happens to be phrased. It respects
+  `--no-pr` (print the JSON to chat, write nothing) for a repo you don't
+  have push access to.
+
+  **On a local-path or current-repo run, the target repo is your own
+  working checkout, and the git side effects land there.** The skill
+  refuses to start unless the working tree is clean, then creates and
+  checks out `craft/model-right-sizing-audit-<date>`, commits the blueprint
+  to it, pushes, and opens the PR — restoring your original branch (or
+  detached commit) before it reports. Nothing outside the blueprint file is
+  ever committed, and the branch it leaves behind is the one backing the
+  PR. Point `<target>` at an `org/repo` slug instead and none of this
+  touches your checkout: that path always clones fresh into a scratch
+  directory and removes it when the run ends.
 
 See the repo-level [SECURITY.md](../../SECURITY.md) for how to report vulnerabilities.
 
@@ -142,6 +170,15 @@ account data is involved anywhere in this repo.
 - *"Dry-run: build a Slack bot that summarizes daily standup threads."* →
   invokes `model-right-sizer-dryrun`, which returns only the JSON blueprint,
   no build.
+- *"Audit the model calls in this repo and open a PR."* → invokes
+  `model-right-sizer-audit`: finds every real call site, decomposes each by
+  intent (including a flat skill's own step sequence, where severable),
+  dry-runs each one independently, and commits one schema-conformant
+  `model-right-sizing-blueprint.json` at the repo's root via a PR — never a
+  markdown table standing in for the real audit. Phrasing it this way does
+  **not** skip the review gate — the skill shows the assembled blueprint
+  before opening the PR regardless of how the request is worded; only the
+  explicit `--yes` flag skips that gate.
 
 ## Limitations
 

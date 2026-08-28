@@ -5,6 +5,21 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 ## Unreleased
 
 ### Added
+- `skills/model-right-sizer-audit` — a companion skill that retroactively
+  audits every real, already-shipped model call in a target repo: finds
+  each call site (an SDK/API invocation, a sub-agent dispatch, an agent's
+  `model:` frontmatter), decomposes it by intent — including decomposing a
+  single flat skill's own documented step sequence, not just a literal
+  repeated call site, checked against a severability test for whether
+  Claude Code's per-turn model binding actually allows the split — dry-runs
+  each decomposed candidate independently via `model-right-sizer-dryrun`
+  (never re-scores itself), and commits ONE schema-conformant JSON
+  blueprint at the target repo's root via a PR, with a deterministically
+  rendered summary table in the PR body (an f-string renderer, never a
+  model transcribing the numbers). Unlike the other two companion skills,
+  this one is not purely read-only against the *target* repo: it writes
+  the one blueprint file and opens a PR there, gated on user confirmation
+  before committing.
 - **Token Economics (arXiv:2605.09104) as a third research-grounded layer.**
   A new "Economic formalization" section in `agents/model-right-sizer.md`
   formalizes the effectiveness-vs-efficiency split itself as the paper's
