@@ -3,22 +3,19 @@ name: model-right-sizer-schema
 description: >-
   Prescribe a minimal output schema for ONE agent's handoff to its
   controller — the `model-right-sizer` agent's "Agent-to-agent
-  message-schema design" lever, scoped to a single agent-to-controller seam
-  instead of a whole flow's blueprint. You give it a target agent (a path to
-  an existing agent `.md` file, or a plain description of one not yet
-  written) and it returns a schema-conformant JSON prescription (per
-  `schemas/agent-schema.schema.json`) naming which reusable family the
-  agent's reply fits, the typed `in`/`out` fields, the exclusion list, and a
-  ready-to-insert `## Agent-to-agent schema` markdown stamp — the same
-  family-catalogue-plus-per-agent-stamp convention some internal
-  multi-agent codebases at CloudZero already enforce, reproduced here in
-  portable, organization-agnostic form. Offers to stamp that block directly
-  into the target agent's file, idempotently. The point is concrete: an
-  agent that used to hand its controller unscoped prose now hands it a
-  half-dozen typed fields plus one bounded prose slot, so the controller
-  reads less and re-parses nothing. Use when someone says "give this agent
-  an output schema", "prescribe a schema for …", "minimize what this agent
-  returns", or "stamp an agent-to-agent contract on …".
+  message-schema design" lever, scoped to a single seam instead of a whole
+  flow's blueprint. Given a target agent (a path to an existing agent
+  `.md` file, or a description of one not yet written), returns a
+  schema-conformant JSON prescription (`schemas/agent-schema.schema.json`)
+  naming the reusable family the agent's reply fits, typed `in`/`out`
+  fields, an exclusion list, and a ready-to-insert `## Agent-to-agent
+  schema` markdown stamp — reproduced here in portable,
+  organization-agnostic form. Offers to stamp that block directly into the
+  target agent's file, idempotently. The point: an agent that used to hand
+  its controller unscoped prose now hands it typed fields plus one bounded
+  prose slot. Use when someone says "give this agent an output schema",
+  "prescribe a schema for …", "minimize what this agent returns", or
+  "stamp an agent-to-agent contract on …".
 license: Apache-2.0
 author: CloudZero, Inc.
 version: 0.1.0

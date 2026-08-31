@@ -277,15 +277,70 @@ _OUT_MARKER = re.compile(r"\*\*Out\*\*")
 # itself can satisfy a required-member check, never commentary about it.
 _PROSE_BOUNDARY = re.compile(r"\.(?:\s|$)|\s--\s|\s—\s")
 
+# Greptile round 11: round 10 only closed the period/em-dash/double-hyphen
+# joiners. A parenthetical, a comma, a colon, a semicolon, or a single
+# space-padded hyphen dash introduces trailing commentary just as readily
+# (`findings: [{...}] (four required fields)`, `... fix: string}], optional
+# on retries`) and none of those were closed. These can't be matched
+# unconditionally, though: this repo's OWN convention writes a field's
+# actual typed shape as a comma/colon-dense bracketed structure
+# (`severity: enum[P1, P2, hygiene]`, `location: "service:line"`) -- a bare
+# "first comma" or "first colon" would truncate the real declaration before
+# it even finishes. So these only count as prose boundaries once bracket
+# depth has returned to zero; see the depth scan in `_structural_clause`.
+# A lone hyphen requires spaces on both sides so it doesn't fire inside a
+# hyphenated compound word (`on-call`, `well-tested`) -- and `\s-\s` cannot
+# match inside the two-hyphen ` -- ` em-dash-style joiner above (there's
+# always a second `-` where `_PROSE_BOUNDARY` needs whitespace), so the two
+# patterns never double-fire on the same joiner.
+_TRAILING_PUNCT_BOUNDARY = re.compile(r"\(|,|:|;|\s-\s")
+
 
 def _structural_clause(segment: str) -> str:
-    """`segment` truncated at the first prose boundary (see _PROSE_BOUNDARY)
-    -- the field's typed declaration only, with any trailing human-authored
-    aside or follow-on sentence dropped. Returns `segment` unchanged if no
-    boundary is found (the common case: this repo's convention states a
-    field's shape as one dense, period-free clause)."""
-    boundary = _PROSE_BOUNDARY.search(segment)
-    return segment[: boundary.start()] if boundary else segment
+    """`segment` truncated at the first prose boundary -- the field's typed
+    declaration only, with any trailing human-authored aside or follow-on
+    sentence/clause dropped. Returns `segment` unchanged if no boundary is
+    found (the common case: this repo's convention states a field's shape
+    as one dense, boundary-free clause).
+
+    Two boundary classes, combined by taking whichever fires first:
+
+    1. `_PROSE_BOUNDARY` (sentence-end, `--`, em-dash) -- searched over the
+       whole segment, exactly as before round 11.
+    2. `_TRAILING_PUNCT_BOUNDARY` (paren, comma, colon, semicolon, single
+       hyphen dash) -- searched only from the point where the field's own
+       top-level bracket nesting (`{`/`[` ... `}`/`]`) closes, found via a
+       simple depth scan. Parens never appear in this convention's type
+       language, so they don't participate in the depth count -- an
+       unmatched `(` always means trailing prose, at any depth. If the
+       segment never opens a bracket at all (a bare scalar field, e.g.
+       `gate: string, computed from confidence`), the scan starts right
+       after the field-name's own separating colon instead, so that colon
+       itself is never mistaken for a boundary.
+    """
+    depth = 0
+    started = False
+    structural_end = 0
+    for i, ch in enumerate(segment):
+        if ch in "{[":
+            depth += 1
+            started = True
+        elif ch in "}]":
+            depth -= 1
+            if started and depth <= 0:
+                structural_end = i + 1
+                break
+    else:
+        first_colon = segment.find(":")
+        structural_end = first_colon + 1 if first_colon != -1 else 0
+
+    prose_boundary = _PROSE_BOUNDARY.search(segment)
+    prose_pos = prose_boundary.start() if prose_boundary else len(segment)
+
+    punct_boundary = _TRAILING_PUNCT_BOUNDARY.search(segment, structural_end)
+    punct_pos = punct_boundary.start() if punct_boundary else len(segment)
+
+    return segment[: min(prose_pos, punct_pos)]
 
 
 def _field_restatement_segment(stamp: str, field_name: str, all_field_names) -> str:

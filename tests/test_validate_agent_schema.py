@@ -394,6 +394,73 @@ def test_structural_clause_is_unaffected_when_no_prose_boundary_present():
     assert validate_agent_schema.validate(SCHEMA, EXAMPLE) == []
 
 
+@pytest.mark.parametrize(
+    "joiner",
+    [
+        " (four required fields)",
+        ", four fields total",
+        ": four fields total",
+        "; four fields total",
+        " - four fields total",
+    ],
+    ids=["parenthesis", "comma", "colon", "semicolon", "single-hyphen-dash"],
+)
+def test_nested_member_named_only_after_other_prose_separators_does_not_count_as_restated(joiner):
+    """Greptile issue (round 11): round 10 closed the period/`--`/em-dash
+    joiners, but a parenthetical, comma, colon, semicolon, or single
+    space-padded hyphen introduces trailing commentary just as readily, and
+    none of those were closed -- a stamp could still drop `fix` from
+    findings' actual declaration while mentioning the word in an aside
+    joined by any of these, and it previously passed."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["stamp_markdown"] = instance["stamp_markdown"].replace(
+        'findings: [{id, dimension, severity: enum[P1, P2, hygiene], location: "service:line", claim: string, fix: string}]',
+        'findings: [{id, dimension, severity: enum[P1, P2, hygiene], location: "service:line", claim: string}]'
+        + joiner
+        + " -- no fix suggestion this round",
+    )
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("findings" in e and "fix" in e and "does not restate" in e for e in errors)
+
+
+def test_structural_clause_preserves_internal_commas_and_colons_in_bracketed_type():
+    """The fix for round 11 must not regress on the exact shape it has to
+    coexist with: a field's real typed declaration is itself comma/colon-
+    dense inside its brackets (`severity: enum[...]`, `location:
+    "service:line"`). A naive "truncate at first comma/colon" would cut the
+    declaration apart before it even finishes. Confirm the full bracketed
+    type -- including `fix` at the very end of it -- survives intact when a
+    parenthetical gloss follows the closing bracket."""
+    segment = (
+        'findings: [{id, dimension, severity: enum[P1, P2, hygiene], '
+        'location: "service:line", claim: string, fix: string}] '
+        "(order not significant)"
+    )
+    clause = validate_agent_schema._structural_clause(segment)
+
+    assert "fix" in clause
+    assert "hygiene" in clause
+    assert "(order not significant)" not in clause
+
+
+def test_single_hyphen_inside_compound_word_is_not_a_boundary():
+    """A space-padded hyphen dash is a boundary; a hyphen JOINING two words
+    in a compound (no surrounding spaces) is not -- `_TRAILING_PUNCT_BOUNDARY`
+    requires whitespace on both sides specifically so `on-call` or
+    `well-tested` inside a field's own description doesn't get mistaken for
+    a dash into commentary."""
+    segment = "gate: boolean, true for an on-call page, false otherwise"
+    clause = validate_agent_schema._structural_clause(segment)
+
+    # The comma right after "boolean" is still a real boundary (no bracket
+    # to protect it here) -- confirms the fix doesn't swing to "hyphens
+    # never count" by disabling comma detection too.
+    assert clause == "gate: boolean"
+
+
 def test_shared_field_name_between_in_and_out_sections_does_not_truncate_segment():
     """Greptile issue (round 8): a field name can be shared between the
     **In** and **Out** sections of a stamp (e.g. `evidence` naming both the
