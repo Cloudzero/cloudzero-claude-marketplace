@@ -9,6 +9,10 @@ Checks, per skill file:
     author, version, license) are present and non-empty
   - `name` matches the skill's directory name (Claude Code discovers skills
     by directory, so a mismatch breaks cross-references)
+  - `description` is within Claude Code's documented 1,024-character cap.
+    Found missing during a PR #41 security review: a description that grows
+    past this cap parses fine as YAML and every other check here still
+    passes, so nothing catches it without this explicit length check.
 """
 from __future__ import annotations
 
@@ -22,6 +26,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 PLUGINS_DIR = REPO_ROOT / "plugins"
 
 REQUIRED_FIELDS = ("name", "description", "author", "version", "license")
+DESCRIPTION_MAX_LEN = 1024
 FRONTMATTER_RE = re.compile(r"\A---\n(.*?)\n---\n", re.DOTALL)
 
 
@@ -51,6 +56,14 @@ def validate_skill_file(skill_file: Path) -> bool:
         if not fields.get(field):
             fail(f"{skill_file}: frontmatter missing required field: {field}")
             ok = False
+
+    description = fields.get("description")
+    if isinstance(description, str) and len(description) > DESCRIPTION_MAX_LEN:
+        fail(
+            f"{skill_file}: description is {len(description)} chars, over the "
+            f"{DESCRIPTION_MAX_LEN}-char spec cap"
+        )
+        ok = False
 
     skill_dir = skill_file.parent.name
     if fields.get("name") and fields["name"] != skill_dir:
