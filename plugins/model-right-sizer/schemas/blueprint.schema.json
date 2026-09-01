@@ -70,7 +70,7 @@
         "model": {
           "type": "string",
           "minLength": 1,
-          "description": "A model ID from price_sheet.models[], or the literal 'deterministic_query_layer' when the pick is to route via a deterministic query layer instead of a model."
+          "description": "A model ID from price_sheet.models[], the literal 'deterministic_query_layer' when the pick is to route via a deterministic query layer instead of a model, or 'local:<model-id>' for an open-weight model running on hardware the operator already owns. A local pick is a non-invoiced tier, not a free one: its price_sheet.models[] entry must carry cost_basis 'amortized_local' and a non-zero amortized rate."
         },
         "effort": {
           "enum": ["none", "low", "medium", "high", "xhigh", "max"],
@@ -238,7 +238,15 @@
               "out_per_1m": { "type": "number" },
               "context_tokens": { "type": ["integer", "null"] },
               "max_output_tokens": { "type": ["integer", "null"] },
-              "effort_ceiling": { "type": ["string", "null"] }
+              "effort_ceiling": { "type": ["string", "null"] },
+              "cost_basis": {
+                "enum": ["provider_list_price", "amortized_local"],
+                "description": "How in_per_1m/out_per_1m were derived. Absent means provider_list_price: a vendor's published per-token rate. 'amortized_local' marks a non-invoiced tier (an open-weight model on hardware the operator already owns), whose rate is the operator's own device amortization plus power over measured throughput. It is never 0: a tier booked at zero makes every stage moved onto it show unbounded ROI, and poisons any calibration history that reads the result."
+              },
+              "cost_basis_note": {
+                "type": ["string", "null"],
+                "description": "Required in spirit when cost_basis is 'amortized_local': the derivation behind the rate (device amortization, power draw, measured tokens/hour, and whether the device cost is charged at all), so a reader can tell an owned-hardware figure from an invoiced one. See plugins/model-right-sizer/eval/local_tier.py for the formulas."
+              }
             }
           }
         }

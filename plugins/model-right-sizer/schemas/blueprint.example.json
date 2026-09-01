@@ -21,7 +21,19 @@
         "out_per_1m": 5,
         "context_tokens": 200000,
         "max_output_tokens": 64000,
-        "effort_ceiling": null
+        "effort_ceiling": null,
+        "cost_basis": "provider_list_price"
+      },
+      {
+        "name": "Qwen3 4B Instruct (4-bit, on-device)",
+        "id": "local:qwen3-4b-instruct-2507-4bit",
+        "in_per_1m": 0.2,
+        "out_per_1m": 1.43,
+        "context_tokens": null,
+        "max_output_tokens": null,
+        "effort_ceiling": null,
+        "cost_basis": "amortized_local",
+        "cost_basis_note": "Operator's own hardware, not a vendor rate: a $3,000 machine over a 10,000-hour life ($0.30/hr) plus 40W at $0.20/kWh ($0.008/hr), divided by measured throughput on that machine (~430 tok/s prompt, ~60 tok/s generation). Charging power alone, on the argument the machine was bought anyway, would put generation at ~$0.04/1M instead; both bases are defensible and a $0 rate is not. Context/output ceilings left null pending the model card for the exact build in use."
       }
     ]
   },
@@ -91,6 +103,40 @@
       "budget": { "token_ceiling": 0, "thinking_budget": null },
       "handoff_schema_ref": "route_via_query_layer",
       "rationale": "Pure structured lookup; a query layer is reliable by construction and removes hallucination risk entirely, at less cost than even the cheapest model tier."
+    },
+    {
+      "id": "stage-3",
+      "name": "Pre-filter the day's threads for ones that mention a blocker",
+      "description": "Sweep every thread in the day's backlog and shortlist the ones the summarization stage should read closely. Recall-tuned: the summarizer still re-reads every hit, so this stage never produces a claim anyone acts on directly.",
+      "query_shaped": false,
+      "query_layer_note": null,
+      "loop_class": "single-shot",
+      "signals": {
+        "effectiveness": {
+          "score": 25,
+          "reason": "A false positive costs one extra read downstream and a false negative is caught by the summarizer, so cost of error is low and bounded."
+        },
+        "efficiency": {
+          "score": 90,
+          "reason": "Highest-volume stage in the flow, every thread in every channel daily, and nothing interactive waits on it."
+        },
+        "difficulty": {
+          "score": 15,
+          "reason": "One fuzzy yes/no per thread against a single well-specified signal, no cross-thread reasoning."
+        }
+      },
+      "pick": {
+        "primary": { "model": "local:qwen3-4b-instruct-2507-4bit", "confidence": 65 },
+        "runner_up": { "model": "claude-haiku-4-5", "effort": "none", "confidence": 35 },
+        "what_flips_it": "If the shortlist ever becomes the deliverable instead of an input the summarizer re-reads, or if the stage has to run where no local runtime is installed, it goes to Haiku: a local pick is barred from producing output anyone reads directly, and it must never be the only path.",
+        "why_not_tier_above": "Sonnet's reasoning depth buys nothing on a one-signal recall-tuned filter whose misses are caught one stage later.",
+        "why_not_tier_below": "The only tier below is a keyword grep, which cannot catch the paraphrases ('stuck on', 'waiting on review') this filter exists for."
+      },
+      "default_model": "claude-haiku-4-5",
+      "keep_or_override": "override",
+      "budget": { "token_ceiling": 400000, "thinking_budget": null },
+      "handoff_schema_ref": "blocker-shortlist-v1",
+      "rationale": "Bulk, mechanical, off the critical path, and unverified output a stronger stage re-reads: the routing gate's deny and compound checks both pass, and the amortized local basis undercuts Haiku at this volume. Falls back to the Haiku runner-up wherever no local runtime is present."
     }
   ],
   "work_routing_map": [
@@ -119,6 +165,17 @@
         { "name": "confidence", "type": "number" }
       ],
       "exclude": ["full thread transcript", "raw Slack message payloads", "chain-of-thought"]
+    },
+    {
+      "id": "blocker-shortlist-v1",
+      "seam_description": "local pre-filter stage -> summarization stage",
+      "fields": [
+        { "name": "thread_id", "type": "string" },
+        { "name": "matched", "type": "boolean", "description": "Whether the thread mentions a blocker." },
+        { "name": "quote", "type": "string", "description": "The verbatim span the match came from; a match with no quote is dropped rather than passed on." },
+        { "name": "unverified", "type": "boolean", "description": "Always true on this seam: the producing tier is a local model, so the consumer treats every field as a candidate, not a fact." }
+      ],
+      "exclude": ["full thread transcript", "the local model's own reasoning about why it matched", "any judgment about whether the blocker is real or already resolved"]
     }
   ],
   "uncertainty_ledger": {

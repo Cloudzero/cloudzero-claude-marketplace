@@ -92,6 +92,93 @@ def test_none_and_route_via_query_layer_handoff_refs_are_not_dangling():
     assert errors == []
 
 
+# ---------------------------------------------------------------------------
+# The non-invoiced tier: a `local:<model-id>` pick must state what it costs.
+# Neither half of this is expressible in JSON Schema.
+# ---------------------------------------------------------------------------
+
+
+def test_example_still_exercises_a_local_pick():
+    """Guard for the guard: if the worked example ever loses its local row,
+    the three checks below stop covering the path they were written for."""
+    models = [
+        choice["model"]
+        for group in ("blueprint_rows", "work_routing_map")
+        for row in EXAMPLE.get(group, [])
+        for choice in (row["pick"]["primary"], row["pick"]["runner_up"])
+    ]
+    assert any(m.startswith("local:") for m in models)
+
+
+def test_local_pick_with_no_price_sheet_entry_is_rejected():
+    instance = copy.deepcopy(EXAMPLE)
+    instance["blueprint_rows"][0]["pick"]["primary"]["model"] = "local:no-such-model"
+
+    errors = validate_blueprint.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("no price_sheet.models[] entry" in e for e in errors)
+
+
+def test_local_pick_in_the_runner_up_slot_is_checked_too():
+    """A runner-up is a real recommendation: 'what flips it' can route the
+    stage onto that tier, so it needs a stated cost basis like any other."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["blueprint_rows"][0]["pick"]["runner_up"]["model"] = "local:no-such-model"
+
+    errors = validate_blueprint.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("runner_up" in e for e in errors)
+
+
+def test_amortized_local_entry_priced_at_zero_is_rejected():
+    """The failure the whole check exists for: a non-invoiced tier booked as
+    a free one, which makes every stage moved onto it unfalsifiably cheap."""
+    instance = copy.deepcopy(EXAMPLE)
+    local = next(
+        m for m in instance["price_sheet"]["models"] if m.get("cost_basis") == "amortized_local"
+    )
+    local["out_per_1m"] = 0
+
+    errors = validate_blueprint.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("non-invoiced, not free" in e for e in errors)
+
+
+def test_local_pick_whose_entry_claims_a_vendor_list_price_is_rejected():
+    instance = copy.deepcopy(EXAMPLE)
+    local = next(
+        m for m in instance["price_sheet"]["models"] if m.get("cost_basis") == "amortized_local"
+    )
+    local["cost_basis"] = "provider_list_price"
+
+    errors = validate_blueprint.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("cost_basis" in e for e in errors)
+
+
+def test_a_hosted_pick_needs_no_cost_basis():
+    """cost_basis is optional and absent means provider_list_price, so every
+    blueprint written before this field existed still validates."""
+    instance = copy.deepcopy(EXAMPLE)
+    for model in instance["price_sheet"]["models"]:
+        model.pop("cost_basis", None)
+        model.pop("cost_basis_note", None)
+    for row in instance["blueprint_rows"]:
+        for slot in ("primary", "runner_up"):
+            if row["pick"][slot]["model"].startswith("local:"):
+                row["pick"][slot]["model"] = "claude-haiku-4-5"
+                row["pick"][slot].pop("effort", None)
+    instance["price_sheet"]["models"] = [
+        m for m in instance["price_sheet"]["models"] if not m["id"].startswith("local:")
+    ]
+
+    assert validate_blueprint.validate(SCHEMA, instance) == []
+
+
 def test_main_validates_default_example(monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", ["validate_blueprint.py"])
 
