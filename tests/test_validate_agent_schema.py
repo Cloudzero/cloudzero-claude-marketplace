@@ -52,6 +52,53 @@ def test_illegal_family_catalogue_source_is_rejected():
     assert errors
 
 
+@pytest.mark.parametrize(
+    "bad_ref",
+    [
+        "/etc/passwd",
+        "../../etc/passwd",
+        "agents/../../../etc/passwd.md",
+        "~/.claude/CLAUDE.md",
+        "agents/.hidden.md",
+        "settings.json",
+        "not-markdown.txt",
+    ],
+)
+def test_file_ref_outside_workspace_or_non_markdown_is_rejected(bad_ref):
+    """Security review finding: file_ref was `["string", "null"]` with no
+    pattern, so nothing confined the eventual write to a relative .md path
+    inside the workspace -- an absolute path, a `..` traversal, `~`, or a
+    non-.md file all validated. This is the write-target confinement
+    control from the schema side (SKILL.md step 7 carries the matching
+    behavioral invariant: write only to the path the user actually named)."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["target"]["file_ref"] = bad_ref
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("file_ref" in e for e in errors)
+
+
+def test_file_ref_relative_markdown_path_is_allowed():
+    instance = copy.deepcopy(EXAMPLE)
+    instance["target"]["file_ref"] = "plugins/some-plugin/agents/some-agent.md"
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors == []
+
+
+def test_file_ref_null_is_still_allowed():
+    """null means the target agent doesn't exist as a file yet -- must stay legal."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["target"]["file_ref"] = None
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors == []
+
+
 def test_null_prose_field_is_allowed():
     """A family like watch-report/candidate-set carries no prose slot -- null must be legal, not a violation."""
     instance = copy.deepcopy(EXAMPLE)
@@ -85,6 +132,70 @@ def test_stamp_missing_heading_is_rejected():
 
     assert errors
     assert any("heading" in e for e in errors)
+
+
+def test_stamp_missing_end_marker_is_rejected():
+    """Security review finding: SKILL.md step 7's marker-pairing algorithm
+    keys entirely off begin/end markers, but nothing validated them before
+    this. A stamp missing its `:end` marker is exactly the 'unmatched
+    marker' corrupted state step 7 is written to detect when INHERITED from
+    an existing file -- this validator must not let the skill emit that
+    same state itself."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["stamp_markdown"] = instance["stamp_markdown"].replace(
+        "<!-- model-right-sizer-schema:end -->", ""
+    )
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("begin" in e and "end" in e for e in errors)
+
+
+def test_stamp_missing_begin_marker_is_rejected():
+    instance = copy.deepcopy(EXAMPLE)
+    instance["stamp_markdown"] = instance["stamp_markdown"].replace(
+        "<!-- model-right-sizer-schema:begin -- family definitions, the universal exclusion list, "
+        "and the no-freelancing rule are single-sourced in schemas/agent-schema-families.md. Fields "
+        "below are THIS agent's; never restate the shared discipline here. Re-run "
+        "model-right-sizer-schema to refresh. -->\n",
+        "",
+    )
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("begin" in e and "end" in e for e in errors)
+
+
+def test_stamp_with_duplicate_marker_pair_is_rejected():
+    """Two complete pairs is the other anomaly SKILL.md step 7 names explicitly
+    ('more than one complete marker pair present') -- must be caught here too,
+    not just documented as a state the skill refuses to act on."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["stamp_markdown"] = instance["stamp_markdown"] + "\n\n" + instance["stamp_markdown"]
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("begin" in e and "end" in e for e in errors)
+
+
+def test_stamp_with_end_before_begin_is_rejected():
+    instance = copy.deepcopy(EXAMPLE)
+    stamp = instance["stamp_markdown"]
+    begin = "<!-- model-right-sizer-schema:begin -- family definitions, the universal exclusion list, and the no-freelancing rule are single-sourced in schemas/agent-schema-families.md. Fields below are THIS agent's; never restate the shared discipline here. Re-run model-right-sizer-schema to refresh. -->"
+    end = "<!-- model-right-sizer-schema:end -->"
+    assert begin in stamp and end in stamp  # guard against the fixture drifting under this test
+    instance["stamp_markdown"] = stamp.replace(begin, "\x00BEGIN\x00").replace(end, "\x00END\x00")
+    instance["stamp_markdown"] = (
+        instance["stamp_markdown"].replace("\x00BEGIN\x00", end).replace("\x00END\x00", begin)
+    )
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("must appear before" in e for e in errors)
 
 
 def test_stamp_tolerates_hard_wrap_backticks_and_quote_style():
@@ -172,11 +283,13 @@ def test_repo_catalogue_family_bypasses_all_portable_catalogue_checks():
     instance["exclude"] = ["raw log lines"]
     instance["prose_field"] = None
     instance["stamp_markdown"] = (
+        "<!-- model-right-sizer-schema:begin -->\n"
         "## Agent-to-agent schema\n\n"
         "**In** -- `budget_tokens: int`\n\n"
         "**Out** -- the `{status, output, error}` envelope; `output.*`: `summary: string`\n\n"
         "**Never inline:** raw log lines.\n\n"
-        "You return ONLY this schema."
+        "You return ONLY this schema.\n"
+        "<!-- model-right-sizer-schema:end -->"
     )
 
     errors = validate_agent_schema.validate(SCHEMA, instance)
@@ -482,13 +595,15 @@ def test_shared_field_name_between_in_and_out_sections_does_not_truncate_segment
     instance["exclude"] = ["full transcripts behind source_ref"]
     instance["prose_field"] = None
     instance["stamp_markdown"] = (
+        "<!-- model-right-sizer-schema:begin -->\n"
         "## Agent-to-agent schema\n\n"
         "**In** -- `evidence: state_key` (a reference to the raw evidence, never inlined) · `budget_tokens: int`\n\n"
         "**Out** -- the `{status, output, error}` envelope; `output.*`:\n"
         "`subject: string` · `grade: {score: number, confidence: enum[high, medium, low]}` · "
         "`evidence: [{source_ref, quote, stance}]` · `counter_case: string`\n\n"
         "**Never inline:** full transcripts behind source_ref.\n\n"
-        "You return ONLY this schema."
+        "You return ONLY this schema.\n"
+        "<!-- model-right-sizer-schema:end -->"
     )
 
     errors = validate_agent_schema.validate(SCHEMA, instance)

@@ -55,6 +55,16 @@ Checks:
     drops a required member from the typed shape doesn't get to satisfy the
     check by mentioning the member's name in an aside, even one explicitly
     saying it was left out.
+  - `stamp_markdown` carries exactly one `model-right-sizer-schema:begin`
+    marker and exactly one matching `:end` marker, begin before end. A
+    security review flagged this as the one hard, structural invariant this
+    validator left unguarded despite everything else about the stamp being
+    checked: SKILL.md step 7's whole marker-pairing algorithm exists to
+    detect and refuse to act on an ambiguous marker state (missing end,
+    duplicate pair, mismatched styles) when it's INHERITED from an existing
+    file -- but nothing stopped this skill from emitting exactly that
+    ambiguous state itself in a freshly-generated `stamp_markdown`, which
+    step 7 would then treat as clean on the very next run.
 
 Usage:
   uv run --no-project --with jsonschema scripts/validate_agent_schema.py                  # validate the checked-in worked example
@@ -75,6 +85,25 @@ SCHEMA_PATH = REPO_ROOT / "plugins" / "model-right-sizer" / "schemas" / "agent-s
 DEFAULT_INSTANCE_PATH = REPO_ROOT / "plugins" / "model-right-sizer" / "schemas" / "agent-schema.example.json"
 
 REQUIRED_HEADING = "## Agent-to-agent schema"
+
+# This skill's own marker convention (agent-schema.example.json's
+# stamp_markdown is the worked instance): a single HTML-comment pair
+# bracketing the whole stamped section, so SKILL.md step 7's branching
+# algorithm (five cases, most of them refusing to act on an ambiguous file
+# state) has an unambiguous pair to detect. A security review correctly
+# flagged that this was the only stamp-structure property this validator
+# left unchecked: `grep -n 'begin' scripts/validate_agent_schema.py` found
+# nothing before this, so a prescription whose `stamp_markdown` omitted the
+# `:end` marker, or carried two pairs, validated clean and would have been
+# written to disk -- manufacturing precisely the "unmatched marker"/"more
+# than one pair" corrupted states SKILL.md step 7 exists to catch when
+# INHERITED from someone else, while this validator let the skill create
+# that same state itself. `[^>]*?` (non-greedy) rather than `.*` so a begin
+# marker's own trailing comment text (e.g. "-- family definitions ... are
+# single-sourced in ...") can't accidentally swallow a same-line `-->` that
+# belongs to it and then keep matching past it.
+_BEGIN_MARKER = re.compile(r"<!--\s*model-right-sizer-schema:begin\b[^>]*?-->")
+_END_MARKER = re.compile(r"<!--\s*model-right-sizer-schema:end\s*-->")
 
 # Characters that are purely typographic in a hand-authored markdown stamp --
 # backticks for inline code, and both quote styles -- plus any run of
@@ -419,6 +448,23 @@ def validate(schema: dict, instance: dict) -> list[str]:
 
     if REQUIRED_HEADING not in stamp:
         errors.append(f"stamp_markdown: missing the {REQUIRED_HEADING!r} heading")
+
+    begin_matches = list(_BEGIN_MARKER.finditer(stamp))
+    end_matches = list(_END_MARKER.finditer(stamp))
+    if len(begin_matches) != 1 or len(end_matches) != 1:
+        errors.append(
+            "stamp_markdown: expected exactly one 'model-right-sizer-schema:begin' marker and "
+            f"exactly one matching ':end' marker, found {len(begin_matches)} begin and "
+            f"{len(end_matches)} end -- SKILL.md step 7's marker-pairing algorithm requires an "
+            "unambiguous single pair, and this skill must not manufacture the same 'unmatched "
+            "marker'/'more than one pair' anomaly it's written to detect when inherited from "
+            "someone else"
+        )
+    elif begin_matches[0].start() >= end_matches[0].start():
+        errors.append(
+            "stamp_markdown: the 'model-right-sizer-schema:begin' marker must appear before its "
+            "':end' marker"
+        )
 
     for out_field in instance.get("out_fields", []):
         name = out_field.get("name")
