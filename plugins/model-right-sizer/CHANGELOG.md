@@ -181,7 +181,7 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   accuracy-per-compute arithmetic) is implemented as a pure, stdlib-only
   Python function in `eval/token_economics.py` / `eval/reasoning_budget.py`
   — run by code, never re-derived by an LLM. `eval/check_citations.py` runs
-  four independent checks per claim: (1) literal presence of the cited
+  five independent checks per claim: (1) literal presence of the cited
   formula/number in the agent file's own prose (`exact_substring` — this
   caught a real bug: the agent file's CES equation had transcribed `K^ρ`/`M^ρ`
   as `K^p`/`M^p`); (2) recomputed arithmetic against the claimed figure; (3)
@@ -196,7 +196,7 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   PDF, which stays a human/primary-source check performed at authoring time
   (named explicitly, the same way `verifiable: false` names its own gap).
   Each `sample_inputs` entry also carries an independently hand-computed
-  `expected_output` (fourth review pass), diffed against both `formula_expr`'s
+  `expected_output` (the fifth check), diffed against both `formula_expr`'s
   evaluation and the implementation's return value — this is what catches
   `formula_expr` and the implementation being edited TOGETHER to the same
   wrong structure (a sign flip, a swapped pairing) that keeps the same
