@@ -175,11 +175,13 @@ def test_negative_rate_on_a_hosted_entry_is_rejected_by_the_schema():
     assert any("in_per_1m" in e for e in errors)
 
 
-@pytest.mark.parametrize("note", [None, ""])
+@pytest.mark.parametrize("note", [None, "", "   ", "\t\n"])
 def test_amortized_local_entry_without_a_usable_derivation_is_rejected(note):
     """The rate alone is unreadable: the same run prices ~38x apart depending
     only on whether the device is charged. cost_basis_note is what says which
-    basis ran, so the schema requires it (non-empty) for this cost_basis."""
+    basis ran, so the schema requires it for this cost_basis: present, and
+    non-blank, since `minLength: 1` alone accepts a whitespace-only string
+    that states no basis at all."""
     instance = copy.deepcopy(EXAMPLE)
     local = next(
         m for m in instance["price_sheet"]["models"] if m.get("cost_basis") == "amortized_local"

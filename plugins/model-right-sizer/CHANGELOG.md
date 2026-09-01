@@ -61,7 +61,8 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   `cost_basis` (`provider_list_price` | `amortized_local`) and
   `cost_basis_note` (the derivation behind an owned-hardware rate, required
   and non-empty whenever `cost_basis` is `amortized_local`, enforced by an
-  `if/then` in the schema rather than left advisory: the same run prices about
+  `if/then` in the schema (non-blank, since `minLength` alone accepts a
+  whitespace-only string) rather than left advisory: the same run prices about
   38x apart depending only on whether the device is charged, so an undeclared
   basis makes the rate unreadable). `in_per_1m` and `out_per_1m` also gain
   `minimum: 0`, since no tier has a negative rate. Additive and backward
