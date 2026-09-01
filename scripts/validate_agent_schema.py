@@ -26,6 +26,20 @@ Checks:
     consistent-looking prose but doesn't actually match the typed fields
     sitting right next to it -- the same class of drift the referential check
     in `validate_blueprint.py` exists to catch for `handoff_schema_ref`.
+  - `family.shape_summary` -- "one clause naming the family's shape" per its
+    own schema description, e.g. `"scorecard[] + findings[] + leave_alone[],
+    the advisory-quality-lens shape -- ..."` -- is self-consistent with
+    `out_fields[]`/`prose_field`: every field name it lists (conservatively
+    parsed -- only identifier-shaped tokens count, so a `shape_summary` that
+    doesn't follow the `+`-joined convention is silently skipped rather than
+    false-positived) must actually be declared. This runs for EVERY
+    prescription regardless of `catalogue_source`, because it needs no
+    external ground truth -- it checks the instance against itself. This is
+    the one family check that still applies to `catalogue_source:
+    "repo_catalogue"` (see below) -- a Greptile round correctly flagged that
+    the round-8 fix, which stopped applying the PORTABLE catalogue's rules
+    to a repo-defined family (a category error), had also left repo_catalogue
+    with literally no family check running at all.
   - family invariants a generic JSON Schema can't express either -- but ONLY
     when `family.catalogue_source` is `"plugin_portable_catalogue"`: `family.id`
     resolves to a real entry in the portable catalogue (agent-schema-families.md)
@@ -36,11 +50,12 @@ Checks:
     letting an otherwise-incomplete contract pass -- and a family the
     catalogue documents as carrying no prose slot (`watch-report`,
     `candidate-set`) is not paired with a non-null `prose_field`. When
-    `catalogue_source` is `"repo_catalogue"` instead, none of these checks
-    run: `family.id` names a family from the TARGET REPO's own catalogue,
-    which this script has no access to and no ground truth for -- applying
-    the portable catalogue's rules to it is a category error a later
-    Greptile round correctly caught.
+    `catalogue_source` is `"repo_catalogue"` instead, none of these
+    CATALOGUE-SPECIFIC checks run (though the shape_summary self-consistency
+    check above still does): `family.id` names a family from the TARGET
+    REPO's own catalogue, which this script has no access to and no ground
+    truth for -- applying the portable catalogue's rules to it is a category
+    error a later Greptile round correctly caught.
   - nested-member invariants the catalogue states as a hard violation, not
     just a top-level field-name check: `scored-review`'s `findings[]`
     entries must mention `fix`, `action-log`'s `removed[]` entries must
@@ -416,6 +431,45 @@ def _field_restatement_segment(stamp: str, field_name: str, all_field_names) -> 
     return scoped[start:end]
 
 
+# family.shape_summary's own documented convention (agent-schema.schema.json:
+# "One clause naming the family's shape, e.g. 'scorecard + findings +
+# leave_alone'") is a `+`-joined field-name list, optionally followed by a
+# comma/`--`/em-dash and free-text rationale -- the checked-in worked example
+# is literally `scorecard[] + findings[] + leave_alone[], the advisory-
+# quality-lens shape -- a log triage is...`. Reuses the same boundary style
+# as _PROSE_BOUNDARY (comma added, since a shape_summary's rationale clause
+# routinely opens with one, unlike a field's own typed declaration).
+_SHAPE_SUMMARY_BOUNDARY = re.compile(r",\s|\s--\s|\s—\s")
+_FIELD_TOKEN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def _shape_summary_field_names(shape_summary: str) -> list[str]:
+    """The out_fields[].name tokens `shape_summary` names, e.g.
+    'scorecard[] + findings[] + leave_alone[], the advisory-quality-lens
+    shape...' -> ['scorecard', 'findings', 'leave_alone'].
+
+    Deliberately conservative: only a token that's IDENTIFIER-shaped once
+    stripped of the `[]` array marker (matches _FIELD_TOKEN) is treated as a
+    named field; anything else -- a `shape_summary` that doesn't follow the
+    `+`-joined convention at all, free text with spaces, an em-dash aside
+    that leaked past the boundary regex -- is silently skipped rather than
+    reported as a missing field. This is what keeps the check from false-
+    positiving on a `shape_summary` some future agent writes in a different
+    style: it can only ever CATCH a genuinely named-but-missing field, never
+    invent one from prose it can't parse."""
+    normalized = _normalize(shape_summary)
+    boundary = _SHAPE_SUMMARY_BOUNDARY.search(normalized)
+    field_list = normalized[: boundary.start()] if boundary else normalized
+    names = []
+    for token in field_list.split("+"):
+        name = token.strip()
+        if name.endswith("[]"):
+            name = name[:-2].strip()
+        if _FIELD_TOKEN.match(name):
+            names.append(name)
+    return names
+
+
 def fail(msg: str) -> None:
     print(f"FAIL: {msg}", file=sys.stderr)
 
@@ -481,6 +535,36 @@ def validate(schema: dict, instance: dict) -> list[str]:
         if name and not _contains_phrase(stamp, name):
             errors.append(f"stamp_markdown: does not mention prose_field.name {name!r}")
 
+    family = instance.get("family", {})
+    family_id = family.get("id")
+    is_new_family = family.get("is_new_family")
+    catalogue_source = family.get("catalogue_source")
+    out_field_names = {f.get("name") for f in instance.get("out_fields", [])}
+
+    # Self-consistency check: does family.shape_summary -- the field naming
+    # its OWN claimed shape ("one clause naming the family's shape", per the
+    # schema) -- actually match what out_fields[] declares? Unlike the
+    # catalogue-membership checks below, this needs no external ground truth
+    # at all, so it runs for EVERY prescription regardless of
+    # catalogue_source -- including "repo_catalogue", which the checks below
+    # deliberately skip (see the comment on that branch). A prescription
+    # naming a family whose own shape_summary lists fields that never made
+    # it into out_fields[] is internally inconsistent independent of which
+    # catalogue it claims to come from -- that's a real, catchable defect,
+    # not one this validator needs the target repo's catalogue file to see.
+    all_out_or_prose_names = set(out_field_names)
+    if prose_field is not None and prose_field.get("name"):
+        all_out_or_prose_names.add(prose_field["name"])
+    claimed_names = _shape_summary_field_names(family.get("shape_summary", ""))
+    missing_from_out_fields = [n for n in claimed_names if n not in all_out_or_prose_names]
+    if missing_from_out_fields:
+        errors.append(
+            f"family.shape_summary: names {missing_from_out_fields!r} as part of this "
+            f"family's shape, but out_fields[] (plus prose_field) only has "
+            f"{sorted(all_out_or_prose_names)} -- shape_summary must name fields that are "
+            "actually declared, regardless of catalogue_source"
+        )
+
     # Family invariants -- referential/structural checks a generic JSON
     # Schema can't express, the same class of gap NON_REFERENCE_HANDOFFS
     # closes for validate_blueprint.py's handoff_schema_ref.
@@ -497,13 +581,13 @@ def validate(schema: dict, instance: dict) -> list[str]:
     # repo-defined family for not matching a taxonomy it was never claiming
     # to use, or silently apply the wrong shape if the name happens to
     # collide with one of the 9 portable family names. Greptile caught
-    # this after round 8 landed.
-    family = instance.get("family", {})
-    family_id = family.get("id")
-    is_new_family = family.get("is_new_family")
-    catalogue_source = family.get("catalogue_source")
-    out_field_names = {f.get("name") for f in instance.get("out_fields", [])}
-
+    # this after round 8 landed. The shape_summary self-consistency check
+    # above is the one check that DOES still apply here -- it's the closest
+    # this validator can get to a repo_catalogue family-completeness check
+    # without reading an external file, and it was previously the one gap
+    # entirely unguarded for that catalogue_source (a later Greptile round
+    # correctly flagged that "no portable-catalogue ground truth" had
+    # collapsed into "no check at all").
     if catalogue_source != "plugin_portable_catalogue":
         pass  # repo_catalogue (or any future source): no portable-catalogue ground truth to check against.
     elif not is_new_family and family_id not in FAMILY_REQUIRED_FIELDS:

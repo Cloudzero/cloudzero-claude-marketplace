@@ -297,6 +297,115 @@ def test_repo_catalogue_family_bypasses_all_portable_catalogue_checks():
     assert errors == []
 
 
+def test_repo_catalogue_family_with_shape_summary_missing_a_named_field_is_rejected():
+    """Greptile finding: 'repo_catalogue skips every family check' -- true of
+    the catalogue-membership checks (no ground truth for those, see the test
+    above), but shape_summary self-consistency needs no external file and
+    must still catch a family whose own claimed shape doesn't match what
+    out_fields[] actually declares, regardless of catalogue_source."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["family"] = {
+        "id": "incident-writeup",
+        "is_new_family": False,
+        "catalogue_source": "repo_catalogue",
+        # Claims a `timeline` field as part of the shape, but out_fields
+        # below never declares one -- exactly the "names a missing field"
+        # shape the finding describes.
+        "shape_summary": "summary + timeline, this repo's own incident-writeup family",
+    }
+    instance["out_fields"] = [{"name": "summary", "type": "string"}]
+    instance["exclude"] = ["raw log lines"]
+    instance["prose_field"] = None
+    instance["stamp_markdown"] = (
+        "<!-- model-right-sizer-schema:begin -->\n"
+        "## Agent-to-agent schema\n\n"
+        "**In** -- `budget_tokens: int`\n\n"
+        "**Out** -- the `{status, output, error}` envelope; `output.*`: `summary: string` · `timeline: string`\n\n"
+        "**Never inline:** raw log lines.\n\n"
+        "You return ONLY this schema.\n"
+        "<!-- model-right-sizer-schema:end -->"
+    )
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("shape_summary" in e and "timeline" in e for e in errors)
+
+
+def test_shape_summary_naming_the_prose_field_is_allowed():
+    """A shape_summary that names the bounded prose slot (not just out_fields)
+    must not be flagged -- prose_field is a legitimate part of a family's
+    documented shape, just tracked on a separate JSON field."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["family"] = {
+        "id": "incident-writeup",
+        "is_new_family": False,
+        "catalogue_source": "repo_catalogue",
+        "shape_summary": "summary + narrative, this repo's own incident-writeup family",
+    }
+    instance["out_fields"] = [{"name": "summary", "type": "string"}]
+    instance["exclude"] = ["raw log lines"]
+    instance["prose_field"] = {"name": "narrative", "max_words": 150}
+    instance["stamp_markdown"] = (
+        "<!-- model-right-sizer-schema:begin -->\n"
+        "## Agent-to-agent schema\n\n"
+        "**In** -- `budget_tokens: int`\n\n"
+        "**Out** -- the `{status, output, error}` envelope; `output.*`: `summary: string` · `narrative: string|null`\n\n"
+        "**Never inline:** raw log lines.\n\n"
+        "You return ONLY this schema.\n"
+        "<!-- model-right-sizer-schema:end -->"
+    )
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors == []
+
+
+def test_shape_summary_not_following_the_field_list_convention_is_not_false_flagged():
+    """Deliberately conservative: a shape_summary that isn't a `+`-joined
+    identifier list at all (free prose, no recognizable field tokens) must
+    not be treated as naming fields it doesn't -- this check can only ever
+    CATCH a genuinely named-but-missing field, never invent one from prose
+    it can't parse."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["family"] = {
+        "id": "incident-writeup",
+        "is_new_family": False,
+        "catalogue_source": "repo_catalogue",
+        "shape_summary": "a free-form incident writeup with no fixed field list",
+    }
+    instance["out_fields"] = [{"name": "summary", "type": "string"}]
+    instance["exclude"] = ["raw log lines"]
+    instance["prose_field"] = None
+    instance["stamp_markdown"] = (
+        "<!-- model-right-sizer-schema:begin -->\n"
+        "## Agent-to-agent schema\n\n"
+        "**In** -- `budget_tokens: int`\n\n"
+        "**Out** -- the `{status, output, error}` envelope; `output.*`: `summary: string`\n\n"
+        "**Never inline:** raw log lines.\n\n"
+        "You return ONLY this schema.\n"
+        "<!-- model-right-sizer-schema:end -->"
+    )
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors == []
+
+
+def test_portable_catalogue_family_with_shape_summary_missing_a_named_field_is_also_rejected():
+    """The self-consistency check runs regardless of catalogue_source -- it
+    isn't only a repo_catalogue backstop. A plugin_portable_catalogue
+    prescription with a shape_summary/out_fields mismatch is still caught by
+    it, on top of (not instead of) the stronger FAMILY_REQUIRED_FIELDS check."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["family"]["shape_summary"] = "scorecard[] + findings[] + leave_alone[] + nonexistent_field"
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("shape_summary" in e and "nonexistent_field" in e for e in errors)
+
+
 def test_family_missing_its_definitional_field_is_rejected():
     """Greptile issue 1 (round 1): a prescription can't claim a catalogue
     family while omitting the field that makes it that family -- e.g.
@@ -586,6 +695,7 @@ def test_shared_field_name_between_in_and_out_sections_does_not_truncate_segment
     instance = copy.deepcopy(EXAMPLE)
     instance["family"]["id"] = "graded-claim"
     instance["family"]["is_new_family"] = False
+    instance["family"]["shape_summary"] = "subject + grade + evidence + counter_case, the graded-claim shape."
     instance["out_fields"] = [
         {"name": "subject", "type": "string"},
         {"name": "grade", "type": "object", "description": "{score, confidence}"},
