@@ -234,8 +234,8 @@
             "properties": {
               "name": { "type": "string" },
               "id": { "type": "string" },
-              "in_per_1m": { "type": "number" },
-              "out_per_1m": { "type": "number" },
+              "in_per_1m": { "type": "number", "minimum": 0 },
+              "out_per_1m": { "type": "number", "minimum": 0 },
               "context_tokens": { "type": ["integer", "null"] },
               "max_output_tokens": { "type": ["integer", "null"] },
               "effort_ceiling": { "type": ["string", "null"] },
@@ -245,9 +245,21 @@
               },
               "cost_basis_note": {
                 "type": ["string", "null"],
-                "description": "Required in spirit when cost_basis is 'amortized_local': the derivation behind the rate (device amortization, power draw, measured tokens/hour, and whether the device cost is charged at all), so a reader can tell an owned-hardware figure from an invoiced one. See plugins/model-right-sizer/eval/local_tier.py for the formulas."
+                "description": "The derivation behind the rate (device amortization, power draw, measured tokens/hour, and whether the device cost is charged at all), so a reader can tell an owned-hardware figure from an invoiced one. Required, and non-empty, whenever cost_basis is 'amortized_local' (see the allOf below): the same run prices ~38x apart depending only on which basis was used, so an undeclared basis makes the rate unreadable. See plugins/model-right-sizer/eval/local_tier.py for the formulas."
               }
-            }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": { "cost_basis": { "const": "amortized_local" } },
+                  "required": ["cost_basis"]
+                },
+                "then": {
+                  "required": ["cost_basis_note"],
+                  "properties": { "cost_basis_note": { "type": "string", "minLength": 1 } }
+                }
+              }
+            ]
           }
         }
       }

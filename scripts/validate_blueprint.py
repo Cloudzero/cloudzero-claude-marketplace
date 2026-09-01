@@ -89,9 +89,10 @@ def check_local_tier_basis(instance: dict) -> list[str]:
     1. A `local:<model-id>` pick must resolve to a `price_sheet.models[]`
        entry marked `cost_basis: "amortized_local"`, otherwise the blueprint
        recommends a tier whose cost nothing in the document states.
-    2. An `amortized_local` entry's rates must be non-zero. A local stage
+    2. An `amortized_local` entry's rates must be positive. A local stage
        booked at $0 shows unbounded ROI by construction, which no usage
-       report or calibration history can ever falsify.
+       report or calibration history can ever falsify; a negative rate
+       inverts every comparison downstream instead.
     """
     errors: list[str] = []
     models = instance.get("price_sheet", {}).get("models", [])
@@ -101,11 +102,15 @@ def check_local_tier_basis(instance: dict) -> list[str]:
         if model.get("cost_basis") != AMORTIZED_LOCAL:
             continue
         for field in ("in_per_1m", "out_per_1m"):
-            if model.get(field) == 0:
+            # Zero is the failure this check was written for; a negative rate is
+            # the same failure with the sign flipped, and worse downstream (it
+            # inverts every cost comparison the blueprint feeds).
+            if model.get(field) <= 0:
                 errors.append(
                     f"price_sheet.models[id={model.get('id')!r}].{field}: a "
                     f"{AMORTIZED_LOCAL!r} tier is non-invoiced, not free: state the "
-                    "amortized device + power cost over measured throughput, not 0"
+                    "amortized device + power cost over measured throughput as a "
+                    f"positive rate, got {model.get(field)!r}"
                 )
 
     for group, row_id, slot, choice in iter_picks(instance):

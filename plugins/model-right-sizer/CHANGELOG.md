@@ -59,11 +59,15 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   `local:<model-id>` alongside the existing `deterministic_query_layer`
   sentinel, and `price_sheet.models[]` entries gain two optional fields,
   `cost_basis` (`provider_list_price` | `amortized_local`) and
-  `cost_basis_note` (the derivation behind an owned-hardware rate). Additive
-  and backward compatible: both fields are optional, an absent `cost_basis`
-  means `provider_list_price`, and every existing `schema_version` 1.0
-  document still validates unchanged, so the version is deliberately not
-  bumped.
+  `cost_basis_note` (the derivation behind an owned-hardware rate, required
+  and non-empty whenever `cost_basis` is `amortized_local`, enforced by an
+  `if/then` in the schema rather than left advisory: the same run prices about
+  38x apart depending only on whether the device is charged, so an undeclared
+  basis makes the rate unreadable). `in_per_1m` and `out_per_1m` also gain
+  `minimum: 0`, since no tier has a negative rate. Additive and backward
+  compatible: `cost_basis` is optional and its absence means
+  `provider_list_price`, so every existing `schema_version` 1.0 document still
+  validates unchanged and the version is deliberately not bumped.
 - `schemas/blueprint.example.json` gains a third stage, a bulk pre-filter
   routed to the local tier with a runner-up on Haiku, its amortized price-sheet
   entry, and a handoff schema whose payload carries an explicit `unverified`

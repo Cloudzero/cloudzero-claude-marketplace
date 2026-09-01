@@ -8,6 +8,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 # Make the scripts directory importable.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 import validate_blueprint  # noqa: E402
@@ -145,6 +147,73 @@ def test_amortized_local_entry_priced_at_zero_is_rejected():
 
     assert errors
     assert any("non-invoiced, not free" in e for e in errors)
+
+
+def test_negative_amortized_local_rate_is_rejected():
+    """A negative rate is the zero-rate failure with the sign flipped, and
+    worse: it inverts every cost comparison downstream instead of flattening
+    it. The schema's `minimum: 0` catches it for any tier, this check catches
+    it with a message that names the basis."""
+    instance = copy.deepcopy(EXAMPLE)
+    local = next(
+        m for m in instance["price_sheet"]["models"] if m.get("cost_basis") == "amortized_local"
+    )
+    local["out_per_1m"] = -1.43
+
+    errors = validate_blueprint.validate(SCHEMA, instance)
+
+    assert errors
+
+
+def test_negative_rate_on_a_hosted_entry_is_rejected_by_the_schema():
+    instance = copy.deepcopy(EXAMPLE)
+    instance["price_sheet"]["models"][0]["in_per_1m"] = -3
+
+    errors = validate_blueprint.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("in_per_1m" in e for e in errors)
+
+
+@pytest.mark.parametrize("note", [None, ""])
+def test_amortized_local_entry_without_a_usable_derivation_is_rejected(note):
+    """The rate alone is unreadable: the same run prices ~38x apart depending
+    only on whether the device is charged. cost_basis_note is what says which
+    basis ran, so the schema requires it (non-empty) for this cost_basis."""
+    instance = copy.deepcopy(EXAMPLE)
+    local = next(
+        m for m in instance["price_sheet"]["models"] if m.get("cost_basis") == "amortized_local"
+    )
+    local["cost_basis_note"] = note
+
+    errors = validate_blueprint.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("cost_basis_note" in e for e in errors)
+
+
+def test_amortized_local_entry_missing_the_note_entirely_is_rejected():
+    instance = copy.deepcopy(EXAMPLE)
+    local = next(
+        m for m in instance["price_sheet"]["models"] if m.get("cost_basis") == "amortized_local"
+    )
+    del local["cost_basis_note"]
+
+    errors = validate_blueprint.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("cost_basis_note" in e for e in errors)
+
+
+def test_a_hosted_entry_needs_no_derivation_note():
+    """The conditional requirement fires on cost_basis alone, so a
+    provider_list_price entry (or one with no cost_basis at all) is unaffected."""
+    instance = copy.deepcopy(EXAMPLE)
+    hosted = instance["price_sheet"]["models"][0]
+    hosted["cost_basis"] = "provider_list_price"
+    hosted.pop("cost_basis_note", None)
+
+    assert validate_blueprint.validate(SCHEMA, instance) == []
 
 
 def test_local_pick_whose_entry_claims_a_vendor_list_price_is_rejected():
