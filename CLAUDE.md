@@ -24,3 +24,26 @@ uv run --no-project --with pyyaml --with jsonschema --with pytest -- pytest test
 ```
 
 `claude plugin validate .` (and per-plugin) is a useful extra check — it uses Claude Code's real parsers.
+
+<!-- xdp-dev-flow:begin (managed by /xdp-tools:dev-flow — do not edit; re-run install to refresh) -->
+## MANDATE — route every task through the XDP flow-router
+
+**At the start of any substantive task, invoke `/xdp-tools:flow-router`.** It
+classifies the task and routes you to the correct flow — a **skill** to
+`/xdp-tools:skills-flow`, other **code** (even with a doc in its plan) to
+`/xdp-tools:dev-flow`, pure non-skill **markdown** to `/xdp-tools:markdown-flow`
+— then you follow that flow. All flows and the agents they spawn live in the
+xdp-tools plugin (namespaced, e.g. `xdp-tools:designer`).
+
+**When a flow spawns sub-agents, exchange work through the plugin's
+agent-protocol** (typed contracts + a shared state store, not paraphrased
+context) — full definition, single-sourced: `context/agent-protocol.md` in
+`Cloudzero/project-xdp-tools`.
+
+Do NOT describe or copy the flows here — the routing rule, every flow's
+steps, and the agent-protocol are single-sourced in the plugin, so process
+tweaks land everywhere at once (PR → `Cloudzero/project-xdp-tools`; the
+version is bumped once at integration, not in the PR — never an edit to this
+block). Repo-specific verification commands (test suite, render harness)
+belong below this block, NOT inside it.
+<!-- xdp-dev-flow:end -->
