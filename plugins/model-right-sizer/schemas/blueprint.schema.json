@@ -256,7 +256,14 @@
                 },
                 "then": {
                   "required": ["cost_basis_note"],
-                  "properties": { "cost_basis_note": { "type": "string", "minLength": 1 } }
+                  "properties": {
+                    "cost_basis_note": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "\\S",
+                      "description": "Non-blank: `minLength` alone accepts a whitespace-only string, which states no basis at all. Content beyond that is a review question, not a validator's."
+                    }
+                  }
                 }
               }
             ]
