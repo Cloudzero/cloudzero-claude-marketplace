@@ -29,7 +29,7 @@ The flagship plugin providing comprehensive cost analysis capabilities:
 A model-selection economist for Claude Code that keeps AI spend as intentional as cloud spend:
 - The `model-right-sizer` agent scores each task on effectiveness need vs. efficiency pressure vs. difficulty, and recommends the smallest Claude model (plus effort and token budget) that clears the bar
 - Runs as a bookend around work: a right-sizing blueprint before, a model-usage report after
-- Companion skills to preview the routing map for an intent (`model-right-sizer-dryrun`) and to stamp a standing right-sizing mandate onto a repo (`model-right-sizer-install`)
+- Companion skills to preview the routing map for an intent (`model-right-sizer-dryrun`), to stamp a standing right-sizing mandate onto a repo (`model-right-sizer-install`), and to prescribe a minimal output schema for one agent's handoff to its controller (`model-right-sizer-schema`)
 
 See the [Model Right Sizer README](plugins/model-right-sizer/README.md) for full details.
 
@@ -63,7 +63,8 @@ cloudzero-claude-marketplace/
 │       ├── .claude-plugin/
 │       │   └── plugin.json       # Plugin manifest
 │       ├── agents/               # The model-right-sizer agent
-│       ├── skills/               # Companion install/dry-run skills
+│       ├── schemas/              # Blueprint + agent-schema JSON Schemas, family catalogue
+│       ├── skills/               # Companion install/dry-run/schema skills
 │       └── README.md             # Plugin documentation
 ├── scripts/                      # CI validators (manifests, agent files)
 ├── tests/                        # Tests for the validators
@@ -96,7 +97,7 @@ Adding the marketplace makes every plugin in this repository available. It does 
 /plugin install model-right-sizer@cloudzero
 ```
 
-Installing `cost-analyst@cloudzero` gives you the 11 cost analysis skills and the pre-configured CloudZero MCP server. Installing `model-right-sizer@cloudzero` gives you the model-right-sizer agent and its two companion skills.
+Installing `cost-analyst@cloudzero` gives you the 11 cost analysis skills and the pre-configured CloudZero MCP server. Installing `model-right-sizer@cloudzero` gives you the model-right-sizer agent and its three companion skills.
 
 For platform setup and more installation guidance, see the [CloudZero AI Hub](https://docs.cloudzero.com/docs/ai-getting-started).
 
@@ -220,7 +221,7 @@ Fetches top unaddressed CloudZero Optimize recommendations, dispatches parallel 
 
 ### Model Right Sizer Plugin
 
-The Model Right Sizer plugin includes one agent and two skills:
+The Model Right Sizer plugin includes one agent and three skills:
 
 #### The `model-right-sizer` Agent
 **Triggered by:** "Blueprint this task", "Which model should this run on?", "Give me a usage report"
@@ -250,6 +251,16 @@ Stamps a standing mandate onto the current repo's `CLAUDE.md`, `AGENTS.md`, or b
 **Example:**
 ```
 "Install model-right-sizer in this repo"
+```
+
+#### Model Right Sizer Schema
+**Triggered by:** "Give this agent an output schema", "Prescribe a schema for...", "Minimize what this agent returns"
+
+Prescribes a minimal output schema for **one** agent's handoff to its controller — the agent's message-schema lever scoped to a single seam instead of a whole flow. Names a reusable family (or coins a minimal new one), the typed in/out fields, and an exclusion list, then offers to stamp a `## Agent-to-agent schema` section directly into the target agent's file.
+
+**Example:**
+```
+"This log-triage agent just replies with a paragraph — give it an output schema for the on-call digest skill that calls it"
 ```
 
 See the [Model Right Sizer README](plugins/model-right-sizer/README.md) for the full documentation.
