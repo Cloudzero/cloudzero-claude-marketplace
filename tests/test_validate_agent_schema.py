@@ -670,6 +670,44 @@ def test_nested_member_named_only_in_unpunctuated_trailing_prose_does_not_count_
     assert any("findings" in e and "fix" in e and "does not restate" in e for e in errors)
 
 
+def test_nested_member_named_only_in_leading_prose_does_not_count_as_restated():
+    """Greptile round 13: every prior round (10-12) closed a way for TRAILING
+    prose (after the bracket closes) to satisfy a missing member. This is the
+    mirror bug on the LEADING side: introductory text between a field's own
+    name and its bracket -- e.g. "findings needs a fix noted here: [{...}]"
+    -- was never excluded either, since `_structural_clause` only ever
+    trimmed the END of the segment. A stamp could drop `fix` from findings'
+    actual bracketed declaration while still mentioning the word in prose
+    BEFORE the bracket opens, and it previously passed."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["stamp_markdown"] = instance["stamp_markdown"].replace(
+        'findings: [{id, dimension, severity: enum[P1, P2, hygiene], location: "service:line", claim: string, fix: string}]',
+        "findings mentions a fix suggestion field before its actual shape: "
+        '[{id, dimension, severity: enum[P1, P2, hygiene], location: "service:line", claim: string}]',
+    )
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("findings" in e and "fix" in e and "does not restate" in e for e in errors)
+
+
+def test_structural_clause_excludes_leading_prose_before_the_bracket():
+    """Direct unit test for the round-13 fix: text between the field's own
+    name and its bracket must not be treated as part of the typed
+    declaration, however plausible-sounding, since the check exists to
+    verify the BRACKET's own content, not commentary sitting next to it."""
+    segment = (
+        "findings mentions a fix suggestion field before its actual shape: "
+        '[{id, dimension, severity: enum[P1, P2, hygiene], location: "service:line", claim: string}]'
+    )
+    clause = validate_agent_schema._structural_clause(segment)
+
+    assert "hygiene" in clause  # the real bracketed declaration survives intact
+    assert "fix" not in clause  # only mentioned in the leading prose, not the bracket
+    assert "mentions" not in clause
+
+
 def test_structural_clause_preserves_internal_commas_and_colons_in_bracketed_type():
     """The fix for round 11 must not regress on the exact shape it has to
     coexist with: a field's real typed declaration is itself comma/colon-

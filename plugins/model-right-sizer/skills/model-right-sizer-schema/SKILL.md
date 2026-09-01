@@ -222,20 +222,31 @@ once, that's `model-right-sizer-dryrun`, not this skill.
      wrap the (or one specific) existing section in this skill's markers and
      replace it, or leave the file untouched and abandon the stamp for this
      run.
-   - **An unmatched marker** — a `:begin` with no corresponding `:end` of
-     the *same style*, or vice versa, anywhere in the file. This includes a
-     begin from one convention followed by an end from the other (a
-     `model-right-sizer-schema:begin` … `xdp-agent-schema:end`, or the
-     reverse) — that is two orphaned halves, not a pair, whatever order they
-     appear in. Applies *regardless of whether a separate, genuinely clean
+   - **An unmatched or misordered marker** — either (a) a `:begin` with no
+     corresponding `:end` of the *same style*, or vice versa, anywhere in
+     the file (this includes a begin from one convention followed by an end
+     from the other, e.g. `model-right-sizer-schema:begin` …
+     `xdp-agent-schema:end`, or the reverse — that is two orphaned halves,
+     not a pair, whatever order they appear in); **or (b) exactly one begin
+     and one end of the SAME style, both present, but the `:end` marker
+     appears in the file BEFORE the `:begin` marker.** (b) is easy to miss
+     because the counts alone (one begin, one end) look identical to the
+     clean single-pair case above — it fails only the *order* half of that
+     case's requirement, not the count half, and doesn't fit "no
+     corresponding end" either since a same-style end genuinely exists. It
+     still belongs here, not in the clean case: a reversed pair is exactly
+     as corrupted as an orphaned half, since "replace only the text between
+     those two markers" has no well-defined meaning when the markers are
+     backwards. Applies *regardless of whether a separate, genuinely clean
      pair also exists elsewhere*. This is a corrupted or partially-applied
      prior stamp, not a state this skill invented a rule for. Stop, report
-     the exact line the orphaned marker is on (and the
+     the exact lines both markers are on (and the
      clean pair's location too, if one is also present, so the human isn't
      left guessing which is which), and ask a human to repair or remove it
      before re-running — do not attempt to infer where the missing half
-     belongs, and do not refresh the clean pair in the same run without the
-     human's go-ahead once an orphan is known to exist.
+     belongs or which marker should move, and do not refresh the clean pair
+     in the same run without the human's go-ahead once an orphan or
+     reversed pair is known to exist.
    - **More than one complete marker pair present** (from either marker
      style, or a mix), or **a complete pair coexisting with an unmarked
      heading elsewhere.** An existing anomaly, not something this run

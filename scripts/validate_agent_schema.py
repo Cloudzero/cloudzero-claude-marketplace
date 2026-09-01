@@ -74,7 +74,10 @@ Checks:
     structural clause falls back to truncating at the field's own bracket
     close in that case, not end-of-segment, closing a gap where a plain
     unpunctuated aside like "we intentionally omit a fix suggestion this
-    round" still credited `fix` as restated.
+    round" still credited `fix` as restated. It also excludes LEADING prose
+    sitting between a field's own name and its bracket (e.g. "findings
+    needs a fix noted here: [{...}]") -- the mirror bug on the other side of
+    the declaration, closed the same round.
   - `stamp_markdown` carries exactly one `model-right-sizer-schema:begin`
     marker and exactly one matching `:end` marker, begin before end. A
     security review flagged this as the one hard, structural invariant this
@@ -346,39 +349,53 @@ _TRAILING_PUNCT_BOUNDARY = re.compile(r"\(|,|:|;|\s-\s")
 
 
 def _structural_clause(segment: str) -> str:
-    """`segment` truncated at the first prose boundary -- the field's typed
-    declaration only, with any trailing human-authored aside or follow-on
-    sentence/clause dropped. Returns `segment` unchanged if no boundary is
-    found (the common case: this repo's convention states a field's shape
-    as one dense, boundary-free clause).
+    """`segment` trimmed to the field's typed declaration only -- LEADING
+    prose before the declaration opens and TRAILING prose after it closes
+    are both dropped. Returns `segment` unchanged if no boundary is found
+    on either side (the common case: this repo's convention states a
+    field's shape as one dense, boundary-free clause immediately after its
+    own `name:`).
 
-    Two boundary classes, combined by taking whichever fires first:
+    The end boundary, combining two classes by taking whichever fires
+    first, both searched starting at `structural_end` (where the field's
+    own top-level bracket nesting -- `{`/`[` ... `}`/`]`, found via a simple
+    depth scan -- closes; or right after the field-name's own separating
+    colon, for a bare scalar field with no bracket at all):
 
-    1. `_PROSE_BOUNDARY` (sentence-end, `--`, em-dash) -- searched over the
-       whole segment, exactly as before round 11.
+    1. `_PROSE_BOUNDARY` (sentence-end, `--`, em-dash).
     2. `_TRAILING_PUNCT_BOUNDARY` (paren, comma, colon, semicolon, single
-       hyphen dash) -- searched only from the point where the field's own
-       top-level bracket nesting (`{`/`[` ... `}`/`]`) closes, found via a
-       simple depth scan. Parens never appear in this convention's type
-       language, so they don't participate in the depth count -- an
-       unmatched `(` always means trailing prose, at any depth. If the
-       segment never opens a bracket at all (a bare scalar field, e.g.
-       `gate: string, computed from confidence`), the scan starts right
-       after the field-name's own separating colon instead, so that colon
-       itself is never mistaken for a boundary. When a bracket WAS found but
-       nothing after it matches this pattern either (no recognized
-       punctuation anywhere before the segment ends), the bracket's own
-       close is the fallback boundary -- not end-of-segment -- since a
-       field's documented nested shape never extends past its own closing
-       `}`/`]` (round 12: this is what closes unpunctuated trailing prose,
-       e.g. a plain "we omit a fix suggestion this round" aside with no
-       comma/period/dash anywhere in it).
+       hyphen dash). Parens never appear in this convention's type
+       language, so they don't participate in the bracket-depth count -- an
+       unmatched `(` always means trailing prose, at any depth. When a
+       bracket WAS found but nothing after it matches this pattern either
+       (no recognized punctuation anywhere before the segment ends), the
+       bracket's own close is the fallback boundary -- not end-of-segment --
+       since a field's documented nested shape never extends past its own
+       closing `}`/`]` (round 12: this is what closes unpunctuated trailing
+       prose, e.g. a plain "we omit a fix suggestion this round" aside with
+       no comma/period/dash anywhere in it).
+
+    The start boundary (round 13): when a bracket was found, the returned
+    clause starts at the bracket's own OPENING character, not at the start
+    of `segment`. Before this, the function only ever trimmed the END of
+    `segment` -- introductory text sitting between the field's own name and
+    its bracket (e.g. "findings needs a fix noted here: [{id, dimension,
+    severity, location, claim}]") was silently retained, so a required
+    member missing from the actual bracketed shape could still be credited
+    as restated off a mention in that LEADING prose. There's no legitimate
+    reason for meaningful content to sit between a field's name/colon and
+    its own bracket in this convention -- every worked example opens the
+    bracket immediately -- so once a bracket exists, anything before it is
+    never part of the typed declaration either.
     """
     depth = 0
     started = False
+    bracket_start = None
     structural_end = 0
     for i, ch in enumerate(segment):
         if ch in "{[":
+            if bracket_start is None:
+                bracket_start = i
             depth += 1
             started = True
         elif ch in "}]":
@@ -390,34 +407,22 @@ def _structural_clause(segment: str) -> str:
         first_colon = segment.find(":")
         structural_end = first_colon + 1 if first_colon != -1 else 0
 
-    prose_boundary = _PROSE_BOUNDARY.search(segment)
+    prose_boundary = _PROSE_BOUNDARY.search(segment, structural_end)
     prose_pos = prose_boundary.start() if prose_boundary else len(segment)
 
     punct_boundary = _TRAILING_PUNCT_BOUNDARY.search(segment, structural_end)
     if punct_boundary:
         punct_pos = punct_boundary.start()
     elif started:
-        # Greptile round 12: falling back to len(segment) here let trailing
-        # prose with ZERO recognized punctuation anywhere -- no comma,
-        # period, dash, colon, semicolon, or parenthesis before the next
-        # field-name mention, e.g. "findings: [{...}] we intentionally omit
-        # a fix suggestion this round" -- pass straight through untruncated,
-        # so `fix` mentioned in that unpunctuated aside still satisfied the
-        # nested-member restatement check even though the typed declaration
-        # itself dropped it. Every family's nested shape in
-        # agent-schema-families.md is fully self-contained inside its own
-        # `{}`/`[]` -- once that bracket closes there is by convention
-        # nothing further that's part of the TYPED declaration, so the
-        # bracket close itself (`structural_end`) is the right fallback
-        # boundary, not end-of-segment. Scoped to `started` (a bracket was
-        # actually found) so the bare-scalar case below -- which has no
-        # closing delimiter to fall back to -- keeps its original,
-        # necessarily looser fallback.
         punct_pos = structural_end
     else:
         punct_pos = len(segment)
 
-    return segment[: min(prose_pos, punct_pos)]
+    start = bracket_start if started else 0
+    end = min(prose_pos, punct_pos)
+    if end <= start:
+        return ""
+    return segment[start:end]
 
 
 def _field_restatement_segment(stamp: str, field_name: str, all_field_names) -> str:
