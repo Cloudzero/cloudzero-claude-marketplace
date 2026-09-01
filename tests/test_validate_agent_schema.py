@@ -648,6 +648,28 @@ def test_nested_member_named_only_after_other_prose_separators_does_not_count_as
     assert any("findings" in e and "fix" in e and "does not restate" in e for e in errors)
 
 
+def test_nested_member_named_only_in_unpunctuated_trailing_prose_does_not_count_as_restated():
+    """Greptile round 12: rounds 10-11 closed every joiner that uses SOME
+    recognized punctuation (period, --/em-dash, parenthesis, comma, colon,
+    semicolon, single hyphen-dash), but trailing prose joined with NO
+    punctuation at all -- just a space and a word -- had no boundary to stop
+    at, so `_structural_clause` fell back to returning the whole segment
+    unchanged. A stamp could drop `fix` from findings' actual declaration
+    while still mentioning the word in a plain, unpunctuated aside, and it
+    previously passed."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["stamp_markdown"] = instance["stamp_markdown"].replace(
+        'findings: [{id, dimension, severity: enum[P1, P2, hygiene], location: "service:line", claim: string, fix: string}]',
+        'findings: [{id, dimension, severity: enum[P1, P2, hygiene], location: "service:line", claim: string}]'
+        " we intentionally omit a fix suggestion this round",
+    )
+
+    errors = validate_agent_schema.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("findings" in e and "fix" in e and "does not restate" in e for e in errors)
+
+
 def test_structural_clause_preserves_internal_commas_and_colons_in_bracketed_type():
     """The fix for round 11 must not regress on the exact shape it has to
     coexist with: a field's real typed declaration is itself comma/colon-
@@ -666,6 +688,24 @@ def test_structural_clause_preserves_internal_commas_and_colons_in_bracketed_typ
     assert "fix" in clause
     assert "hygiene" in clause
     assert "(order not significant)" not in clause
+
+
+def test_structural_clause_truncates_at_bracket_close_when_no_punctuation_follows():
+    """Direct unit test for the round-12 fix: trailing prose with literally
+    no recognized punctuation anywhere (no comma, period, dash, colon,
+    semicolon, or parenthesis) must still be dropped once the field's own
+    bracketed shape closes -- the bracket close is the fallback boundary,
+    not end-of-segment."""
+    segment = (
+        'findings: [{id, dimension, severity: enum[P1, P2, hygiene], '
+        'location: "service:line", claim: string}] '
+        "we intentionally omit a fix suggestion this round"
+    )
+    clause = validate_agent_schema._structural_clause(segment)
+
+    assert "hygiene" in clause  # the real declaration survives intact
+    assert "fix" not in clause  # only mentioned in the unpunctuated aside
+    assert "intentionally" not in clause
 
 
 def test_single_hyphen_inside_compound_word_is_not_a_boundary():

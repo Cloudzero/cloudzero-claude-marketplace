@@ -69,7 +69,12 @@ Checks:
     declaration), never in trailing prose about that field -- a stamp that
     drops a required member from the typed shape doesn't get to satisfy the
     check by mentioning the member's name in an aside, even one explicitly
-    saying it was left out.
+    saying it was left out. This includes an aside joined with NO
+    recognized punctuation at all (just a space and a word) -- the
+    structural clause falls back to truncating at the field's own bracket
+    close in that case, not end-of-segment, closing a gap where a plain
+    unpunctuated aside like "we intentionally omit a fix suggestion this
+    round" still credited `fix` as restated.
   - `stamp_markdown` carries exactly one `model-right-sizer-schema:begin`
     marker and exactly one matching `:end` marker, begin before end. A
     security review flagged this as the one hard, structural invariant this
@@ -360,7 +365,14 @@ def _structural_clause(segment: str) -> str:
        segment never opens a bracket at all (a bare scalar field, e.g.
        `gate: string, computed from confidence`), the scan starts right
        after the field-name's own separating colon instead, so that colon
-       itself is never mistaken for a boundary.
+       itself is never mistaken for a boundary. When a bracket WAS found but
+       nothing after it matches this pattern either (no recognized
+       punctuation anywhere before the segment ends), the bracket's own
+       close is the fallback boundary -- not end-of-segment -- since a
+       field's documented nested shape never extends past its own closing
+       `}`/`]` (round 12: this is what closes unpunctuated trailing prose,
+       e.g. a plain "we omit a fix suggestion this round" aside with no
+       comma/period/dash anywhere in it).
     """
     depth = 0
     started = False
@@ -382,7 +394,28 @@ def _structural_clause(segment: str) -> str:
     prose_pos = prose_boundary.start() if prose_boundary else len(segment)
 
     punct_boundary = _TRAILING_PUNCT_BOUNDARY.search(segment, structural_end)
-    punct_pos = punct_boundary.start() if punct_boundary else len(segment)
+    if punct_boundary:
+        punct_pos = punct_boundary.start()
+    elif started:
+        # Greptile round 12: falling back to len(segment) here let trailing
+        # prose with ZERO recognized punctuation anywhere -- no comma,
+        # period, dash, colon, semicolon, or parenthesis before the next
+        # field-name mention, e.g. "findings: [{...}] we intentionally omit
+        # a fix suggestion this round" -- pass straight through untruncated,
+        # so `fix` mentioned in that unpunctuated aside still satisfied the
+        # nested-member restatement check even though the typed declaration
+        # itself dropped it. Every family's nested shape in
+        # agent-schema-families.md is fully self-contained inside its own
+        # `{}`/`[]` -- once that bracket closes there is by convention
+        # nothing further that's part of the TYPED declaration, so the
+        # bracket close itself (`structural_end`) is the right fallback
+        # boundary, not end-of-segment. Scoped to `started` (a bracket was
+        # actually found) so the bare-scalar case below -- which has no
+        # closing delimiter to fall back to -- keeps its original,
+        # necessarily looser fallback.
+        punct_pos = structural_end
+    else:
+        punct_pos = len(segment)
 
     return segment[: min(prose_pos, punct_pos)]
 
