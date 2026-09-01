@@ -285,3 +285,53 @@ def test_inherit_session_model_override_also_gets_no_live_edit():
     doc, counts = m.render(candidates, blueprint_rows, "acme/foo")
     assert counts["override"] == 1
     assert "reference pick only — no live edit" in doc
+
+
+# ---------------------------------------------------------------------------
+# A `local:<model-id>` pick: the lineup's non-invoiced tier. It has no
+# pasteable counterpart (you cannot pin `model: local:...` in frontmatter, and
+# the pick is only valid behind the routing gate), so it must render as an
+# advisory row like the query-layer case, not as a cross-provider reference.
+# ---------------------------------------------------------------------------
+
+
+def test_model_label_names_the_local_tier_and_flags_it_unverified():
+    label = m._model_label("local:qwen3-4b-instruct-2507-4bit")
+    assert label == "local tier (qwen3-4b-instruct-2507-4bit), unverified output"
+
+
+def test_has_tier_keyword_is_false_for_a_local_pick():
+    assert m._has_tier_keyword("local:qwen3-4b-instruct-2507-4bit") is False
+
+
+def test_local_primary_pick_gets_no_live_edit_and_is_not_called_cross_provider():
+    candidates = [
+        {
+            "candidate_id": "c1",
+            "file": "digest.py",
+            "line": 12,
+            "component": "bulk pre-filter",
+            "current_pin_literal": "claude-haiku-4-5",
+            "pin_syntax": "sdk_string_literal",
+            "job_description": "shortlist threads that mention a blocker",
+        }
+    ]
+    blueprint_rows = [
+        {
+            "id": "c1",
+            "keep_or_override": "override",
+            "rationale": "bulk mechanical pre-filter, re-read downstream, clears the routing gate",
+            "pick": {
+                "primary": {"model": "local:qwen3-4b-instruct-2507-4bit", "confidence": 65},
+                "runner_up": {"model": "claude-haiku-4-5", "confidence": 35},
+            },
+        }
+    ]
+    doc, counts = m.render(candidates, blueprint_rows, "acme/foo")
+    assert counts["override"] == 1
+    # No pasteable literal: a local pick is a routing decision, not a pin swap.
+    assert '"local:qwen3-4b-instruct-2507-4bit"' not in doc
+    assert "local tier, gated: see Why" in doc
+    assert "routing-gate decision, not a pin swap" in doc
+    # And it is not mislabelled as another provider's model.
+    assert "cross-provider reference" not in doc
