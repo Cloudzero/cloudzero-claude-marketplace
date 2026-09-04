@@ -23,6 +23,11 @@ Checks:
     carrying `cost_basis: "amortized_local"` and a non-zero rate: a
     non-invoiced tier is not a free one, and a $0 rate is what makes a move
     to local unfalsifiable
+  - the routing gate in front of a local pick actually denies: a recorded
+    deny reason, a compound instruction, or a validator that cannot fail is
+    a hard error rather than a note in the rationale
+  - a local primary falls back to a hosted runner-up, so the stage behaves
+    the same way on a machine with no local runtime
 
 Usage:
   uv run --no-project --with jsonschema scripts/validate_blueprint.py                  # validate the checked-in worked example
@@ -52,6 +57,11 @@ NON_REFERENCE_HANDOFFS = {"none", "route_via_query_layer"}
 # plugins/model-right-sizer/agents/model-right-sizer.md.
 LOCAL_MODEL_PREFIX = "local:"
 AMORTIZED_LOCAL = "amortized_local"
+
+# The gate's own escape hatch. `minLength` cannot tell a named invariant from the
+# word "none", and a local task whose validator cannot fail is a hosted task —
+# the rule this list exists to keep enforceable. Compared casefolded and stripped.
+NON_ANSWERS = {"none", "n/a", "na", "nil", "null", "tbd", "todo", "-", "--"}
 
 
 def fail(msg: str) -> None:
@@ -133,6 +143,82 @@ def check_local_tier_basis(instance: dict) -> list[str]:
     return errors
 
 
+def check_local_routing_gate(instance: dict) -> list[str]:
+    """The three-step gate (deny → compound → propose-plus-available) lived only in
+    the agent's prose, which made it an LLM-compliance question rather than a
+    contract one: a blueprint routing a claim-shaped stage to an open-weight model
+    validated clean.
+
+    A validator cannot read the instruction the gate was evaluated against, and
+    pretending otherwise would be the same unfalsifiable move as booking a local
+    run at $0. What it can do is refuse the artifact whenever the gate's own
+    recorded answer contradicts the pick — which is every case below.
+
+    `blueprint.schema.json` carries the structural half (a local pick in either
+    slot requires `local_gate`; a local primary may not have a local runner-up).
+    This carries the half `jsonschema` has no keyword for.
+    """
+    errors: list[str] = []
+
+    for group in ("blueprint_rows", "work_routing_map"):
+        for row in instance.get(group, []):
+            pick = row.get("pick")
+            if not isinstance(pick, dict):
+                continue
+            local_slots = [
+                slot
+                for slot in ("primary", "runner_up")
+                if isinstance((pick.get(slot) or {}).get("model"), str)
+                and pick[slot]["model"].startswith(LOCAL_MODEL_PREFIX)
+            ]
+            if not local_slots:
+                continue
+
+            where = f"{group}[id={row.get('id')!r}].pick"
+            named = ", ".join(f"{slot}={pick[slot]['model']!r}" for slot in local_slots)
+
+            gate = pick.get("local_gate")
+            if not isinstance(gate, dict):
+                # The schema requires this too; carrying it here gives the failure a
+                # sentence instead of a JSON Pointer.
+                errors.append(
+                    f"{where}.local_gate: a local pick ({named}) with no recorded routing "
+                    "gate. State the gate's answer (denied_by, single_clause_instruction, "
+                    "registered_task, validator) or route hosted"
+                )
+                continue
+
+            denied = gate.get("denied_by") or []
+            if denied:
+                errors.append(
+                    f"{where}.local_gate.denied_by: gate step 1 denied this stage "
+                    f"({', '.join(sorted(str(d) for d in denied))}) and the pick still names "
+                    f"{named}. Deny is the step with no appeal: route hosted. Routing wrongly "
+                    "to hosted costs tokens; routing wrongly to local puts a confident wrong "
+                    "answer in front of somebody"
+                )
+
+            if gate.get("single_clause_instruction") is not True:
+                errors.append(
+                    f"{where}.local_gate.single_clause_instruction: a local task does exactly "
+                    f"one narrow thing, so a compound instruction is not a match — the pick "
+                    f"names {named} anyway. This is the gate that actually holds: a keyword "
+                    "deny-list leaked 9 of 10 claim-shaped requests, every one of them a safe "
+                    "first clause with the real ask in clause two"
+                )
+
+            validator = gate.get("validator")
+            if isinstance(validator, str) and validator.strip().casefold() in NON_ANSWERS:
+                errors.append(
+                    f"{where}.local_gate.validator: {validator!r} is not a validator. Name a "
+                    "check that can fail this output — an invariant, not a shape check. A "
+                    "shape-only check accepted 4 output lines for 6 input items; the "
+                    "item-count invariant that caught it also pointed at the fix"
+                )
+
+    return errors
+
+
 def validate(schema: dict, instance: dict) -> list[str]:
     """Return human-readable error strings for `instance` against `schema`; empty means conformant."""
     schema_errors = sorted(
@@ -157,6 +243,7 @@ def validate(schema: dict, instance: dict) -> list[str]:
                     f"match any message_schemas[].id (and isn't {sorted(NON_REFERENCE_HANDOFFS)!r})"
                 )
     errors.extend(check_local_tier_basis(instance))
+    errors.extend(check_local_routing_gate(instance))
     return errors
 
 

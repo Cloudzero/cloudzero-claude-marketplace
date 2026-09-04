@@ -53,6 +53,30 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   entry marked `cost_basis: "amortized_local"`, and such an entry's rates must
   be non-zero. A blueprint that recommends a local tier without saying what it
   costs no longer validates.
+- **`pick.local_gate`: the routing gate is now part of the contract, not just
+  the agent's prose.** Review caught the hole this closes. The gate above was
+  documented in `agents/model-right-sizer.md` and enforced nowhere, so a
+  blueprint that routed a claim-shaped, outward-facing stage onto an
+  open-weight model validated clean — the only thing standing in front of it
+  was the agent choosing to obey its own instructions, which is LLM compliance
+  rather than a contract layer. Every pick naming a `local:` model in *either*
+  slot now carries `pick.local_gate`: `denied_by` (the step-1 reasons that
+  fired, empty when none did), `single_clause_instruction` (step 2),
+  `registered_task` (step 3), the `validator` that can fail the output, and an
+  optional `runtime_probe`. `blueprint.schema.json` requires the object and
+  rejects a local primary whose runner-up is also local, so *"never make local
+  the only path"* is a property of the artifact; `validate_blueprint.py`
+  rejects a record that contradicts its own pick — a recorded deny with the
+  local pick still in the slot, a compound instruction, or a `validator` of
+  `"none"` / `"n/a"` / `"tbd"`, which `minLength` cannot tell from a named
+  invariant. A validator cannot read the instruction the gate was evaluated
+  against, and pretending otherwise would be the same unfalsifiable move as
+  booking a local run at $0: the judgment stays with the agent, the bookkeeping
+  stops being optional. The runner-up slot is covered deliberately, since
+  `what_flips_it` can promote it and a flip must not be how a claim-shaped
+  stage arrives on an open-weight model. A `deterministic_query_layer`
+  runner-up is a legitimate fallback — the rule is runtime independence, not
+  "must be a hosted model". 13 tests.
 
 ### Changed
 - `schemas/blueprint.schema.json`: `modelChoice.model` documents
@@ -74,6 +98,17 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   entry, and a handoff schema whose payload carries an explicit `unverified`
   field. It is the worked example of a gated local pick, validated in CI like
   the rest of the file.
+- The local tier's **residency** argument now names its trust boundary instead
+  of resting on "never leaves the machine." That phrase is a claim about the
+  network hop, not about the disk: the boundary is the operator's runtime, and
+  prompts still land in whatever the host keeps — runtime logs, KV caches,
+  shell history, crash dumps, a synced or backed-up filesystem, another process
+  under the same user. A developer laptop is not a compliance boundary unless
+  somebody made it one, and a self-hosted server inherits its operator's
+  controls rather than the model's. Where residency is the reason for the pick,
+  the agent now has to say what the runtime does with the bytes and who can read
+  them, or mark the claim `unverified` like any other unsourced figure in that
+  file.
 - The `model-right-sizer-audit` skill's two renderers label a `local:` pick as
   its own thing rather than as a cross-provider reference (which it is not):
   it renders as an advisory row with no pasteable literal, because a local pick
