@@ -64,7 +64,7 @@ cloudzero-claude-marketplace/
 │       │   └── plugin.json       # Plugin manifest
 │       ├── agents/               # The model-right-sizer agent
 │       ├── schemas/              # Blueprint + agent-schema JSON Schemas, family catalogue
-│       ├── skills/               # Companion install/dry-run/schema skills
+│       ├── skills/               # Companion install/dry-run/audit/schema skills
 │       └── README.md             # Plugin documentation
 ├── scripts/                      # CI validators (manifests, agent files)
 ├── tests/                        # Tests for the validators
