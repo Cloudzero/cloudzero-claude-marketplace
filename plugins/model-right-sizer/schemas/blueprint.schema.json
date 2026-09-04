@@ -70,13 +70,47 @@
         "model": {
           "type": "string",
           "minLength": 1,
-          "description": "A model ID from price_sheet.models[], or the literal 'deterministic_query_layer' when the pick is to route via a deterministic query layer instead of a model."
+          "description": "A model ID from price_sheet.models[], the literal 'deterministic_query_layer' when the pick is to route via a deterministic query layer instead of a model, or 'local:<model-id>' for an open-weight model running on hardware the operator already owns. A local pick is a non-invoiced tier, not a free one: its price_sheet.models[] entry must carry cost_basis 'amortized_local' and a non-zero amortized rate."
         },
         "effort": {
           "enum": ["none", "low", "medium", "high", "xhigh", "max"],
           "description": "Omit (or 'none') when model is 'deterministic_query_layer' or the model has no effort dial."
         },
         "confidence": { "type": "integer", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "localGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The recorded outcome of the three-step routing gate in front of a local pick (deny → compound → propose-plus-available). Required on any pick where either slot names a 'local:<model-id>' model. A validator cannot read the instruction the gate was evaluated against, so what it enforces is that the gate was evaluated, its answer recorded in the artifact, and every mechanical consequence honoured — the judgment stays with the agent, the bookkeeping does not. See \"The routing gate in front of a local pick\" in agents/model-right-sizer.md.",
+      "required": ["denied_by", "single_clause_instruction", "registered_task", "validator"],
+      "properties": {
+        "denied_by": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["claim_about_state", "verification", "outward_facing", "high_stakes_domain", "judgment", "ranking"] },
+          "description": "Gate step 1. Every deny reason that fires on the *instruction* — never on the data it will process, or a document that happens to contain the word 'overdue' would push every digest of it up a tier. A non-empty array means the stage may not run local: hosted tier, no appeal. An empty array says step 1 was evaluated and nothing fired, which is a different statement from the key being absent."
+        },
+        "single_clause_instruction": {
+          "type": "boolean",
+          "description": "Gate step 2, the load-bearing one. True only when the instruction asks for exactly one thing. A local task does exactly one narrow thing, so a two-clause request is definitionally not a match — on one adversarial pass 9 of 10 claim-shaped requests leaked past a keyword deny-list, every one of them a safe first clause with the real ask in clause two."
+        },
+        "registered_task": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Gate step 3. The single registered local task this instruction matched. Anything unmatched or ambiguous goes hosted; the gate may only ever propose, and silence means hosted."
+        },
+        "validator": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "The check that can *fail* this local output — an invariant, not a shape check. A shape-only check once accepted 4 output lines for 6 input items, and the item-count invariant that caught it also pointed at the real fix. A local task with no validator that can fail is a hosted task, so 'none' and 'n/a' are rejected rather than accepted as answers."
+        },
+        "runtime_probe": {
+          "type": ["string", "null"],
+          "description": "How the consuming system detects that the local runtime is present, where it has a probe. Optional: the fallback itself is enforced structurally through runner_up, so this documents the mechanism rather than carrying the guarantee."
+        }
       }
     },
     "pick": {
@@ -92,8 +126,26 @@
           "description": "The concrete condition that would flip primary and runner-up."
         },
         "why_not_tier_above": { "type": "string" },
-        "why_not_tier_below": { "type": "string" }
-      }
+        "why_not_tier_below": { "type": "string" },
+        "local_gate": { "$ref": "#/$defs/localGate" }
+      },
+      "allOf": [
+        {
+          "$comment": "Either slot naming a local model puts the gate on the record. The runner_up slot counts: what_flips_it can promote it, and a flip must not be how a claim-shaped stage arrives on an open-weight model.",
+          "if": {
+            "anyOf": [
+              { "required": ["primary"], "properties": { "primary": { "required": ["model"], "properties": { "model": { "pattern": "^local:" } } } } },
+              { "required": ["runner_up"], "properties": { "runner_up": { "required": ["model"], "properties": { "model": { "pattern": "^local:" } } } } }
+            ]
+          },
+          "then": { "required": ["local_gate"] }
+        },
+        {
+          "$comment": "A stage routed local must behave identically when the runtime is absent, so its fallback cannot itself need that runtime. This is \"never make local the only path\" as a contract rather than a sentence in the agent file.",
+          "if": { "required": ["primary"], "properties": { "primary": { "required": ["model"], "properties": { "model": { "pattern": "^local:" } } } } },
+          "then": { "properties": { "runner_up": { "properties": { "model": { "not": { "pattern": "^local:" } } } } } }
+        }
+      ]
     },
     "budget": {
       "type": "object",
@@ -234,12 +286,39 @@
             "properties": {
               "name": { "type": "string" },
               "id": { "type": "string" },
-              "in_per_1m": { "type": "number" },
-              "out_per_1m": { "type": "number" },
+              "in_per_1m": { "type": "number", "minimum": 0 },
+              "out_per_1m": { "type": "number", "minimum": 0 },
               "context_tokens": { "type": ["integer", "null"] },
               "max_output_tokens": { "type": ["integer", "null"] },
-              "effort_ceiling": { "type": ["string", "null"] }
-            }
+              "effort_ceiling": { "type": ["string", "null"] },
+              "cost_basis": {
+                "enum": ["provider_list_price", "amortized_local"],
+                "description": "How in_per_1m/out_per_1m were derived. Absent means provider_list_price: a vendor's published per-token rate. 'amortized_local' marks a non-invoiced tier (an open-weight model on hardware the operator already owns), whose rate is the operator's own device amortization plus power over measured throughput. It is never 0: a tier booked at zero makes every stage moved onto it show unbounded ROI, and poisons any calibration history that reads the result."
+              },
+              "cost_basis_note": {
+                "type": ["string", "null"],
+                "description": "The derivation behind the rate (device amortization, power draw, measured tokens/hour, and whether the device cost is charged at all), so a reader can tell an owned-hardware figure from an invoiced one. Required, and non-empty, whenever cost_basis is 'amortized_local' (see the allOf below): the same run prices ~38x apart depending only on which basis was used, so an undeclared basis makes the rate unreadable. See plugins/model-right-sizer/eval/local_tier.py for the formulas."
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": { "cost_basis": { "const": "amortized_local" } },
+                  "required": ["cost_basis"]
+                },
+                "then": {
+                  "required": ["cost_basis_note"],
+                  "properties": {
+                    "cost_basis_note": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "\\S",
+                      "description": "Non-blank: `minLength` alone accepts a whitespace-only string, which states no basis at all. Content beyond that is a review question, not a validator's."
+                    }
+                  }
+                }
+              }
+            ]
           }
         }
       }

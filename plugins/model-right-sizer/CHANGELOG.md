@@ -2,6 +2,133 @@
 
 All notable changes to `model-right-sizer.md` are documented here, most recent first. This project doesn't cut version tags — entries are dated. Loosely follows [Keep a Changelog](https://keepachangelog.com/) conventions (Added / Changed / Fixed).
 
+## Unreleased
+
+### Added
+- **A local / open-weight row in the model lineup, plus the routing gate that
+  makes it safe to recommend.** The lineup the agent reasoned over stopped at
+  the cheapest model with an invoice behind it, so the cheapest thing it could
+  ever recommend was the cheapest thing somebody bills for. It now carries an
+  explicit row below that floor: an open-weight model running on hardware the
+  operator already owns (an on-device runtime such as MLX or llama.cpp, or a
+  self-hosted server), expressed in a Pass A pick as `local:<model-id>`. The row
+  is deliberately narrow, and the agent file says so: mechanical, bulk-text,
+  high-volume work off the critical path, with a deterministic script preferred
+  wherever a script fits, and every local result unverified by default (input
+  for a stronger model to check, never a claim, a verification, a ranking, or a
+  sentence somebody outside the team reads). A three-step gate sits in front of
+  the pick and is evaluated against the *instruction*, never against the data
+  the stage will process: **deny** (claim-shaped, outward-facing, high-stakes,
+  judgment), then **compound** (a request asking for more than one thing is
+  definitionally not a match for a task that does exactly one), then **propose
+  plus available**. Every ambiguous case fails toward the cloud. The compound
+  gate is the load-bearing one, from a measured result rather than a hunch: on
+  an adversarial pass over a real implementation, 9 of 10 claim-shaped requests
+  leaked past a keyword deny-list, each one a safe first clause the matcher hit
+  on with the real ask in clause two, which is why the check is on instruction
+  shape rather than a paraphrase blocklist that can never be finished.
+- **`eval/local_tier.py` (and 24 tests): what a tier with no invoice actually
+  costs.** A local run has no vendor price page, and booking it at $0 is the
+  most expensive mistake available in this tier because it is unfalsifiable:
+  every stage moved local shows unbounded ROI, and any calibration history
+  learns from a saving that was really spend shifted onto hardware somebody
+  already bought. This module implements the agent's own formulas as pure
+  functions, the same standard `reasoning_budget.py` already holds the
+  wall-clock gate to: the amortized basis
+  (`(device_cost_per_hour + power_cost_per_hour) / tokens_per_hour`), the
+  expected-rework term on top of it, and the throughput at which a local tier
+  break-evens against a hosted one. `amortized_local_token_price` raises on a
+  zero hourly cost rather than returning `0.0`. The numbers are the argument:
+  charged against a $3,000 machine over a 10,000-hour life plus 40W at
+  $0.20/kWh, generation at 60 tok/s costs about $1.43 per 1M tokens, the same
+  order as the cheapest hosted tier, while counting power alone puts the same
+  run at about $0.04. Expected rework dwarfs both (a 10% wrong rate on a
+  50K-token run at $90/hr adds about $45 per 1M), which is the arithmetic case
+  for the routing gate mattering more than the price lever. Two tests bind
+  those published figures and the stated formula back to the agent file's
+  prose, so an edit to either side that drifts from the other fails CI.
+- **`scripts/validate_blueprint.py` now enforces the cost basis of a local
+  pick**, two checks JSON Schema has no keyword for: a `local:<model-id>` in
+  either pick slot of either array must resolve to a `price_sheet.models[]`
+  entry marked `cost_basis: "amortized_local"`, and such an entry's rates must
+  be non-zero. A blueprint that recommends a local tier without saying what it
+  costs no longer validates.
+- **Every price-sheet rate must be a finite number.** Greptile caught this on
+  the round above and it was real, in both directions it named and one it did
+  not: `json.loads` accepts the non-standard `NaN` and `Infinity` literals, and
+  neither guard rejected them — `minimum: 0` compares with `<`, which is False
+  for `NaN`, and the `<= 0` positivity test is False for `NaN` and `+inf` both.
+  `-inf` was the only non-finite value ever caught. So a blueprint could carry
+  an unusable rate, validate clean, and hand it to every downstream cost
+  comparison. The check runs over the whole price sheet rather than only the
+  local rows, because a `NaN` on a hosted row corrupts the same arithmetic, and
+  the positivity rule stays scoped to `amortized_local`: a hosted tier priced at
+  0 is legitimate, a non-invoiced one at 0 is the unfalsifiable claim this file
+  keeps arguing about. 9 tests, including one pinning that `-inf` still reports
+  the schema bound's message rather than the new one.
+- **`pick.local_gate`: the routing gate is now part of the contract, not just
+  the agent's prose.** Review caught the hole this closes. The gate above was
+  documented in `agents/model-right-sizer.md` and enforced nowhere, so a
+  blueprint that routed a claim-shaped, outward-facing stage onto an
+  open-weight model validated clean — the only thing standing in front of it
+  was the agent choosing to obey its own instructions, which is LLM compliance
+  rather than a contract layer. Every pick naming a `local:` model in *either*
+  slot now carries `pick.local_gate`: `denied_by` (the step-1 reasons that
+  fired, empty when none did), `single_clause_instruction` (step 2),
+  `registered_task` (step 3), the `validator` that can fail the output, and an
+  optional `runtime_probe`. `blueprint.schema.json` requires the object and
+  rejects a local primary whose runner-up is also local, so *"never make local
+  the only path"* is a property of the artifact; `validate_blueprint.py`
+  rejects a record that contradicts its own pick — a recorded deny with the
+  local pick still in the slot, a compound instruction, or a `validator` of
+  `"none"` / `"n/a"` / `"tbd"`, which `minLength` cannot tell from a named
+  invariant. A validator cannot read the instruction the gate was evaluated
+  against, and pretending otherwise would be the same unfalsifiable move as
+  booking a local run at $0: the judgment stays with the agent, the bookkeeping
+  stops being optional. The runner-up slot is covered deliberately, since
+  `what_flips_it` can promote it and a flip must not be how a claim-shaped
+  stage arrives on an open-weight model. A `deterministic_query_layer`
+  runner-up is a legitimate fallback — the rule is runtime independence, not
+  "must be a hosted model". 13 tests.
+
+### Changed
+- `schemas/blueprint.schema.json`: `modelChoice.model` documents
+  `local:<model-id>` alongside the existing `deterministic_query_layer`
+  sentinel, and `price_sheet.models[]` entries gain two optional fields,
+  `cost_basis` (`provider_list_price` | `amortized_local`) and
+  `cost_basis_note` (the derivation behind an owned-hardware rate, required
+  and non-empty whenever `cost_basis` is `amortized_local`, enforced by an
+  `if/then` in the schema (non-blank, since `minLength` alone accepts a
+  whitespace-only string) rather than left advisory: the same run prices about
+  38x apart depending only on whether the device is charged, so an undeclared
+  basis makes the rate unreadable). `in_per_1m` and `out_per_1m` also gain
+  `minimum: 0`, since no tier has a negative rate. Additive and backward
+  compatible: `cost_basis` is optional and its absence means
+  `provider_list_price`, so every existing `schema_version` 1.0 document still
+  validates unchanged and the version is deliberately not bumped.
+- `schemas/blueprint.example.json` gains a third stage, a bulk pre-filter
+  routed to the local tier with a runner-up on Haiku, its amortized price-sheet
+  entry, and a handoff schema whose payload carries an explicit `unverified`
+  field. It is the worked example of a gated local pick, validated in CI like
+  the rest of the file.
+- The local tier's **residency** argument now names its trust boundary instead
+  of resting on "never leaves the machine." That phrase is a claim about the
+  network hop, not about the disk: the boundary is the operator's runtime, and
+  prompts still land in whatever the host keeps — runtime logs, KV caches,
+  shell history, crash dumps, a synced or backed-up filesystem, another process
+  under the same user. A developer laptop is not a compliance boundary unless
+  somebody made it one, and a self-hosted server inherits its operator's
+  controls rather than the model's. Where residency is the reason for the pick,
+  the agent now has to say what the runtime does with the bytes and who can read
+  them, or mark the claim `unverified` like any other unsourced figure in that
+  file.
+- The `model-right-sizer-audit` skill's two renderers label a `local:` pick as
+  its own thing rather than as a cross-provider reference (which it is not):
+  it renders as an advisory row with no pasteable literal, because a local pick
+  is a routing-gate decision and there is no `model: local:...` frontmatter pin
+  to swap in. Both renderers already degraded gracefully here; the change is
+  that the label is now accurate, and pinned by tests.
+
 ## 2026-08-06
 
 ### Added

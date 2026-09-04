@@ -19,6 +19,18 @@ Checks:
     `work_routing_map[]` that isn't `"none"` or `"route_via_query_layer"`
     resolves to a real `message_schemas[].id` — a foreign-key check
     `jsonschema` itself has no keyword for
+  - every `local:<model-id>` pick resolves to a `price_sheet.models[]` entry
+    carrying `cost_basis: "amortized_local"` and a non-zero rate: a
+    non-invoiced tier is not a free one, and a $0 rate is what makes a move
+    to local unfalsifiable
+  - every rate on the price sheet is a finite number. `json.loads` accepts the
+    non-standard `NaN` and `Infinity` literals, and neither `minimum: 0` nor a
+    `<= 0` test rejects them, so an unusable rate would otherwise validate
+  - the routing gate in front of a local pick actually denies: a recorded
+    deny reason, a compound instruction, or a validator that cannot fail is
+    a hard error rather than a note in the rationale
+  - a local primary falls back to a hosted runner-up, so the stage behaves
+    the same way on a machine with no local runtime
 
 Usage:
   uv run --no-project --with jsonschema scripts/validate_blueprint.py                  # validate the checked-in worked example
@@ -28,6 +40,7 @@ Usage:
 from __future__ import annotations
 
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -39,6 +52,20 @@ DEFAULT_INSTANCE_PATH = REPO_ROOT / "plugins" / "model-right-sizer" / "schemas" 
 
 # handoff_schema_ref values that intentionally point at nothing in message_schemas[].
 NON_REFERENCE_HANDOFFS = {"none", "route_via_query_layer"}
+
+# A `local:<model-id>` pick routes a stage to an open-weight model on hardware
+# the operator already owns: a tier with no invoice behind it. It still has a
+# cost (device amortization + power over measured throughput, plus the rework
+# a wrong answer causes), so the schema asks for that basis explicitly. See
+# "A local run has no invoice, which is not the same as being free" in
+# plugins/model-right-sizer/agents/model-right-sizer.md.
+LOCAL_MODEL_PREFIX = "local:"
+AMORTIZED_LOCAL = "amortized_local"
+
+# The gate's own escape hatch. `minLength` cannot tell a named invariant from the
+# word "none", and a local task whose validator cannot fail is a hosted task —
+# the rule this list exists to keep enforceable. Compared casefolded and stripped.
+NON_ANSWERS = {"none", "n/a", "na", "nil", "null", "tbd", "todo", "-", "--"}
 
 
 def fail(msg: str) -> None:
@@ -54,6 +81,165 @@ def load_json(path: Path) -> dict | None:
     except json.JSONDecodeError as e:
         fail(f"{path} is not valid JSON: {e}")
         return None
+
+
+def iter_picks(instance: dict):
+    """Yield `(group, row_id, slot, model_choice)` for every pick in the
+    instance (both arrays, both slots), so a check runs over all of them
+    instead of only the primary on `blueprint_rows[]`."""
+    for group in ("blueprint_rows", "work_routing_map"):
+        for row in instance.get(group, []):
+            pick = row.get("pick") or {}
+            for slot in ("primary", "runner_up"):
+                choice = pick.get(slot)
+                if isinstance(choice, dict):
+                    yield group, row.get("id"), slot, choice
+
+
+def check_local_tier_basis(instance: dict) -> list[str]:
+    """Three things `jsonschema` has no keyword for, the first two about the
+    same failure: a non-invoiced tier reported as a free one.
+
+    1. A `local:<model-id>` pick must resolve to a `price_sheet.models[]`
+       entry marked `cost_basis: "amortized_local"`, otherwise the blueprint
+       recommends a tier whose cost nothing in the document states.
+    2. An `amortized_local` entry's rates must be positive. A local stage
+       booked at $0 shows unbounded ROI by construction, which no usage
+       report or calibration history can ever falsify; a negative rate
+       inverts every comparison downstream instead.
+    3. Every rate on the sheet, local or hosted, is a finite number. This one
+       is not about intent at all - it closes a parser gap, and it runs over
+       the whole price sheet because a NaN on a hosted row corrupts exactly
+       the same comparison.
+    """
+    errors: list[str] = []
+    models = instance.get("price_sheet", {}).get("models", [])
+    by_id = {m.get("id"): m for m in models}
+
+    for model in models:
+        for field in ("in_per_1m", "out_per_1m"):
+            rate = model.get(field)
+            # Finiteness first, and for every tier rather than only the local
+            # ones. `json.loads` accepts the non-standard `NaN` and `Infinity`
+            # literals, and neither guard below catches them: `minimum: 0` in the
+            # schema compares with `<`, which is False for NaN, and `rate <= 0`
+            # is False for both NaN and +inf. Only -inf was ever rejected. An
+            # unusable rate that validates is worse than one that fails, because
+            # every downstream comparison silently inherits it.
+            if not isinstance(rate, (int, float)) or isinstance(rate, bool) or not math.isfinite(rate):
+                errors.append(
+                    f"price_sheet.models[id={model.get('id')!r}].{field}: rates must be "
+                    f"finite numbers, got {rate!r}. NaN and Infinity are JSON extensions "
+                    "Python's parser accepts and no bound rejects"
+                )
+                continue
+            if model.get("cost_basis") != AMORTIZED_LOCAL:
+                continue
+            # Zero is the failure this check was written for; a negative rate is
+            # the same failure with the sign flipped, and worse downstream (it
+            # inverts every cost comparison the blueprint feeds).
+            if rate <= 0:
+                errors.append(
+                    f"price_sheet.models[id={model.get('id')!r}].{field}: a "
+                    f"{AMORTIZED_LOCAL!r} tier is non-invoiced, not free: state the "
+                    "amortized device + power cost over measured throughput as a "
+                    f"positive rate, got {rate!r}"
+                )
+
+    for group, row_id, slot, choice in iter_picks(instance):
+        model_id = choice.get("model", "")
+        if not isinstance(model_id, str) or not model_id.startswith(LOCAL_MODEL_PREFIX):
+            continue
+        entry = by_id.get(model_id)
+        if entry is None:
+            errors.append(
+                f"{group}[id={row_id!r}].pick.{slot}.model: {model_id!r} has no "
+                "price_sheet.models[] entry, so the blueprint never says what the "
+                "local tier costs"
+            )
+        elif entry.get("cost_basis") != AMORTIZED_LOCAL:
+            errors.append(
+                f"price_sheet.models[id={model_id!r}].cost_basis: a local pick "
+                f"({group}[id={row_id!r}].pick.{slot}) must carry "
+                f"{AMORTIZED_LOCAL!r}, got {entry.get('cost_basis')!r}"
+            )
+    return errors
+
+
+def check_local_routing_gate(instance: dict) -> list[str]:
+    """The three-step gate (deny → compound → propose-plus-available) lived only in
+    the agent's prose, which made it an LLM-compliance question rather than a
+    contract one: a blueprint routing a claim-shaped stage to an open-weight model
+    validated clean.
+
+    A validator cannot read the instruction the gate was evaluated against, and
+    pretending otherwise would be the same unfalsifiable move as booking a local
+    run at $0. What it can do is refuse the artifact whenever the gate's own
+    recorded answer contradicts the pick — which is every case below.
+
+    `blueprint.schema.json` carries the structural half (a local pick in either
+    slot requires `local_gate`; a local primary may not have a local runner-up).
+    This carries the half `jsonschema` has no keyword for.
+    """
+    errors: list[str] = []
+
+    for group in ("blueprint_rows", "work_routing_map"):
+        for row in instance.get(group, []):
+            pick = row.get("pick")
+            if not isinstance(pick, dict):
+                continue
+            local_slots = [
+                slot
+                for slot in ("primary", "runner_up")
+                if isinstance((pick.get(slot) or {}).get("model"), str)
+                and pick[slot]["model"].startswith(LOCAL_MODEL_PREFIX)
+            ]
+            if not local_slots:
+                continue
+
+            where = f"{group}[id={row.get('id')!r}].pick"
+            named = ", ".join(f"{slot}={pick[slot]['model']!r}" for slot in local_slots)
+
+            gate = pick.get("local_gate")
+            if not isinstance(gate, dict):
+                # The schema requires this too; carrying it here gives the failure a
+                # sentence instead of a JSON Pointer.
+                errors.append(
+                    f"{where}.local_gate: a local pick ({named}) with no recorded routing "
+                    "gate. State the gate's answer (denied_by, single_clause_instruction, "
+                    "registered_task, validator) or route hosted"
+                )
+                continue
+
+            denied = gate.get("denied_by") or []
+            if denied:
+                errors.append(
+                    f"{where}.local_gate.denied_by: gate step 1 denied this stage "
+                    f"({', '.join(sorted(str(d) for d in denied))}) and the pick still names "
+                    f"{named}. Deny is the step with no appeal: route hosted. Routing wrongly "
+                    "to hosted costs tokens; routing wrongly to local puts a confident wrong "
+                    "answer in front of somebody"
+                )
+
+            if gate.get("single_clause_instruction") is not True:
+                errors.append(
+                    f"{where}.local_gate.single_clause_instruction: a local task does exactly "
+                    f"one narrow thing, so a compound instruction is not a match — the pick "
+                    f"names {named} anyway. This is the gate that actually holds: a keyword "
+                    "deny-list leaked 9 of 10 claim-shaped requests, every one of them a safe "
+                    "first clause with the real ask in clause two"
+                )
+
+            validator = gate.get("validator")
+            if isinstance(validator, str) and validator.strip().casefold() in NON_ANSWERS:
+                errors.append(
+                    f"{where}.local_gate.validator: {validator!r} is not a validator. Name a "
+                    "check that can fail this output — an invariant, not a shape check. A "
+                    "shape-only check accepted 4 output lines for 6 input items; the "
+                    "item-count invariant that caught it also pointed at the fix"
+                )
+
+    return errors
 
 
 def validate(schema: dict, instance: dict) -> list[str]:
@@ -79,6 +265,8 @@ def validate(schema: dict, instance: dict) -> list[str]:
                     f"{group}[id={row.get('id')!r}].handoff_schema_ref: {ref!r} does not "
                     f"match any message_schemas[].id (and isn't {sorted(NON_REFERENCE_HANDOFFS)!r})"
                 )
+    errors.extend(check_local_tier_basis(instance))
+    errors.extend(check_local_routing_gate(instance))
     return errors
 
 
