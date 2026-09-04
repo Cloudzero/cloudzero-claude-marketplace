@@ -130,7 +130,14 @@
         "runner_up": { "model": "claude-haiku-4-5", "effort": "none", "confidence": 35 },
         "what_flips_it": "If the shortlist ever becomes the deliverable instead of an input the summarizer re-reads, or if the stage has to run where no local runtime is installed, it goes to Haiku: a local pick is barred from producing output anyone reads directly, and it must never be the only path.",
         "why_not_tier_above": "Sonnet's reasoning depth buys nothing on a one-signal recall-tuned filter whose misses are caught one stage later.",
-        "why_not_tier_below": "The only tier below is a keyword grep, which cannot catch the paraphrases ('stuck on', 'waiting on review') this filter exists for."
+        "why_not_tier_below": "The only tier below is a keyword grep, which cannot catch the paraphrases ('stuck on', 'waiting on review') this filter exists for.",
+        "local_gate": {
+          "denied_by": [],
+          "single_clause_instruction": true,
+          "registered_task": "blocker-shortlist: flag threads that mention being stuck or waiting",
+          "validator": "Every input thread appears exactly once in the shortlist output, flagged or not — an item-count invariant, not a shape check. A short output is a failure, not a clean run.",
+          "runtime_probe": "`mlx_lm` importable and the model present in the local cache; anything else routes to the Haiku runner-up."
+        }
       },
       "default_model": "claude-haiku-4-5",
       "keep_or_override": "override",
