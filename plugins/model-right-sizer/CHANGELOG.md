@@ -53,6 +53,19 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   entry marked `cost_basis: "amortized_local"`, and such an entry's rates must
   be non-zero. A blueprint that recommends a local tier without saying what it
   costs no longer validates.
+- **Every price-sheet rate must be a finite number.** Greptile caught this on
+  the round above and it was real, in both directions it named and one it did
+  not: `json.loads` accepts the non-standard `NaN` and `Infinity` literals, and
+  neither guard rejected them — `minimum: 0` compares with `<`, which is False
+  for `NaN`, and the `<= 0` positivity test is False for `NaN` and `+inf` both.
+  `-inf` was the only non-finite value ever caught. So a blueprint could carry
+  an unusable rate, validate clean, and hand it to every downstream cost
+  comparison. The check runs over the whole price sheet rather than only the
+  local rows, because a `NaN` on a hosted row corrupts the same arithmetic, and
+  the positivity rule stays scoped to `amortized_local`: a hosted tier priced at
+  0 is legitimate, a non-invoiced one at 0 is the unfalsifiable claim this file
+  keeps arguing about. 9 tests, including one pinning that `-inf` still reports
+  the schema bound's message rather than the new one.
 - **`pick.local_gate`: the routing gate is now part of the contract, not just
   the agent's prose.** Review caught the hole this closes. The gate above was
   documented in `agents/model-right-sizer.md` and enforced nowhere, so a

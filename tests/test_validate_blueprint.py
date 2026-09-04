@@ -407,6 +407,60 @@ def test_a_recorded_gate_on_a_hosted_pick_is_harmless():
     assert validate_blueprint.validate(SCHEMA, instance) == []
 
 
+@pytest.mark.parametrize("rate", [float("nan"), float("inf")])
+@pytest.mark.parametrize("basis", ["amortized_local", "provider_list_price"])
+def test_non_finite_rate_is_rejected(basis, rate):
+    """`json.loads` accepts the non-standard `NaN` and `Infinity` literals, and
+    nothing here rejected these two: `minimum: 0` in the schema compares with
+    `<`, which is False for NaN, and the positivity test is False for both NaN
+    and +inf. An unusable rate that validates is worse than one that errors,
+    because every downstream cost comparison inherits it silently. Checked on
+    hosted rows too — a NaN there corrupts the same arithmetic."""
+    instance = copy.deepcopy(EXAMPLE)
+    model = next(
+        m for m in instance["price_sheet"]["models"] if m.get("cost_basis") == basis
+    )
+    model["out_per_1m"] = rate
+
+    errors = validate_blueprint.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("finite" in e for e in errors)
+
+
+@pytest.mark.parametrize("basis", ["amortized_local", "provider_list_price"])
+def test_negative_infinity_is_caught_by_the_schema_bound_instead(basis):
+    """-inf is the one non-finite value that was already rejected: `minimum: 0`
+    catches it, and `validate` reports schema errors alone, so it never reaches
+    the finiteness check and carries the bound's message rather than its own.
+    Pinned so the asymmetry stays deliberate rather than looking like a gap."""
+    instance = copy.deepcopy(EXAMPLE)
+    model = next(
+        m for m in instance["price_sheet"]["models"] if m.get("cost_basis") == basis
+    )
+    model["out_per_1m"] = float("-inf")
+
+    errors = validate_blueprint.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("minimum" in e for e in errors)
+
+
+def test_a_free_hosted_tier_is_still_allowed():
+    """The positivity rule is scoped to `amortized_local` on purpose: a hosted
+    tier can legitimately be priced at 0, and the finiteness check must not have
+    quietly widened that."""
+    instance = copy.deepcopy(EXAMPLE)
+    hosted = next(
+        m for m in instance["price_sheet"]["models"]
+        if m.get("cost_basis") != "amortized_local"
+    )
+    hosted["in_per_1m"] = 0
+    hosted["out_per_1m"] = 0
+
+    assert validate_blueprint.validate(SCHEMA, instance) == []
+
+
 def test_main_validates_default_example(monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", ["validate_blueprint.py"])
 

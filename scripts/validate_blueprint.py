@@ -23,6 +23,9 @@ Checks:
     carrying `cost_basis: "amortized_local"` and a non-zero rate: a
     non-invoiced tier is not a free one, and a $0 rate is what makes a move
     to local unfalsifiable
+  - every rate on the price sheet is a finite number. `json.loads` accepts the
+    non-standard `NaN` and `Infinity` literals, and neither `minimum: 0` nor a
+    `<= 0` test rejects them, so an unusable rate would otherwise validate
   - the routing gate in front of a local pick actually denies: a recorded
     deny reason, a compound instruction, or a validator that cannot fail is
     a hard error rather than a note in the rationale
@@ -37,6 +40,7 @@ Usage:
 from __future__ import annotations
 
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -93,8 +97,8 @@ def iter_picks(instance: dict):
 
 
 def check_local_tier_basis(instance: dict) -> list[str]:
-    """Two things `jsonschema` has no keyword for, both about the same
-    failure: a non-invoiced tier reported as a free one.
+    """Three things `jsonschema` has no keyword for, the first two about the
+    same failure: a non-invoiced tier reported as a free one.
 
     1. A `local:<model-id>` pick must resolve to a `price_sheet.models[]`
        entry marked `cost_basis: "amortized_local"`, otherwise the blueprint
@@ -103,24 +107,43 @@ def check_local_tier_basis(instance: dict) -> list[str]:
        booked at $0 shows unbounded ROI by construction, which no usage
        report or calibration history can ever falsify; a negative rate
        inverts every comparison downstream instead.
+    3. Every rate on the sheet, local or hosted, is a finite number. This one
+       is not about intent at all - it closes a parser gap, and it runs over
+       the whole price sheet because a NaN on a hosted row corrupts exactly
+       the same comparison.
     """
     errors: list[str] = []
     models = instance.get("price_sheet", {}).get("models", [])
     by_id = {m.get("id"): m for m in models}
 
     for model in models:
-        if model.get("cost_basis") != AMORTIZED_LOCAL:
-            continue
         for field in ("in_per_1m", "out_per_1m"):
+            rate = model.get(field)
+            # Finiteness first, and for every tier rather than only the local
+            # ones. `json.loads` accepts the non-standard `NaN` and `Infinity`
+            # literals, and neither guard below catches them: `minimum: 0` in the
+            # schema compares with `<`, which is False for NaN, and `rate <= 0`
+            # is False for both NaN and +inf. Only -inf was ever rejected. An
+            # unusable rate that validates is worse than one that fails, because
+            # every downstream comparison silently inherits it.
+            if not isinstance(rate, (int, float)) or isinstance(rate, bool) or not math.isfinite(rate):
+                errors.append(
+                    f"price_sheet.models[id={model.get('id')!r}].{field}: rates must be "
+                    f"finite numbers, got {rate!r}. NaN and Infinity are JSON extensions "
+                    "Python's parser accepts and no bound rejects"
+                )
+                continue
+            if model.get("cost_basis") != AMORTIZED_LOCAL:
+                continue
             # Zero is the failure this check was written for; a negative rate is
             # the same failure with the sign flipped, and worse downstream (it
             # inverts every cost comparison the blueprint feeds).
-            if model.get(field) <= 0:
+            if rate <= 0:
                 errors.append(
                     f"price_sheet.models[id={model.get('id')!r}].{field}: a "
                     f"{AMORTIZED_LOCAL!r} tier is non-invoiced, not free: state the "
                     "amortized device + power cost over measured throughput as a "
-                    f"positive rate, got {model.get(field)!r}"
+                    f"positive rate, got {rate!r}"
                 )
 
     for group, row_id, slot, choice in iter_picks(instance):
