@@ -1,26 +1,21 @@
 ---
 name: model-right-sizer-install
 description: >-
-  Stamp a standalone model-right-sizer mandate onto the CURRENT repo's
+  Stamp a model-right-sizer mandate onto the CURRENT repo's
   agent-instructions file — `CLAUDE.md`, `AGENTS.md`, or both, whichever
-  the repo actually has (see step 3) — a one-shot install for a repo that
-  should consult the `model-right-sizer` agent before and after every
-  substantive turn. Idempotent and append-only: an existing file is never
+  the repo has. Idempotent and append-only: an existing file is never
   overwritten, only the marker-delimited mandate block is inserted or
-  refreshed, independently, in each targeted file. The mandate's "before"
-  hook runs the `model-right-sizer-dryrun` skill directly to produce a
-  schema-conformant JSON blueprint for the orchestrator to route by. Also
-  checks whether the `model-right-sizer` agent file and the
-  `model-right-sizer-dryrun` skill are discoverable in this repo and, if
-  either is missing, installs the `model-right-sizer` Claude Code plugin to
-  fix that (falling back to manual instructions if plugin install isn't
-  available). Deliberately narrow and organization-agnostic — it installs
-  only the right-sizing mandate (plus its own agent + dry-run-skill
-  dependencies, if absent), not any broader development process. Use when
-  someone says
-  "install model-right-sizer in this repo", "init this repo for
-  model-right-sizer", "add the right-sizer mandate here", or "make this repo
-  consult model-right-sizer every turn".
+  refreshed. The mandate's "before" hook runs `model-right-sizer-dryrun`
+  to produce a schema-conformant JSON blueprint for the orchestrator to
+  route by. Also checks whether the `model-right-sizer` agent and
+  `model-right-sizer-dryrun` skill are discoverable and, if either is
+  missing, installs the `model-right-sizer` Claude Code plugin to fix that
+  (falling back to manual instructions otherwise). Deliberately narrow and
+  organization-agnostic — installs only the right-sizing mandate (plus its
+  own dependencies, if absent), not any broader development process. Use
+  when someone says "install model-right-sizer in this repo", "init this
+  repo for model-right-sizer", "add the right-sizer mandate here", or
+  "make this repo consult model-right-sizer every turn".
 license: Apache-2.0
 author: CloudZero, Inc.
 version: 0.1.0

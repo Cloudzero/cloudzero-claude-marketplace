@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "target": {
+    "name": "log-triage-agent",
+    "file_ref": "agents/log-triage-agent.md",
+    "role_summary": "Reads a service's recent error logs and triages them for the on-call controller: which errors are novel, which are noisy repeats, and what (if anything) needs a human now."
+  },
+  "controller": {
+    "name": "on-call-digest skill",
+    "needs": [
+      "a short ranked list of findings worth a human's attention",
+      "enough location info to jump straight to the offending code/service",
+      "a clear signal for 'nothing needs you right now' so it can skip paging"
+    ]
+  },
+  "current_shape": {
+    "kind": "unscoped_prose",
+    "note": "Today the agent returns a free-form written triage report -- several paragraphs of prose mixing severity judgment, quoted log lines, and a narrative summary, which the controller has to re-parse to extract anything actionable."
+  },
+  "family": {
+    "id": "scored-review",
+    "is_new_family": false,
+    "catalogue_source": "plugin_portable_catalogue",
+    "shape_summary": "scorecard[] + findings[] + leave_alone[], the advisory-quality-lens shape -- a log triage is structurally a graded review of the log window, not a report or a data fetch."
+  },
+  "task_type": "log_triage",
+  "in_fields": [
+    { "name": "logs_ref", "type": "string", "description": "A reference to the log source/window, never the raw lines." },
+    { "name": "window", "type": "string", "description": "e.g. 'last 1h'." },
+    { "name": "budget_tokens", "type": "integer" }
+  ],
+  "out_fields": [
+    { "name": "target", "type": "string", "description": "The service/window this triage covers." },
+    { "name": "scorecard", "type": "array", "description": "[{dimension: enum[error-rate, novelty, blast-radius], score: 1-10, ten_looks_like: string}]" },
+    { "name": "findings", "type": "array", "description": "[{id, dimension, severity: enum[P1, P2, hygiene], location: 'service:line', claim, fix}]" },
+    { "name": "leave_alone", "type": "array", "description": "[{location, reason}] -- known-noisy errors explicitly triaged as not worth paging on." }
+  ],
+  "prose_field": { "name": "prose", "max_words": 150 },
+  "exclude": [
+    "raw log lines",
+    "stack traces",
+    "prior triage runs' full reports"
+  ],
+  "stamp_markdown": "<!-- model-right-sizer-schema:begin -- family definitions, the universal exclusion list, and the no-freelancing rule are single-sourced in schemas/agent-schema-families.md. Fields below are THIS agent's; never restate the shared discipline here. Re-run model-right-sizer-schema to refresh. -->\n## Agent-to-agent schema\n\n**Family:** `scored-review` · **`task_type:`** `log_triage` · **v1.0**\n\n**In** -- `logs_ref: string` (a reference to the log source, never the raw lines) · `window: string` · `budget_tokens: int`\n\n**Out** -- the `{status, output, error}` envelope; `output.*`:\n`target: string` ·\n`scorecard: [{dimension: enum[error-rate, novelty, blast-radius], score: 1-10, ten_looks_like: string}]` ·\n`findings: [{id, dimension, severity: enum[P1, P2, hygiene], location: \"service:line\", claim: string, fix: string}]` ·\n`leave_alone: [{location, reason}]` ·\n`prose: string|null` (≤150w, the on-call-relevant summary)\n\n**Never inline (this agent, beyond the universal list):** raw log lines · stack traces (cite `location` instead) · prior triage runs' full reports.\n\nYou return ONLY this schema -- no prose channel alongside it; the one bounded prose slot is the whole allowance. If the shape genuinely can't hold a finding, return `status: \"error\"` rather than freelance into prose.\n<!-- model-right-sizer-schema:end -->",
+  "savings_note": {
+    "baseline": "unscoped prose triage report, ~400-700 words typical, mixing judgment with quoted log lines",
+    "prescribed": "4 typed fields (scorecard/findings/leave_alone/target) + one <=150-word prose slot",
+    "rationale": "The controller only ever acts on the ranked findings and the paging signal; everything else in the prose baseline (quoted lines, narrative framing) was re-parsing cost the controller paid on every run for information it never used."
+  },
+  "rationale": "The seam is a graded review of a bounded window (the log slice), which is exactly the scored-review family's shape; no existing field goes unused by the controller's stated needs, and the exclusion list removes the two things (raw lines, stack traces) that made the old prose reply expensive to read."
+}

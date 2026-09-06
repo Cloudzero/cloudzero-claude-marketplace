@@ -57,6 +57,16 @@ To add a plugin to the marketplace:
 
 CI runs `scripts/validate_plugin_manifest.py`, `scripts/validate_agent_file.py`, and `scripts/validate_skill_frontmatter.py` on every push/PR — run them locally via `uv` before opening a PR (see CLAUDE.md for the exact commands, e.g. `uv run --no-project --with pyyaml --with pytest -- pytest tests/ -q`).
 
+### Cutting a Release
+
+Maintainers only. Once the PR(s) for a release are merged to `main`, invoke the
+`release` skill (`.claude/skills/release/SKILL.md`) from a Claude Code session
+in this repo — it promotes changelogs, bumps `.claude-plugin/marketplace.json`,
+tags, publishes the GitHub Release, and opens the companion docs PR against
+`Cloudzero/cloudzero-documentation`'s `v2.0` branch. This is repo-local
+maintainer tooling, not a plugin — it is never installed by marketplace
+consumers.
+
 ### Documentation
 
 - Use clear, concise language
