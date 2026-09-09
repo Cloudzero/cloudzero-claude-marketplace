@@ -29,7 +29,7 @@ The flagship plugin providing comprehensive cost analysis capabilities:
 A model-selection economist for Claude Code that keeps AI spend as intentional as cloud spend:
 - The `model-right-sizer` agent scores each task on effectiveness need vs. efficiency pressure vs. difficulty, and recommends the smallest Claude model (plus effort and token budget) that clears the bar
 - Runs as a bookend around work: a right-sizing blueprint before, a model-usage report after
-- Companion skills to preview the routing map for an intent (`model-right-sizer-dryrun`), to stamp a standing right-sizing mandate onto a repo (`model-right-sizer-install`), and to prescribe a minimal output schema for one agent's handoff to its controller (`model-right-sizer-schema`)
+- Companion skills to preview the routing map for an intent (`model-right-sizer-dryrun`), to stamp a standing right-sizing mandate onto a repo (`model-right-sizer-install`), to retroactively audit every model call already shipped in a target repo (`model-right-sizer-audit`), and to prescribe a minimal output schema for one agent's handoff to its controller (`model-right-sizer-schema`)
 
 See the [Model Right Sizer README](plugins/model-right-sizer/README.md) for full details.
 
@@ -97,7 +97,7 @@ Adding the marketplace makes every plugin in this repository available. It does 
 /plugin install model-right-sizer@cloudzero
 ```
 
-Installing `cost-analyst@cloudzero` gives you the 11 cost analysis skills and the pre-configured CloudZero MCP server. Installing `model-right-sizer@cloudzero` gives you the model-right-sizer agent and its three companion skills.
+Installing `cost-analyst@cloudzero` gives you the 11 cost analysis skills and the pre-configured CloudZero MCP server. Installing `model-right-sizer@cloudzero` gives you the model-right-sizer agent and its four companion skills.
 
 For platform setup and more installation guidance, see the [CloudZero AI Hub](https://docs.cloudzero.com/docs/ai-getting-started).
 
@@ -221,7 +221,7 @@ Fetches top unaddressed CloudZero Optimize recommendations, dispatches parallel 
 
 ### Model Right Sizer Plugin
 
-The Model Right Sizer plugin includes one agent and three skills:
+The Model Right Sizer plugin includes one agent and four skills:
 
 #### The `model-right-sizer` Agent
 **Triggered by:** "Blueprint this task", "Which model should this run on?", "Give me a usage report"
@@ -251,6 +251,16 @@ Stamps a standing mandate onto the current repo's `CLAUDE.md`, `AGENTS.md`, or b
 **Example:**
 ```
 "Install model-right-sizer in this repo"
+```
+
+#### Model Right Sizer Audit
+**Triggered by:** "Audit the model calls in this repo", "Right-size what we've already shipped"
+
+Retroactively audits every real, already-shipped model call in a target repo — an SDK/API invocation, a sub-agent dispatch, an agent's `model:` frontmatter — decomposes each by intent, dry-runs each decomposed candidate independently via `model-right-sizer-dryrun`, and commits one schema-conformant JSON blueprint at the target repo's root via a PR. Unlike the plugin's other companion skills, this one writes to the *target* repo, gated on user confirmation before committing.
+
+**Example:**
+```
+"Audit the model calls in this repo and open a PR"
 ```
 
 #### Model Right Sizer Schema
