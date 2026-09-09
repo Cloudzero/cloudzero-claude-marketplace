@@ -18,6 +18,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.0] - 2026-09-01
+
+### Added
+
+**Model Right Sizer Plugin**
+- Added `skills/model-right-sizer-schema` — a companion skill that applies the agent's existing "Agent-to-agent message-schema design" lever to one agent-to-controller seam at a time instead of a whole flow's blueprint: given a target agent, it dispatches `model-right-sizer` to prescribe the smallest typed output contract that still carries everything the named controller acts on, shows the before/after size delta, and — on confirmation — stamps a marker-delimited `## Agent-to-agent schema` section directly into the target agent's file.
+- Added `schemas/agent-schema.schema.json` (+ `agent-schema.example.json`) — the strict JSON Schema (draft 2020-12, `additionalProperties: false` throughout) `model-right-sizer-schema`'s dispatch must conform to.
+- Added `schemas/agent-schema-families.md` — a portable, organization-agnostic catalogue of nine reusable agent-reply shapes (`scored-review`, `verdict-set`, `graded-claim`, `build-report`, `drafted-unit`, `data-payload`, `watch-report`, `action-log`, `candidate-set`), the shared minimal envelope, and the universal exclusion list.
+- Added `scripts/validate_agent_schema.py` (wired into CI, plus `tests/test_validate_agent_schema.py`) — validates an agent-schema prescription against the schema in full, plus the referential checks a JSON Schema can't express: that `stamp_markdown` actually restates every declared field, and that a prescription's chosen family resolves to a real catalogue entry with its required shape intact.
+
+---
+
 ## [1.3.0] - 2026-08-06
 
 ### Added
@@ -261,7 +273,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.0.0...v1.2.0
 [1.0.1]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.0.0...v1.0.1

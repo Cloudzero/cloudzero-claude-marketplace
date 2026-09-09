@@ -2,7 +2,7 @@
 
 All notable changes to `model-right-sizer.md` are documented here, most recent first. This project doesn't cut version tags — entries are dated. Loosely follows [Keep a Changelog](https://keepachangelog.com/) conventions (Added / Changed / Fixed).
 
-## 2026-08-06
+## 2026-09-01
 
 ### Added
 - `skills/model-right-sizer-schema` — a companion skill that applies the
@@ -143,6 +143,10 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   unmatched-marker anomaly case: a reversed pair is exactly as corrupted as
   an orphaned half, since "replace only the text between the markers" has
   no defined meaning when they're backwards.
+
+## 2026-08-06
+
+### Added
 - `skills/model-right-sizer-audit` — a companion skill that retroactively
   audits every real, already-shipped model call in a target repo: finds
   each call site (an SDK/API invocation, a sub-agent dispatch, an agent's
