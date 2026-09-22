@@ -5,6 +5,27 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 ## Unreleased
 
 ### Fixed
+- **`agents/model-right-sizer.md`'s quoted budget-warning template corrected
+  to match `format_budget_warning()`'s real output character-for-character**
+  (a human-reviewer finding): the doc showed a literal `%` immediately after
+  both `{pct_used}` and `{warning_threshold_pct}`, but each placeholder's own
+  formatting already carries its `%` sign (`pct_used` renders as e.g. `75%
+  of`; `warning_threshold_pct` as e.g. `70%` via `:.0%`) — the extra literal
+  `%` would have rendered a naively hand-reconstructed threshold clause as
+  `0.7%` instead of the real `70%`. Extended
+  `tests/model_right_sizer/test_budget_warning_prose_fidelity.py` to check
+  the full template against the function's real return value, not just its
+  previously-checked fixed tail.
+- **`eval/token_ceiling_formula.py`'s `FORMULA_VERSION` bump-rationale
+  comment corrected to stop reading as if the `v1.0.0 → v1.1.0` bump had
+  already happened** — the constant deliberately still reads `"1.0.0"`,
+  pending a real `model-right-sizer-release-report` run; only the comment's
+  wording was misleading, not the constant itself.
+- **`.claude-plugin/plugin.json`'s description brought up to date** with the
+  full eleven-companion-skill surface (it still only named the original
+  four) — same doc-lag pattern already fixed once in `README.md` earlier in
+  this changelog.
+
 - **Zero-ceiling rows no longer distort accuracy metrics.**
   `reasoning_budget.classify_budget_adherence(0, 0)` now returns
   `within_budget` (the ideal, exact match) instead of falling through the

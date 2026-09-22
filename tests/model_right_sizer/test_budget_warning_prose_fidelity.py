@@ -107,3 +107,54 @@ def test_warning_template_tail_matches_even_at_the_zero_ceiling_degenerate_case(
 
     assert WARNING_TEMPLATE_TAIL in message
     assert message.endswith(WARNING_TEMPLATE_TAIL)
+
+
+# ---------------------------------------------------------------------------
+# Full-template fidelity: the whole quoted template, not just its fixed tail
+# ---------------------------------------------------------------------------
+
+# The full template as quoted in the agent file, with every `{...}` span
+# translated into a real Python format field. Kept as a literal template
+# string here (not read out of the agent file) so a corruption of EITHER
+# copy shows up as a mismatch against format_budget_warning()'s real
+# output, rather than the agent file's copy only ever being compared to
+# itself.
+FULL_WARNING_TEMPLATE = (
+    "Budget warning for '{unit_id}': you have used {pct_used} your "
+    "{token_ceiling}-token budget ({actual_tokens} tokens spent), crossing the "
+    "{warning_threshold_pct} warning threshold. " + WARNING_TEMPLATE_TAIL
+)
+
+
+def test_full_warning_template_matches_format_budget_warnings_actual_return_value():
+    """The agent file claims character-for-character parity for the WHOLE
+    template, not just its fixed tail (see the prose immediately above the
+    quote) -- confirm that holds, including the two percentage clauses a
+    naive reader could otherwise mis-reconstruct (each placeholder's own
+    formatting already carries its `%` sign; there is no separate literal
+    `%` sitting next to either one)."""
+    unit_id, actual_tokens, token_ceiling, warning_threshold_pct = "unit-x", 7500, 10000, 0.7
+
+    message = budget_threshold.format_budget_warning(unit_id, actual_tokens, token_ceiling, warning_threshold_pct)
+
+    expected = FULL_WARNING_TEMPLATE.format(
+        unit_id=unit_id,
+        pct_used="75% of",
+        token_ceiling=token_ceiling,
+        actual_tokens=actual_tokens,
+        warning_threshold_pct="70%",
+    )
+    assert message == expected
+
+
+def test_full_warning_template_matches_at_the_zero_ceiling_degenerate_case():
+    message = budget_threshold.format_budget_warning(unit_id="zero-budget-unit", actual_tokens=5, token_ceiling=0)
+
+    expected = FULL_WARNING_TEMPLATE.format(
+        unit_id="zero-budget-unit",
+        pct_used="an undefined percentage of",
+        token_ceiling=0,
+        actual_tokens=5,
+        warning_threshold_pct="70%",
+    )
+    assert message == expected

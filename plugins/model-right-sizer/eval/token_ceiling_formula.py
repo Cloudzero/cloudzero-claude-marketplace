@@ -186,19 +186,27 @@ __all__ = [
 # see `tuning/results/2026-08-22-token-ceiling-formula-v1.0.0-release.md`
 # for v1.0.0's own.
 #
-# v1.0.0 -> v1.1.0 (this bump): closes gap #6 of that same v1.0.0 release
-# report (the two-harness floor reconciliation) by adding
-# `AGENT_TOOL_HARNESS_FLOORS` and `rebase_onto_canonical_floor`. None of the
-# three bump-policy bullets above names "new utility function/constant"
-# directly -- this isn't a recalibration of an existing constant (not
-# PATCH), doesn't touch any signal or its weight (not the MINOR case as
+# v1.0.0 -> v1.1.0 (NOT YET BUMPED -- see note below): closes gap #6 of
+# that same v1.0.0 release report (the two-harness floor reconciliation) by
+# adding `AGENT_TOOL_HARNESS_FLOORS` and `rebase_onto_canonical_floor`. None
+# of the three bump-policy bullets above names "new utility function/
+# constant" directly -- this isn't a recalibration of an existing constant
+# (not PATCH), doesn't touch any signal or its weight (not the MINOR case as
 # literally written), and removes nothing, changes no existing nonzero
-# weight's meaning, and switches no preferred formula (not MAJOR). Treated
-# as MINOR by the same semver spirit the MINOR bullet already applies to
-# "a new signal added at weight 0.0": purely additive, backward-compatible
-# surface area with zero effect on any existing constant or function's
-# output -- `DISPATCH_FLOORS`, `REAL_WORK_SPAN`, `ADDITIVE_TOTAL_SPAN`, and
-# every existing function's behavior are byte-for-byte unchanged.
+# weight's meaning, and switches no preferred formula (not MAJOR). Would be
+# treated as MINOR by the same semver spirit the MINOR bullet already
+# applies to "a new signal added at weight 0.0": purely additive,
+# backward-compatible surface area with zero effect on any existing
+# constant or function's output -- `DISPATCH_FLOORS`, `REAL_WORK_SPAN`,
+# `ADDITIVE_TOTAL_SPAN`, and every existing function's behavior are
+# byte-for-byte unchanged.
+#
+# The constant below deliberately still reads "1.0.0", not "1.1.0" --
+# `model-right-sizer-release-report` is this module's own designated tool
+# for actually bumping it and publishing the dated report a real version
+# change requires; this comment records the bump's rationale in advance so
+# that skill's next real run has it, rather than the version number and its
+# justification silently drifting apart in the meantime.
 FORMULA_VERSION = "1.0.0"
 
 # Zero-tool-call dispatch floors, per model tier -- see
