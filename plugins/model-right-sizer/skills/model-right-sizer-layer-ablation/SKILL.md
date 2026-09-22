@@ -2,25 +2,19 @@
 name: model-right-sizer-layer-ablation
 description: >-
   Empirically measure what each of model-right-sizer's four research-grounded
-  citation layers (Token Economics, IBPO, BudgetThinker, Speculative
-  Decoding) actually does to the blueprints the agent produces — instead of
-  trusting the paper citations to be doing what their prose claims. Renders
-  layer-ablated variants of the agent (any of the 16 layer subsets, from a
-  zero-layer baseline to the full shipped agent), runs a fixed six-task
-  benchmark suite through each variant's Pass A blueprint, and — for a
-  scoped subset of conditions — actually executes the recommended build and
-  scores whether real effort stayed within the blueprint's own predicted
-  budget (the exact definition of "accuracy" this skill uses, wrapping the
-  same `classify_budget_adherence` function Pass B itself calls). Reports
-  two things: (1) each layer's effect in ISOLATION vs. the zero-layer
-  baseline, and (2) the effect of every COMBINATION across the full 16-subset
-  grid, so a synergy or redundancy between layers is visible, not assumed
-  away. Read-mostly: never edits `agents/model-right-sizer.md`, only ever
-  writes a scratch working directory and a final report. Use when someone
-  says "does the Token Economics layer actually change anything", "ablate
-  the research layers", "run the layer-ablation study", "ablation experiment
-  for model-right-sizer", or "audit model-right-sizer's citations
-  empirically".
+  citation layers (Token Economics, IBPO, BudgetThinker, Speculative Decoding)
+  actually does to its blueprints — instead of trusting the citations alone.
+  Renders layer-ablated variants (any of the 16 layer subsets), runs a fixed
+  six-task benchmark through each variant's Pass A blueprint, and for a scoped
+  subset actually executes the recommended build and scores whether real effort
+  stayed within the predicted budget (wrapping `classify_budget_adherence`).
+  Reports each layer's effect in ISOLATION vs. a zero-layer baseline, and every
+  COMBINATION across the full 16-subset grid, so synergy or redundancy is
+  visible, not assumed away. Read-mostly: writes only a scratch directory and a
+  final report, never `agents/model-right-sizer.md`. Use when someone says "does
+  the Token Economics layer actually change anything", "ablate the research
+  layers", "run the layer-ablation study", or "audit model-right-sizer's
+  citations empirically".
 license: Apache-2.0
 author: CloudZero, Inc.
 version: 0.1.0

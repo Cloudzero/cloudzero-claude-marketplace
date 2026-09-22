@@ -1,26 +1,19 @@
 ---
 name: model-right-sizer-budget-guard
 description: >-
-  The while-work-is-in-flight companion to `model-right-sizer-dryrun`: once a
-  blueprint's `work_routing_map[]` is real and an orchestrating/chief-of-staff
-  session is actually dispatching those units as sub-agents, this is the
-  concrete runbook for keeping two things honest as dispatch proceeds — the
-  status ledger (`status` / `status_updated_at` / `status_note` on each
-  routing-map row, flipped at every real transition with a freshly-read
-  timestamp, never guessed or reused) and the token-budget guard (checking
-  real spend against `budget.token_ceiling` and, once
-  `eval/budget_threshold.py`'s `threshold_crossed()` trips at
-  `warning_threshold_pct`, sending that unit's own `format_budget_warning()`
-  string verbatim into its next turn). Deliberately after-each-dispatch-returns
-  rather than mid-turn: this skill states plainly that no confirmed live
-  mid-turn token-spend signal exists in the dispatch mechanisms it could
-  verify, so it checks at turn boundaries with whatever usage figure the
-  dispatch mechanism reports on completion, not a fabricated live ticker. Only
-  applies to `work_routing_map[]` rows actually being dispatched — never to
-  `blueprint_rows[]` (design-time only) — and never replaces Pass B's closing
-  usage report. Use when someone says "dispatch the work-routing map", "run
-  the budget guard while units are in flight", "update the status ledger for
-  unit X", or "did unit X cross its warning threshold".
+  The while-work-is-in-flight companion to `model-right-sizer-dryrun`: once
+  `work_routing_map[]` is real and being dispatched as sub-agents, the runbook
+  for keeping two things honest — the status ledger
+  (`status`/`status_updated_at`/`status_note` per row, flipped at every real
+  transition) and the token-budget guard (checking real spend against
+  `budget.token_ceiling`; once `budget_threshold.py`'s `threshold_crossed()`
+  trips at `warning_threshold_pct`, sending `format_budget_warning()`'s string
+  into that unit's next turn). Checks at turn boundaries with whatever usage the
+  dispatch mechanism reports — never a fabricated live ticker. Only applies to
+  rows actually dispatched, never design-time-only `blueprint_rows[]`, and never
+  replaces Pass B's usage report. Use when someone says "dispatch the
+  work-routing map", "run the budget guard while units are in flight", "update
+  the status ledger for unit X", or "did unit X cross its warning threshold".
 license: Apache-2.0
 author: CloudZero, Inc.
 version: 0.1.0

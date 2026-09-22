@@ -1,24 +1,20 @@
 ---
 name: model-right-sizer-research-report
 description: >-
-  Package up every result this plugin's tuning/validation research has
-  produced — the layer-ablation study (`eval/ablation/`), the prompt-tuning
-  coordinate-ascent passes and the dispatch-floor-awareness/held-out-task
-  work (`eval/tuning/`), the averaged-vs-additive `token_ceiling_formula.py`
-  pivot, and the real-work-signal validation experiments — into one
-  condensed, research-paper-style EXECUTIVE report with real charts, built
-  entirely from the numbers already recorded in this repo's own dated
-  results files (never invented or rounded up). Publishes a self-contained
-  HTML report (loads the `dataviz` and `artifact-design` skills first) with
-  an abstract, a key-findings table, a handful of figures, limitations
-  stated as prominently as wins, and a reproducibility appendix pointing at
-  the companion skills that can re-run each experiment
-  (`model-right-sizer-layer-ablation`, `model-right-sizer-prompt-tuning`,
-  `model-right-sizer-holdout-tuning`, `model-right-sizer-signal-validation`).
-  Use when someone says "write up all the tuning results", "executive
-  summary of the research", "package the findings into a report",
-  "research report with charts", or "summarize everything we've found so
-  far for leadership".
+  Package up every result this plugin's tuning/validation research has produced
+  — the layer-ablation study, the prompt-tuning coordinate-ascent passes and the
+  dispatch-floor-awareness/held-out-task work, the averaged-vs-additive
+  `token_ceiling_formula.py` pivot, and the real-work-signal validation
+  experiments — into one condensed, research-paper-style EXECUTIVE report with
+  real charts, built entirely from numbers already recorded in this repo's own
+  dated results files (never invented or rounded up). Publishes a self-contained
+  HTML report (loads the `dataviz` and `artifact-design` skills first) with an
+  abstract, a key-findings table, a handful of figures, limitations stated as
+  prominently as wins, and a reproducibility appendix pointing at the companion
+  skills that can re-run each experiment. Use when someone says "write up all
+  the tuning results", "executive summary of the research", "package the
+  findings into a report", "research report with charts", or "summarize
+  everything we've found so far for leadership".
 license: Apache-2.0
 author: CloudZero, Inc.
 version: 0.1.0

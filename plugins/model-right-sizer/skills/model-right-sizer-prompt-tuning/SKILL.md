@@ -2,26 +2,19 @@
 name: model-right-sizer-prompt-tuning
 description: >-
   Tune the exact WORDING of model-right-sizer's four already-shipped
-  research-grounded layers to maximize real-execution accuracy (this repo's
-  fixed definition: expected effort stayed within the blueprint's own
-  predicted budget, per `classify_budget_adherence`) — not whether to include
-  a layer (see the sibling `model-right-sizer-layer-ablation` skill for that),
-  but how a layer that's already included should be phrased. Runs a discrete
-  coordinate-ascent search (the ordinal, finite-difference analog of gradient
-  descent for prose — there's no derivative of a Markdown file) over four
-  small wording knobs in `eval/tuning/knobs.py`, each anchored at one exact
-  spot in the shipped agent text that plausibly moves the accuracy ratio:
-  how much margin `token_ceiling` carries above expected spend, how hard the
-  effort dial leans down under difficulty-uncertainty, and whether Pass A's
-  calibration ledger and Pass B's budget-adherence line push a corrected
-  ceiling number forward. Read-mostly: never edits
-  `agents/model-right-sizer.md`, only ever writes a scratch working
-  directory and a final report (though its own last step is proposing that
-  report's winning wording AS an edit to the shipped file, for a human to
-  review and merge). Use when someone says "tune model-right-sizer's
-  wording for accuracy", "optimize the budget-ceiling wording", "run a
-  gradient descent / hill-climbing search on the agent prompt", or "which
-  wording of the four layers gives the highest budget-adherence accuracy".
+  research-grounded layers to maximize real-execution accuracy (effort stayed
+  within budget, per `classify_budget_adherence`) — not whether to include a
+  layer (see `model-right-sizer-layer-ablation`), but how an included layer
+  should be phrased. Runs a discrete coordinate-ascent search (the
+  finite-difference analog of gradient descent for prose) over four wording
+  knobs in `eval/tuning/knobs.py`, each anchored at one spot in the shipped
+  agent text plausibly moving the accuracy ratio: `token_ceiling` margin, how
+  hard the effort dial leans down under difficulty-uncertainty, and the
+  calibration/adherence knobs. Read-mostly: never edits the agent file directly,
+  only proposes the winning wording as a diff to review. Use when someone says
+  "tune model-right-sizer's wording for accuracy", "optimize the budget-ceiling
+  wording", "run a gradient descent / hill-climbing search on the agent prompt",
+  or "which wording maximizes budget-adherence accuracy".
 license: Apache-2.0
 author: CloudZero, Inc.
 version: 0.1.0

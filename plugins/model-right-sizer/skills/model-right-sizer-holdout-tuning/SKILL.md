@@ -3,33 +3,18 @@ name: model-right-sizer-holdout-tuning
 description: >-
   Tune model-right-sizer's wording knobs (`eval/tuning/knobs.py`) against a
   REAL, already-measured build's actual token spend — not the synthetic
-  `t1`-`t6` benchmark `model-right-sizer-prompt-tuning` searches, and not a
-  fresh real build per candidate. Picks a task from
-  `eval/tuning/overfitting_guard.py`'s `HOLDOUT_TASKS` registry (one whose
-  `real_outcome_doc` already records real `{actual_tokens, budgeted_tokens}`
-  pairs from a genuine past dispatch), dispatches 3 INDEPENDENT BLIND
-  dry-runs per candidate (no calibration-ledger access — none may read
-  `eval/tuning/results/`, `eval/ablation/results/`, or
-  `overfitting_guard.py` itself) using the current best-known settings,
-  averages each unit's budget across the 3 draws (a single draw is not
-  reliable evidence — this repo's own history found single-draw noise
-  large enough to flip within/over-budget classifications and make a
-  reported "win" evaporate on re-measurement), maps the averaged units back
-  to the matching real actuals, scores the match via
-  `reasoning_budget.classify_budget_adherence` + `optimizer.score_candidate`,
-  diagnoses the dominant miss pattern, proposes ONE targeted knob-wording
-  change grounded in that evidence, and re-runs the same 3-draw-averaged
-  comparison to check whether accuracy improved — still cheap per iteration
-  relative to a real build, because only the blueprint step re-runs, since
-  the ground truth is already measured. Carries an explicit stopping
-  discipline: the same held-out task's n stays fixed no matter how many
-  iterations run against it, so this skill flags — rather than silently
-  keeps going — once further squeezing one task starts to look like
-  overfitting instead of tuning. Use when someone says "tune the knobs
+  benchmark `model-right-sizer-prompt-tuning` searches, nor a fresh build per
+  candidate. Picks a task from `overfitting_guard.py`'s `HOLDOUT_TASKS` registry
+  (real actual/budgeted pairs already recorded), dispatches 3 INDEPENDENT BLIND
+  dry-runs per candidate (no calibration-ledger access), averages the budget
+  across draws (single-draw noise can flip within/over-budget calls), maps to
+  real actuals, scores via `classify_budget_adherence` + `score_candidate`,
+  diagnoses the miss pattern, proposes ONE wording change, and re-runs to check
+  improvement. n stays fixed per task — flags rather than silently continues
+  once squeezing looks like overfitting. Use when someone says "tune the knobs
   against this blueprint/build", "iterate the dry run with no prior context
-  against the real actuals", "keep tuning until N%", "test the new knobs on
-  a fresh task" (once that task has a real outcome recorded), or "how close
-  does a blind estimate get to what this actually cost".
+  against the real actuals", "keep tuning until N%", or "how close does a blind
+  estimate get to the actual cost".
 license: Apache-2.0
 author: CloudZero, Inc.
 version: 0.1.0

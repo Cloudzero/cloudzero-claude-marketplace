@@ -1,27 +1,20 @@
 ---
 name: model-right-sizer-release-report
 description: >-
-  Publish a per-version release report for `eval/token_ceiling_formula.py`
-  every time `FORMULA_VERSION` bumps — the exact published configuration
-  (preferred formula, signal weights, calibration constants), a ranked list
-  of gaps for the next contributor, and what's explicitly settled and not
-  worth re-relitigating. Its load-bearing rule, and the reason this skill
-  exists as its own thing rather than folding into
-  `model-right-sizer-research-report`: **every claim must interweave WHY it
-  matters, in the same breath as WHAT changed** — a report is a version
-  history if it just lists constants, but it stays a decision-support
-  document only if a reader can tell, without opening a second file, what
-  breaks (wasted spend, false over-budget alarms, undetected overruns, a
-  silently re-biased fleet of budgets) if a given number or gap is wrong or
-  ignored. Never a new-finding surface — like its sibling report skill, it
-  synthesizes from already-committed `eval/tuning/results/` and
-  `eval/ablation/results/` files, never runs new experiments. Also the
-  designated tool for BACKFILLING a report for a past version that shipped
-  before this skill existed, from that version's git history and whatever
-  results files were live at the time. Use when someone says "write the
-  release report for this version", "version the token ceiling formula",
-  "what changed and why does it matter", "backfill a release report for
-  v0.x", or after any `FORMULA_VERSION` bump.
+  Publish a per-version release report for `eval/token_ceiling_formula.py` every
+  time `FORMULA_VERSION` bumps — the exact configuration (formula, signal
+  weights, calibration constants), a ranked gap list for the next contributor,
+  and what's settled and not worth re-relitigating. Why this is its own skill
+  rather than folding into `model-right-sizer-research-report`: every claim must
+  interweave WHY it matters, in the same breath as WHAT changed — it stays
+  decision-support only if a reader can tell, without a second file, what breaks
+  (wasted spend, false alarms, undetected overruns, a re-biased fleet of
+  budgets) if a number or gap is wrong. Never a new-finding surface —
+  synthesizes only from committed results files. Also the tool for BACKFILLING a
+  report for a past version that shipped before this skill existed. Use when
+  someone says "write the release report for this version", "version the token
+  ceiling formula", "backfill a release report for v0.x", or after any
+  `FORMULA_VERSION` bump.
 license: Apache-2.0
 author: CloudZero, Inc.
 version: 0.1.0

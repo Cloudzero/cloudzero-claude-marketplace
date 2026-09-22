@@ -2,26 +2,19 @@
 name: model-right-sizer-signal-validation
 description: >-
   Test whether a candidate real-work signal in `eval/token_ceiling_formula.py`
-  (e.g. `context_ingestion_volume`, `investigative_uncertainty`, or a brand
-  new one) deserves a nonzero default weight — the blind multi-draw rating +
-  correlation methodology this repo's own signal-rating research converged
-  on, written down so it doesn't have to be re-invented or, worse,
-  re-contaminated per session. Its load-bearing rule, made explicit because
-  getting it wrong once already produced a fabricated-looking result this
-  same research program had to catch and discard: candidate signal ratings
-  must come from genuinely independent sub-agent dispatches that see ONLY a
-  forward-looking task spec and the signal definitions — never a context
-  that already holds the real actual costs or this repo's own retired
-  write-ups explaining what happened, which turns "blind rating" into
-  transcribing the answer key. Dispatches 3+ such independent draws per
-  held-out task, computes per-signal CV and Pearson correlation (candidate
-  alone, and candidate added to the existing signal sum — dilution, not a
-  weak standalone correlation, is the dominant failure mode found twice
-  already), and requires the same conclusion to replicate on a SECOND
-  different held-out task before proposing (never silently shipping) a
-  nonzero default weight. Use when someone says "test this new signal",
-  "does [signal] deserve a nonzero weight", "re-run the signal validation
-  experiment", or "validate the real-work signals against real data".
+  (e.g. `context_ingestion_volume`, `investigative_uncertainty`, or new)
+  deserves a nonzero default weight, via the blind multi-draw rating +
+  correlation methodology this repo's research converged on. Ratings must come
+  from genuinely independent sub-agent dispatches seeing ONLY a forward-looking
+  task spec and the signal definitions — never a context holding the real
+  actuals or this repo's retired write-ups, which would turn "blind rating" into
+  transcribing the answer key. Dispatches 3+ independent draws per held-out
+  task, computes per-signal CV and Pearson correlation (alone, and added to the
+  signal sum — dilution, not weak correlation, is the dominant failure found
+  twice), requiring replication on a SECOND held-out task before proposing a
+  nonzero weight. Use when someone says "test this new signal", "does [signal]
+  deserve a nonzero weight", "re-run the signal validation experiment", or
+  "validate real-work signals against real data".
 license: Apache-2.0
 author: CloudZero, Inc.
 version: 0.1.0
