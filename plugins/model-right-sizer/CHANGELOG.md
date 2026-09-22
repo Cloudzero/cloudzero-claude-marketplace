@@ -47,6 +47,10 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   a human-readable label, not an identifier, and stays free text
   (unconstrained) on purpose — the checked-in example's own value already
   contains spaces and punctuation.
+- **`eval/budget_threshold.py::format_budget_warning` now validates
+  `unit_id` against that same identifier shape directly** (defense-in-depth,
+  per the same review — this function can be called with any string, not
+  only ones that already passed schema validation).
 
 **Breaking**: `schema_version` is a `const` — the `"1.0"` → `"1.1"` →
 `"1.2"` chain of bumps in this changelog means any blueprint instance

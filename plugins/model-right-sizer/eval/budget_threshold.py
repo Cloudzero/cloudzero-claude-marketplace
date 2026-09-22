@@ -18,6 +18,8 @@ for "has this dispatch crossed its warning line yet," not an LLM's per-turn gues
 """
 from __future__ import annotations
 
+import re
+
 __all__ = [
     "remaining_budget_pct",
     "threshold_crossed",
@@ -99,7 +101,18 @@ def format_budget_warning(
     budget -- rather than silently continuing past the ceiling. A sibling
     agent-file instruction unit quotes this string as-is, so its wording is the
     contract, not a paraphrase for that unit to improvise from.
+
+    Defense-in-depth: `unit_id` is bounded to the same identifier shape
+    `schemas/blueprint.schema.json`'s `routingMapRow.id` enforces at the
+    schema layer, since this function can be called directly with any
+    string. Because this message is sent verbatim into a sub-agent's own
+    context -- and, under `model-right-sizer-audit`, `unit_id` can
+    originate from a target repo's own contents -- an unbounded id would
+    be a channel for instruction-bearing text riding inside contractual
+    wording, not a cosmetic concern.
     """
+    if not re.fullmatch(r"[A-Za-z0-9._-]{1,64}", unit_id):
+        raise ValueError(f"unit_id must be a 1-64 character [A-Za-z0-9._-]+ identifier, got {unit_id!r}")
     if not (0 < warning_threshold_pct <= 1):
         raise ValueError("warning_threshold_pct must be in (0, 1].")
     if token_ceiling <= 0:
