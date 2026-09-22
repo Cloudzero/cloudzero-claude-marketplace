@@ -29,8 +29,14 @@ This directory is a self-contained **Claude Code plugin** within the CloudZero m
 - [`skills/model-right-sizer-prompt-tuning/SKILL.md`](skills/model-right-sizer-prompt-tuning/SKILL.md) — a companion skill that, starting from all four layers already present, coordinate-ascent searches four small wording knobs (how much margin `token_ceiling` carries, how hard the effort dial leans down under difficulty-uncertainty, and two calibration-feedback knobs) for the wording that maximizes real-execution `accuracy_rate`. The ordinal, finite-difference analog of gradient descent for prose, named as such rather than as literal gradient descent — see [`eval/tuning/DESIGN.md`](eval/tuning/DESIGN.md). Read-mostly, same as the ablation skill: proposes the winning wording as a diff for a human to review, never applies it itself.
 - [`skills/model-right-sizer-holdout-tuning/SKILL.md`](skills/model-right-sizer-holdout-tuning/SKILL.md) — the real-actuals sibling of `model-right-sizer-prompt-tuning`: tunes the same `knobs.py` wording registry, but against a real, already-measured build's actuals (`eval/tuning/overfitting_guard.py`'s `HOLDOUT_TASKS`) instead of the synthetic benchmark, via 3 independent blind dry-run draws averaged per candidate. Cheaper per iteration since the ground truth doesn't move — only the blind estimate re-runs.
 - [`skills/model-right-sizer-signal-validation/SKILL.md`](skills/model-right-sizer-signal-validation/SKILL.md) — tests whether a candidate real-work signal in `eval/token_ceiling_formula.py` (e.g. `context_ingestion_volume`, `investigative_uncertainty`) deserves a nonzero default weight, via genuinely independent blind sub-agent dispatches (never a self-authored draw in a context already holding the real actuals — a documented past failure mode this skill exists to prevent repeating) and a correlation-delta bar, replicated on a second held-out task before proposing a weight change.
-- [`skills/model-right-sizer-research-report/SKILL.md`](skills/model-right-sizer-research-report/SKILL.md) — a synthesis-only companion skill that condenses every result the four skills above (plus the layer-ablation study) have produced into one short, chart-backed executive report, built entirely from numbers already recorded in this plugin's own dated results files. Publishes a self-contained HTML artifact with an abstract, a key-findings table (rejected/null findings included, not just wins), a handful of figures, and a reproducibility appendix pointing back at the companion skills that can re-run each experiment.
-- [`eval/`](eval/) — the deterministic formula/citation checks for this plugin's research grounding: a committed answer key (`citation_ledger.json`) plus pure-function implementations of every cited formula (`token_economics.py`, `reasoning_budget.py`, `speculative_decoding.py`) and a standalone drift checker (`check_citations.py`). [`eval/ablation/`](eval/ablation/) holds the layer-ablation study's supporting code (variant renderer, benchmark suite, metrics) that the `model-right-sizer-layer-ablation` skill above runs; [`eval/tuning/`](eval/tuning/) holds the prompt-tuning experiment's supporting code (knob registry/renderer, scoring + coordinate-ascent logic, `overfitting_guard.py`'s held-out-task registry) that the `model-right-sizer-prompt-tuning`/`model-right-sizer-holdout-tuning` skills run, plus `token_ceiling_formula.py` and `weight_optimizer.py`, the deterministic signal-to-budget formula and gradient-descent pipeline `model-right-sizer-signal-validation` tests against. Corresponding pytest suites live at the repo root under `tests/model_right_sizer/`. See [`eval/README.md`](eval/README.md).
+- [`skills/model-right-sizer-budget-guard/SKILL.md`](skills/model-right-sizer-budget-guard/SKILL.md) — the while-work-is-in-flight companion to `model-right-sizer-dryrun`: once a blueprint's `work_routing_map[]` is real and being dispatched, keeps the row-level status ledger honest at every real transition and checks real spend against `budget.token_ceiling`, sending a dispatched sub-agent its own `eval/budget_threshold.py`-generated warning verbatim once it crosses `warning_threshold_pct`. Checks at turn boundaries against whatever usage figure the dispatch mechanism reports on completion — never a fabricated live ticker.
+- [`skills/model-right-sizer-research-report/SKILL.md`](skills/model-right-sizer-research-report/SKILL.md) — a synthesis-only companion skill that condenses every result the four research/tuning skills above (`model-right-sizer-layer-ablation`, `-prompt-tuning`, `-holdout-tuning`, `-signal-validation`) have produced into one short, chart-backed executive report, built entirely from numbers already recorded in this plugin's own dated results files. Publishes a self-contained HTML artifact with an abstract, a key-findings table (rejected/null findings included, not just wins), a handful of figures, and a reproducibility appendix pointing back at the companion skills that can re-run each experiment.
+- [`skills/model-right-sizer-release-report/SKILL.md`](skills/model-right-sizer-release-report/SKILL.md) — publishes a dated release report every time `eval/token_ceiling_formula.py`'s `FORMULA_VERSION` bumps: the exact shipped configuration, a ranked gap list for the next contributor, and the settled/don't-re-relitigate list, with every claim required to interweave *why it matters* rather than just what changed. Also the designated tool for backfilling a report for a version that shipped before this skill existed, reconstructed from that version's git history and contemporaneous results files, never from current constants.
+- [`eval/`](eval/) — the deterministic formula/citation checks for this plugin's research grounding: a committed answer key (`citation_ledger.json`) plus pure-function implementations of every cited formula (`token_economics.py`, `reasoning_budget.py`, `speculative_decoding.py`) and a standalone drift checker (`check_citations.py`), plus `budget_threshold.py` (the threshold-crossing/warning-formatting functions `model-right-sizer-budget-guard` runs). [`eval/ablation/`](eval/ablation/) holds the layer-ablation study's supporting code (variant renderer, benchmark suite, metrics) that the `model-right-sizer-layer-ablation` skill above runs; [`eval/tuning/`](eval/tuning/) holds the prompt-tuning experiment's supporting code (knob registry/renderer, scoring + coordinate-ascent logic, `overfitting_guard.py`'s held-out-task registry) that the `model-right-sizer-prompt-tuning`/`model-right-sizer-holdout-tuning` skills run, plus `token_ceiling_formula.py` and `weight_optimizer.py`, the deterministic signal-to-budget formula and gradient-descent pipeline `model-right-sizer-signal-validation` tests against. Corresponding pytest suites live at the repo root under `tests/model_right_sizer/`. See [`eval/README.md`](eval/README.md).
+- [`skills/model-right-sizer-audit/SKILL.md`](skills/model-right-sizer-audit/SKILL.md) — a companion skill that retroactively audits every real model call already shipped in a target repo — one dry-run per decomposed call, via `model-right-sizer-dryrun` — and commits a single schema-conformant blueprint back to that repo through a PR. See its own "Action scope" note: unlike most other skills here, it writes one file and opens a PR in the *target* repo, not just this one.
+- [`skills/model-right-sizer-schema/SKILL.md`](skills/model-right-sizer-schema/SKILL.md) — a companion skill that prescribes a minimal output schema for **one** agent's handoff to its controller (the agent's "Agent-to-agent message-schema design" lever, scoped to a single seam) and, on confirmation, stamps it into the target agent's file as a marker-delimited `## Agent-to-agent schema` section.
+- [`schemas/agent-schema.schema.json`](schemas/agent-schema.schema.json) (+ [`agent-schema.example.json`](schemas/agent-schema.example.json)) — the strict JSON Schema `model-right-sizer-schema`'s agent dispatch must conform to, and a worked instance. Enforced by [`../../scripts/validate_agent_schema.py`](../../scripts/validate_agent_schema.py), the same way `blueprint.schema.json` is enforced by `validate_blueprint.py`.
+- [`schemas/agent-schema-families.md`](schemas/agent-schema-families.md) — a portable, organization-agnostic catalogue of reusable agent-reply shapes (`scored-review`, `build-report`, `data-payload`, …) that `model-right-sizer-schema` picks from when the target repo doesn't already have its own.
 - [`CHANGELOG.md`](CHANGELOG.md) — dated entries for every change to the agent core or its companion skills. Update this in the same PR as the change.
 
 Besides right-sizing *which model*, the agent also flags stages where a deterministic query layer (e.g. PromptQL) would answer a data question more reliably and cheaper than a raw model call, and designs the minimal message schema each agent-to-agent handoff should carry — so a multi-stage chain doesn't leak full transcripts between hops. See the "Agent-to-agent message-schema design" section and the deterministic-query-layer lever in `agents/model-right-sizer.md`.
@@ -44,7 +50,7 @@ Install it from the CloudZero marketplace — add the marketplace once, then ins
 /plugin install model-right-sizer@cloudzero
 ```
 
-That installs the agent (`agents/model-right-sizer.md`) and both companion skills (`skills/model-right-sizer-install/`, `skills/model-right-sizer-dryrun/`) together. Adding the marketplace also makes the [`cost-analyst`](../cost-analyst/) plugin available (`/plugin install cost-analyst@cloudzero`). To try it before installing, or to iterate on a local checkout, load it directly for a session instead:
+That installs the agent (`agents/model-right-sizer.md`) and all eleven companion skills listed above together. Adding the marketplace also makes the [`cost-analyst`](../cost-analyst/) plugin available (`/plugin install cost-analyst@cloudzero`). To try it before installing, or to iterate on a local checkout, load it directly for a session instead:
 
 ```
 claude --plugin-dir /path/to/cloudzero-claude-marketplace/plugins/model-right-sizer
@@ -75,9 +81,13 @@ See the **"Extending this agent for your own organization"** section at the bott
 
 ## Prerequisites
 
-None. This plugin is an agent definition, a JSON Schema for its blueprint
-output, and two companion skills — no runtime dependencies, no code that
-calls an LLM or CloudZero API directly.
+None. This plugin is an agent definition, JSON Schemas for its blueprint
+and agent-schema-prescription outputs, and eleven companion skills — no
+runtime dependencies, no code that calls an LLM or CloudZero API directly.
+`model-right-sizer-audit` does orchestrate the `gh` CLI and `git` against a
+target repo (see its own Prerequisites), but that's an external tool it
+shells out to, not a dependency this plugin bundles or requires an API key
+for.
 It's read by whatever agent runtime loads it (Claude Code, or a compatible
 Claude-Agent-SDK-based runtime), which supplies its own model access. No API
 keys are required by the plugin itself. `eval/` is the one directory with
@@ -113,9 +123,17 @@ ship.
 
 ## Action scope
 
-Read-only, by design. The agent's tool grant is `Read, Grep, Glob, WebFetch,
-Task` — `Task` lets it delegate the model-pricing fetch to a sub-agent; it
-never edits or writes files. Its companion skills' blast radius:
+Read-only by design at the agent level. The agent's tool grant is `Read,
+Grep, Glob, WebFetch, Task` — `Task` lets it delegate the model-pricing
+fetch to a sub-agent; it never edits or writes files. Most companion skills
+inherit that same read-only discipline against the target repo's real
+configuration, writing only to a scratch working directory (if anything);
+`model-right-sizer-install` writes a marker-delimited mandate block into the
+target repo's own `CLAUDE.md`/`AGENTS.md`, `model-right-sizer-schema` writes
+a marker-delimited schema stamp into one target agent file on confirmation,
+and `model-right-sizer-audit` writes a new blueprint file and opens a PR in
+the target repo — the one skill in this plugin that isn't purely read-only
+against the target. Full blast radius per skill:
 
 - `model-right-sizer-install` writes the same marker-delimited mandate block
   into a target repo's `CLAUDE.md`, `AGENTS.md`, or both — whichever exist —
@@ -131,7 +149,35 @@ never edits or writes files. Its companion skills' blast radius:
 - `model-right-sizer-prompt-tuning` writes only to a scratch working directory, same as the ablation skill — it never edits `agents/model-right-sizer.md`; the winning wording it finds is reported as a proposed diff for a human to review and apply separately. EVERY candidate this skill evaluates dispatches real build sub-agents (there is no blueprint-only version of "did the real build stay within budget") against a subset of `eval/ablation/benchmark_tasks.json` — the skill states the per-candidate/per-pass/full-search build counts before running, never silently, and asks for a `MAX_PASSES` scope if one hasn't already been given.
 - `model-right-sizer-holdout-tuning` dispatches 3 blind dry-run sub-agents per candidate (blueprint-only, no real build) against a real held-out task from `overfitting_guard.HOLDOUT_TASKS` — cheaper than the prompt-tuning skill's real builds, but every draw must have calibration-ledger access explicitly withheld to stay genuinely blind. Never edits `agents/model-right-sizer.md`; a winning knob change is a proposed diff, same as its sibling.
 - `model-right-sizer-signal-validation` dispatches 3+ independent rating sub-agents per candidate signal, each given only a task spec and the signal definitions — never the real actuals or this repo's own write-ups, which would silently break the "blind" premise. Never edits `token_ceiling_formula.py`'s shipped default weights itself; a signal earning a nonzero weight is a proposed change requiring replication on a second held-out task first.
+- `model-right-sizer-budget-guard` writes no files of its own: it updates a routing-map row's `status`/`status_updated_at`/`status_note` fields and, once a live dispatch crosses `warning_threshold_pct`, feeds that sub-agent's own budget-warning string into its next turn. Only ever acts on `work_routing_map[]` rows the orchestrating session is already dispatching — never on design-time-only `blueprint_rows[]`.
 - `model-right-sizer-research-report` writes nothing outside a published report artifact (or, if requested, a PDF/DOCX built from the same findings) — it runs no experiments and dispatches no sub-agents, only reads already-committed results files.
+- `model-right-sizer-release-report` writes nothing outside a published report artifact, same discipline as `model-right-sizer-research-report` — it synthesizes only from already-committed `eval/tuning/results/` and `eval/ablation/results/` files and runs no new experiments.
+- `model-right-sizer-schema` writes nothing until the user confirms a specific
+  stamp — it only returns the JSON prescription and the proposed markdown
+  block by default. On confirmation, its one write is a marker-delimited
+  `## Agent-to-agent schema` section in the *target* agent's own file
+  (inserted or refreshed in place); everything else in that file is
+  untouched, and it never edits an agent file the user didn't name.
+- `model-right-sizer-audit` is **not purely read-only against the target
+  repo** — it's the one exception in this plugin. It writes a single new
+  file (`model-right-sizing-blueprint.json`, at the target repo's root) and
+  opens a PR there, but never edits any existing file and never touches
+  real application config. It gates on showing the assembled blueprint to
+  the user before committing; that gate is skipped **only** by the explicit
+  `--yes` flag, never by how the request happens to be phrased. It respects
+  `--no-pr` (print the JSON to chat, write nothing) for a repo you don't
+  have push access to.
+
+  **On a local-path or current-repo run, the target repo is your own
+  working checkout, and the git side effects land there.** The skill
+  refuses to start unless the working tree is clean, then creates and
+  checks out `craft/model-right-sizing-audit-<date>`, commits the blueprint
+  to it, pushes, and opens the PR — restoring your original branch (or
+  detached commit) before it reports. Nothing outside the blueprint file is
+  ever committed, and the branch it leaves behind is the one backing the
+  PR. Point `<target>` at an `org/repo` slug instead and none of this
+  touches your checkout: that path always clones fresh into a scratch
+  directory and removes it when the run ends.
 
 See the repo-level [SECURITY.md](../../SECURITY.md) for how to report vulnerabilities.
 
@@ -153,6 +199,23 @@ account data is involved anywhere in this repo.
 - *"Dry-run: build a Slack bot that summarizes daily standup threads."* →
   invokes `model-right-sizer-dryrun`, which returns only the JSON blueprint,
   no build.
+- *"Audit the model calls in this repo and open a PR."* → invokes
+  `model-right-sizer-audit`: finds every real call site, decomposes each by
+  intent (including a flat skill's own step sequence, where severable),
+  dry-runs each one independently, and commits one schema-conformant
+  `model-right-sizing-blueprint.json` at the repo's root via a PR — never a
+  markdown table standing in for the real audit. Phrasing it this way does
+  **not** skip the review gate — the skill shows the assembled blueprint
+  before opening the PR regardless of how the request is worded; only the
+  explicit `--yes` flag skips that gate.
+- *"This log-triage agent just replies with a paragraph — give it an output
+  schema for the on-call digest skill that calls it."* → invokes
+  `model-right-sizer-schema`, which returns a JSON prescription (schema:
+  `schemas/agent-schema.schema.json`) naming the `scored-review` family, the
+  typed `out_fields` (`scorecard`, `findings`, `leave_alone`), an exclusion
+  list (raw log lines, stack traces), and a ready-to-insert
+  `## Agent-to-agent schema` stamp — then offers to write that stamp into
+  the agent's file.
 
 ## Limitations
 
@@ -183,7 +246,11 @@ required frontmatter and its name matches its directory) and
 plugin's `.claude-plugin/plugin.json` parse as JSON and carry the full
 documented metadata contract, each marketplace entry's `source` resolves
 to a real plugin directory, and manifest `version` fields agree where
-both are declared.
+both are declared. `scripts/validate_blueprint.py` and
+`scripts/validate_agent_schema.py` each validate their schema's checked-in
+worked example in full, plus the one check a JSON Schema alone can't
+express (a dangling `handoff_schema_ref`; a `stamp_markdown` that drifts
+from the typed fields next to it).
 
 ## License
 
