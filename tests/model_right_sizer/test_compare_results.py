@@ -84,11 +84,14 @@ def test_compare_candidates_reports_nonzero_accuracy_and_loss_deltas():
 
 
 def test_compare_candidates_omits_mean_loss_delta_when_a_side_is_all_errors():
-    # An empty-after-errors side scores mean_loss == inf (score_candidate's
-    # own contract); subtracting infinities would produce a nan that LOOKS
-    # like a real number instead of "no comparable rows". mean_loss_delta
-    # must come back None here, not nan.
-    old_results = [build_row("stage-1", 42, 0)]  # zero-budget, nonzero actual -> computation error, no scored rows
+    # A side whose only row is a zero-budget ceiling violation scores
+    # mean_loss == inf too (score_candidate gives that case the worst
+    # possible loss, not a computation error -- see
+    # test_zero_budget_row_with_nonzero_actual_scores_over_budget_with_infinite_loss);
+    # subtracting infinities would produce a nan that LOOKS like a real
+    # number instead of "no comparable rows". mean_loss_delta must come
+    # back None here, not nan.
+    old_results = [build_row("stage-1", 42, 0)]  # zero-budget, nonzero actual -> over_budget, inf loss
     new_results = [build_row("stage-1", 750, 1000)]  # within_budget
 
     result = CR.compare_candidates(old_results, new_results)
@@ -187,12 +190,29 @@ def test_diff_records_keys_on_the_full_candidate_task_row_id_triple():
     assert flags[("c2", "task-b")] == {"only_in_new"}
 
 
-def test_diff_records_reports_computation_errors_as_a_labeled_string_not_a_crash():
-    # A zero-budget row that still spent tokens is rejected by
-    # classify_budget_adherence -- diff_records must surface that as an
-    # "error: ..." string on the affected side, not raise and abort the
-    # whole diff over one bad row.
+def test_diff_records_reports_zero_budget_violation_as_over_budget_not_an_error():
+    # A zero-budget row that still spent tokens is a real ceiling violation,
+    # not a computation error -- classify_budget_adherence scores it
+    # over_budget, with ratio_old reported as inf (undefined at a zero
+    # ceiling), rather than surfacing an "error: ..." string.
     old_results = [build_row("stage-1", 42, 0)]
+    new_results = [build_row("stage-1", 750, 1000)]
+
+    diffs = CR.diff_records(old_results, new_results)
+
+    assert len(diffs) == 1
+    assert diffs[0]["classification_old"] == "over_budget"
+    assert diffs[0]["ratio_old"] == float("inf")
+    assert diffs[0]["classification_new"] == "within_budget"
+    assert diffs[0]["classification_flipped"] is True
+
+
+def test_diff_records_reports_negative_budget_as_a_labeled_error_string_not_a_crash():
+    # budgeted_tokens < 0 is the one input classify_budget_adherence still
+    # rejects -- diff_records must surface THAT as an "error: ..." string
+    # on the affected side, not raise and abort the whole diff over one bad
+    # row.
+    old_results = [build_row("stage-1", 42, -1)]
     new_results = [build_row("stage-1", 750, 1000)]
 
     diffs = CR.diff_records(old_results, new_results)

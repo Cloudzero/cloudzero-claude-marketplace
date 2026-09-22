@@ -105,8 +105,8 @@ def format_budget_warning(
     if token_ceiling <= 0:
         pct_used_str = "an undefined percentage of"
     else:
-        pct_used = (actual_tokens / token_ceiling) * 100
-        pct_used_str = f"{pct_used:.0f}% of"
+        pct_used = actual_tokens / token_ceiling
+        pct_used_str = f"{pct_used:.0%} of"
     return (
         f"Budget warning for '{unit_id}': you have used {pct_used_str} your "
         f"{token_ceiling}-token budget ({actual_tokens} tokens spent), crossing the "

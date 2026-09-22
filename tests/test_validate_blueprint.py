@@ -240,3 +240,70 @@ def test_schema_version_1_0_is_now_rejected():
 
     assert errors
     assert any("schema_version" in e for e in errors)
+
+
+# ---------------------------------------------------------------------------
+# schema_version 1.2: budget.real_work_signals traceability conditional
+# ---------------------------------------------------------------------------
+
+
+def test_real_work_signals_required_when_token_ceiling_nonzero():
+    """A real model dispatch (nonzero token_ceiling) must be traceable to
+    rated signals -- removing real_work_signals from a nonzero-ceiling row
+    (stage-1, token_ceiling: 55836) must fail, not silently validate."""
+    instance = copy.deepcopy(EXAMPLE)
+    assert instance["blueprint_rows"][0]["budget"]["token_ceiling"] > 0
+    del instance["blueprint_rows"][0]["budget"]["real_work_signals"]
+
+    errors = validate_blueprint.validate(SCHEMA, instance)
+
+    assert errors
+    assert any("real_work_signals" in e for e in errors)
+
+
+def test_real_work_signals_may_be_omitted_when_token_ceiling_is_zero():
+    """A token_ceiling: 0 row (stage-2, routed via the deterministic query
+    layer) spends no model tokens at all, so it has no signals to be
+    traceable to -- confirm the conditional's zero-ceiling branch actually
+    permits omitting real_work_signals, not just that the checked-in example
+    happens to validate as a whole."""
+    instance = copy.deepcopy(EXAMPLE)
+    assert instance["blueprint_rows"][1]["budget"]["token_ceiling"] == 0
+    assert "real_work_signals" not in instance["blueprint_rows"][1]["budget"]
+
+    errors = validate_blueprint.validate(SCHEMA, instance)
+
+    assert errors == []
+
+
+def test_real_work_signals_present_but_token_ceiling_still_zero_is_accepted():
+    """The conditional only ever REQUIRES real_work_signals for a nonzero
+    ceiling -- it must not reject the reverse (a zero-ceiling row that
+    carries real_work_signals anyway), since the schema draws no such line."""
+    instance = copy.deepcopy(EXAMPLE)
+    instance["blueprint_rows"][1]["budget"]["real_work_signals"] = copy.deepcopy(
+        instance["blueprint_rows"][0]["budget"]["real_work_signals"]
+    )
+
+    errors = validate_blueprint.validate(SCHEMA, instance)
+
+    assert errors == []
+
+
+def test_removing_real_work_signals_requirement_entirely_is_caught():
+    """Negative control proving these tests actually exercise the
+    conditional: if the allOf/if/then requiring real_work_signals were
+    deleted from the schema outright, test_real_work_signals_required_...
+    above would start passing for the wrong reason (no error, because
+    nothing requires it anymore). Confirm directly against a schema with
+    that conditional stripped that a nonzero-ceiling row missing
+    real_work_signals now validates clean -- i.e. the guard the positive
+    test relies on is the allOf block, not some other unrelated rule."""
+    weakened_schema = copy.deepcopy(SCHEMA)
+    weakened_schema["$defs"]["budget"]["allOf"] = []
+    instance = copy.deepcopy(EXAMPLE)
+    del instance["blueprint_rows"][0]["budget"]["real_work_signals"]
+
+    errors = validate_blueprint.validate(weakened_schema, instance)
+
+    assert errors == []

@@ -152,6 +152,8 @@ another pass over this one.
 """
 from __future__ import annotations
 
+import math
+
 __all__ = [
     "FORMULA_VERSION",
     "DISPATCH_FLOORS",
@@ -311,6 +313,12 @@ def compute_real_work_scale(
             raise ValueError(f"{name} must be in [0.0, 1.0], got {value!r}")
     if len(weights) != 6:
         raise ValueError(f"weights must have exactly 6 entries, got {len(weights)}")
+    if any(not math.isfinite(w) for w in weights):
+        # `w < 0` alone lets NaN/inf through silently: `nan < 0` and
+        # `inf < 0` are both False in Python. A NaN weight would otherwise
+        # collapse through the [0.0, 1.0] clamp below to a scale of exactly
+        # 0.0 -- returning only the dispatch floor with no error at all.
+        raise ValueError(f"weights must be finite, got {weights!r}")
     if any(w < 0 for w in weights):
         raise ValueError(f"weights must be non-negative, got {weights!r}")
     total_weight = sum(weights)
@@ -446,6 +454,13 @@ def compute_real_work_additive(
             raise ValueError(f"{name} must be in [0.0, 1.0], got {value!r}")
     if len(weights) != 6:
         raise ValueError(f"weights must have exactly 6 entries, got {len(weights)}")
+    if any(not math.isfinite(w) for w in weights):
+        # Same rationale as `compute_real_work_scale`'s identical guard: `w
+        # < 0` alone lets NaN/inf through, and a nonfinite weight here would
+        # otherwise propagate into a nonfinite `real_work` total that later
+        # fails inside `round()` in `compute_token_ceiling_additive`, not
+        # here where the actual invalid input was given.
+        raise ValueError(f"weights must be finite, got {weights!r}")
     if any(w < 0 for w in weights):
         raise ValueError(f"weights must be non-negative, got {weights!r}")
     return sum(s * w for s, w in zip(signals, weights))

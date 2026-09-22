@@ -57,7 +57,20 @@ def classify_budget_adherence(
     """Classify a stage's Pass-B budget line into the three buckets the agent
     file names explicitly: stayed within the ceiling ('within_budget'), blew
     past it ('over_budget'), or came in well under -- 'a sign the budget -- or
-    the model/effort -- was oversized' ('under_budget_oversized')."""
+    the model/effort -- was oversized' ('under_budget_oversized').
+
+    A zero ceiling (e.g. a deterministic_query_layer row) is handled before
+    the ratio bucketing below, not through it: `budget_adherence_ratio(0, 0)`
+    returns 0.0, which the ratio buckets below would call
+    'under_budget_oversized' (0.0 < oversized_threshold) even though a
+    zero-spend row against a zero budget is the ideal, exact match --
+    'within_budget'. And `budget_adherence_ratio` raises for a zero ceiling
+    with nonzero spend rather than return a ratio; that's a real ceiling
+    violation, not an error to propagate -- classified 'over_budget' here so
+    a caller's accuracy tally counts it instead of the record silently
+    dropping out of scoring."""
+    if budgeted_tokens == 0:
+        return "within_budget" if actual_tokens == 0 else "over_budget"
     ratio = budget_adherence_ratio(actual_tokens, budgeted_tokens)
     if ratio > 1.0:
         return "over_budget"

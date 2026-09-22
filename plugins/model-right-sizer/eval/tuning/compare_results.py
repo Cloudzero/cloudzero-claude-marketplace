@@ -118,11 +118,13 @@ def diff_records(old_results: list[dict], new_results: list[dict]) -> list[dict]
         `computation_errors`-over-silent-drop discipline (see
         `optimizer.score_candidate`).
 
-    A record whose `actual_raw`/`budgeted_tokens` combination is rejected by
-    `classify_budget_adherence` (e.g. a zero-budget row that still spent
-    tokens) gets `classification_old`/`_new` set to the string
-    `"error: <message>"` instead of raising -- one bad row must not abort a
-    diff over ~20 files' worth of records.
+    A record whose `budgeted_tokens` is genuinely invalid (negative) gets
+    `classification_old`/`_new` set to the string `"error: <message>"`
+    instead of raising -- one bad row must not abort a diff over ~20 files'
+    worth of records. A zero-budget row that still spent tokens is not this
+    case: `classify_budget_adherence` scores that `"over_budget"` (a real
+    ceiling violation, not an error), with `ratio_old`/`_new` reported as
+    `inf` since the ratio itself is undefined at a zero ceiling.
     """
 
     def key(record: dict) -> tuple:
@@ -135,11 +137,16 @@ def diff_records(old_results: list[dict], new_results: list[dict]) -> list[dict]
         actual = record["actual_raw"]
         budgeted = record["budgeted_tokens"]
         try:
-            ratio = budget_adherence_ratio(actual, budgeted)
             label = classify_budget_adherence(actual, budgeted)
         except ValueError as exc:
+            # The one input classify_budget_adherence still rejects:
+            # budgeted_tokens < 0.
             return float("nan"), f"error: {exc}"
-        return ratio, label
+        if budgeted == 0 and actual > 0:
+            # Already labeled 'over_budget' above; the ratio itself is
+            # undefined (infinite) for a zero-ceiling violation, not nan.
+            return float("inf"), label
+        return budget_adherence_ratio(actual, budgeted), label
 
     diffs = []
     for k in sorted(set(old_by_key) | set(new_by_key)):

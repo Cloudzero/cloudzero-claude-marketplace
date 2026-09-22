@@ -73,6 +73,9 @@ def main() -> int:
     if not args.layers or not args.out:
         parser.error("--layers and --out are required unless --list-layers is given.")
 
+    if args.out.resolve() == args.agent_file.resolve():
+        parser.error("--out must not overwrite --agent-file.")
+
     included = parse_layers_arg(args.layers)
     agent_text = args.agent_file.read_text(encoding="utf-8")
     variant = L.render_variant(agent_text, included)

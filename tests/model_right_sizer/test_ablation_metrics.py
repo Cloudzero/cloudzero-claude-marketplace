@@ -116,14 +116,31 @@ def test_accuracy_metrics_reports_zero_budget_violation_without_crashing():
     ]
     result = m.accuracy_metrics(records)
     assert result["n"] == 2
-    assert result["n_scored"] == 1  # the violating record is excluded from the rate, not silently zeroed
-    assert result["accuracy_rate"] == pytest.approx(1.0)  # computed only over the scoreable record
-    assert len(result["computation_errors"]) == 1
-    assert result["computation_errors"][0]["index"] == 1
+    # A zero-ceiling row that still spent tokens is a real ceiling
+    # violation, not a computation error -- it's scored over_budget and
+    # counted, not excluded from the rate (which would let a batch report
+    # 100% accuracy despite the violation).
+    assert result["n_scored"] == 2
+    assert result["accuracy_rate"] == pytest.approx(0.5)
+    assert result["over_budget_rate"] == pytest.approx(0.5)
+    assert result["computation_errors"] == []
 
 
-def test_accuracy_metrics_all_records_violating_zero_budget_gives_none_rates():
+def test_accuracy_metrics_zero_budget_violation_alone_scores_zero_accuracy():
     records = [{"actual_tokens": 5, "budgeted_tokens": 0}]
+    result = m.accuracy_metrics(records)
+    assert result["n"] == 1
+    assert result["n_scored"] == 1
+    assert result["accuracy_rate"] == pytest.approx(0.0)
+    assert result["over_budget_rate"] == pytest.approx(1.0)
+    assert result["computation_errors"] == []
+
+
+def test_accuracy_metrics_negative_budget_is_a_computation_error_not_a_crash():
+    """budgeted_tokens < 0 is the one input classify_budget_adherence still
+    rejects -- confirm it's excluded from n_scored and reported, not a zero-
+    budget violation (which is now scored, not excluded)."""
+    records = [{"actual_tokens": 5, "budgeted_tokens": -1}]
     result = m.accuracy_metrics(records)
     assert result["n"] == 1
     assert result["n_scored"] == 0

@@ -4,6 +4,39 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 
 ## Unreleased
 
+### Fixed
+- **Zero-ceiling rows no longer distort accuracy metrics.**
+  `reasoning_budget.classify_budget_adherence(0, 0)` now returns
+  `within_budget` (the ideal, exact match) instead of falling through the
+  ratio buckets to `under_budget_oversized`, and a zero-ceiling row that
+  still spent tokens is now classified `over_budget` instead of raising —
+  so both `eval/ablation/metrics.py::accuracy_metrics` and
+  `eval/tuning/optimizer.py::score_candidate` count a real ceiling
+  violation in their headline `accuracy_rate` instead of silently
+  excluding it from `n_scored` (a batch could previously report 100%
+  accuracy despite one record violating its ceiling). `optimizer.py` gives
+  such a violation the worst possible loss (`float("inf")`) rather than
+  dropping it from the search's scoring. `eval/tuning/compare_results.py`'s
+  `diff_records` reports the same violation as `"over_budget"` with
+  `ratio: inf`, not an `"error: ..."` string. `classify_budget_adherence`
+  still raises for the one genuinely invalid input, `budgeted_tokens < 0`.
+- **`eval/token_ceiling_formula.py`'s weight validation now rejects NaN and
+  infinite weights**, not just negative ones — `w < 0` is `False` for both
+  `nan` and `inf` in Python, so a `NaN` weight previously collapsed
+  silently through the `[0.0, 1.0]` clamp to a scale of exactly `0.0`
+  (`compute_real_work_scale`) instead of raising, and a nonfinite weight in
+  `compute_real_work_additive` surfaced only later as an unrelated-looking
+  crash inside `round()` in `compute_token_ceiling_additive`.
+- **`eval/ablation/generate_variant.py` and `eval/tuning/generate_variant.py`
+  reject `--out` resolving to the same file as `--agent-file`** — both
+  modules promise never to touch the shipped
+  `agents/model-right-sizer.md`, but neither previously checked that a
+  (mis)matched `--out`/`--agent-file` pair couldn't overwrite it.
+- **`eval/budget_threshold.py::format_budget_warning`** now formats its
+  percentage with Python's built-in `:.0%` formatter directly on the raw
+  ratio, instead of manually multiplying by 100 first — consistent with
+  the `warning_threshold_pct` percentage two lines below it.
+
 ### Added
 - **`eval/token_ceiling_formula.py`: `AGENT_TOOL_HARNESS_FLOORS` +
   `rebase_onto_canonical_floor()`** — closes v1.0.0 gap #6. Promotes the

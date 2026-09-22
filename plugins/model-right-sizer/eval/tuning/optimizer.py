@@ -53,8 +53,11 @@ def score_candidate(records, *, oversized_threshold: float = 0.5) -> dict:
 
     A `computation_errors` entry (mirroring
     `../ablation/metrics.py::accuracy_metrics`) is kept for any record
-    `classify_budget_adherence`/`budget_adherence_ratio` rejects (a
-    zero-budget row that still spent tokens) rather than silently dropped.
+    `classify_budget_adherence` rejects -- `budgeted_tokens < 0`, the one
+    input it still refuses -- rather than silently dropped. A zero-budget
+    row that still spent tokens is scored `over_budget` (with `float("inf")`
+    loss, since the ratio is undefined at a zero ceiling), not treated as a
+    computation error.
     """
     classifications = []
     losses = []
@@ -63,12 +66,28 @@ def score_candidate(records, *, oversized_threshold: float = 0.5) -> dict:
         actual = record["actual_tokens"]
         budgeted = record["budgeted_tokens"]
         try:
-            ratio = budget_adherence_ratio(actual, budgeted)
             label = classify_budget_adherence(actual, budgeted, oversized_threshold)
         except ValueError as exc:
+            # The one input classify_budget_adherence still rejects:
+            # budgeted_tokens < 0.
             errors.append({"index": i, "record": record, "error": str(exc)})
             continue
         classifications.append(label)
+        if budgeted == 0:
+            # Mirror classify_budget_adherence's own special-casing of a
+            # zero ceiling, rather than running (0, 0) through the ratio
+            # buckets below: budget_adherence_ratio(0, 0) == 0.0, which
+            # would land in the `< oversized_threshold` branch and give the
+            # ideal exact match a nonzero loss even though its label above
+            # is 'within_budget'. A zero-ceiling row that DID spend tokens
+            # has an undefined (infinite) ratio, not 0 -- give it the worst
+            # possible loss instead of skipping it, so a real ceiling
+            # violation still pulls this candidate's mean_loss tie-break
+            # toward "bad" rather than dropping out of the search's scoring
+            # entirely.
+            losses.append(0.0 if actual == 0 else float("inf"))
+            continue
+        ratio = budget_adherence_ratio(actual, budgeted)
         if ratio > 1.0:
             losses.append(ratio - 1.0)
         elif ratio < oversized_threshold:

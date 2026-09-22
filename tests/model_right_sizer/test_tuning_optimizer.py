@@ -57,8 +57,27 @@ def test_empty_records_scores_zero_accuracy_and_infinite_loss():
     assert result["n"] == result["n_scored"] == 0
 
 
-def test_zero_budget_row_with_nonzero_actual_is_a_computation_error_not_a_crash():
+def test_zero_budget_row_with_nonzero_actual_scores_over_budget_with_infinite_loss():
+    # A zero-ceiling row that still spent tokens is a real ceiling
+    # violation, not a computation error -- classify_budget_adherence
+    # scores it over_budget (not excluded from n_scored), and its loss is
+    # the worst possible (inf, since the ratio is undefined at a zero
+    # ceiling) rather than dropped from the search's scoring entirely.
     records = [rec(750, 1000), rec(42, 0)]
+    result = O.score_candidate(records)
+    assert result["n"] == 2
+    assert result["n_scored"] == 2
+    assert result["computation_errors"] == []
+    assert result["classification_counts"]["over_budget"] == 1
+    assert result["accuracy_rate"] == pytest.approx(0.5)
+    assert result["mean_loss"] == float("inf")
+
+
+def test_negative_budget_is_a_computation_error_not_a_crash():
+    """budgeted_tokens < 0 is the one input classify_budget_adherence still
+    rejects -- confirm it's excluded from n_scored and reported, not a
+    zero-budget violation (which is now scored, not excluded)."""
+    records = [rec(750, 1000), rec(42, -1)]
     result = O.score_candidate(records)
     assert result["n"] == 2
     assert result["n_scored"] == 1  # the bad row is excluded from scoring
@@ -66,13 +85,17 @@ def test_zero_budget_row_with_nonzero_actual_is_a_computation_error_not_a_crash(
     assert result["computation_errors"][0]["index"] == 1
 
 
-def test_zero_budget_zero_actual_row_classifies_as_under_budget_oversized():
-    # budget_adherence_ratio returns 0.0 for (0, 0) -- classify_budget_adherence
-    # calls that under_budget_oversized (0.0 < 0.5), not a special-cased
-    # within_budget. Confirm score_candidate doesn't paper over that.
+def test_zero_budget_zero_actual_row_classifies_as_within_budget():
+    # (0, 0) is the ideal, exact match -- zero spend against a zero
+    # ceiling -- and must classify within_budget, not fall through the
+    # ratio buckets below (which would otherwise call it
+    # under_budget_oversized, since budget_adherence_ratio(0, 0) == 0.0 <
+    # the default 0.5 threshold).
     result = O.score_candidate([rec(0, 0)])
     assert result["n_scored"] == 1
-    assert result["classification_counts"]["under_budget_oversized"] == 1
+    assert result["classification_counts"]["within_budget"] == 1
+    assert result["accuracy_rate"] == pytest.approx(1.0)
+    assert result["mean_loss"] == pytest.approx(0.0)
 
 
 def test_score_tuple_orders_higher_accuracy_above_lower_accuracy():

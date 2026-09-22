@@ -147,18 +147,25 @@ def accuracy_metrics(records: list[dict]) -> dict:
     ratios: list[float] = []
     errors: list[dict] = []
     for i, r in enumerate(records):
+        actual, budgeted = r["actual_tokens"], r["budgeted_tokens"]
         try:
-            classifications.append(
-                reasoning_budget.classify_budget_adherence(r["actual_tokens"], r["budgeted_tokens"])
-            )
-            ratios.append(reasoning_budget.budget_adherence_ratio(r["actual_tokens"], r["budgeted_tokens"]))
+            classifications.append(reasoning_budget.classify_budget_adherence(actual, budgeted))
         except ValueError as e:
-            # A row recommended a 0 token_ceiling (e.g. routed to
-            # deterministic_query_layer) but the actual build still spent
-            # tokens -- that's a real recommendation violation, not a
-            # division-by-zero to paper over. Reported, not silently dropped
-            # or allowed to crash the whole batch's computation.
+            # The one input classify_budget_adherence still rejects:
+            # budgeted_tokens < 0. A row recommending a 0 token_ceiling
+            # (e.g. routed to deterministic_query_layer) that still spent
+            # tokens is a real recommendation violation, not a
+            # division-by-zero to paper over -- classify_budget_adherence
+            # scores it 'over_budget' above rather than raising, so it's
+            # counted in n_scored/accuracy_rate instead of excluded here.
             errors.append({"index": i, "record": r, "error": str(e)})
+            continue
+        if budgeted > 0 or actual == 0:
+            # Skip only the one case budget_adherence_ratio itself still
+            # raises on (a zero-ceiling row that spent tokens): the ratio is
+            # undefined/infinite there, and the violation is already
+            # captured by the 'over_budget' classification above.
+            ratios.append(reasoning_budget.budget_adherence_ratio(actual, budgeted))
 
     n_scored = len(classifications)
     return {

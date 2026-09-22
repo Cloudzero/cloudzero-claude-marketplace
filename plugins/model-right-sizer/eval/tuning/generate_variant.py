@@ -82,6 +82,9 @@ def main() -> int:
     if not args.out:
         parser.error("--out is required unless --list-knobs is given.")
 
+    if args.out.resolve() == args.agent_file.resolve():
+        parser.error("--out must not overwrite --agent-file.")
+
     settings = parse_settings_arg(args.settings)
     agent_text = args.agent_file.read_text(encoding="utf-8")
     variant = K.render_variant(agent_text, settings)

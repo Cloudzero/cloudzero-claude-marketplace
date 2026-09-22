@@ -90,6 +90,22 @@ def test_real_work_scale_rejects_all_zero_weights():
         tcf.compute_real_work_scale(0.5, 0.5, 0.5, weights=(0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
 
 
+@pytest.mark.parametrize("bad_weight", [float("nan"), float("inf"), float("-inf")])
+def test_real_work_scale_rejects_nonfinite_weights(bad_weight):
+    # `w < 0` alone lets NaN/inf through silently -- both comparisons are
+    # False in Python -- and a NaN weight would otherwise collapse through
+    # the [0.0, 1.0] clamp to a scale of exactly 0.0 with no error at all.
+    with pytest.raises(ValueError, match="finite"):
+        tcf.compute_real_work_scale(0.5, 0.5, 0.5, weights=(bad_weight, 1.0, 1.0, 1.0, 1.0, 1.0))
+
+
+def test_real_work_scale_nan_weight_does_not_silently_collapse_to_zero():
+    """Regression guard: before the finite check, this call did not raise
+    at all -- it silently returned 0.0."""
+    with pytest.raises(ValueError):
+        tcf.compute_real_work_scale(0.8, 0.8, 0.8, weights=(float("nan"), 1.0, 1.0, 0.0, 0.0, 0.0))
+
+
 # ---------------------------------------------------------------------------
 # compute_token_ceiling -- basic contract
 # ---------------------------------------------------------------------------
@@ -201,6 +217,33 @@ def test_additive_real_work_is_not_bounded_to_one():
 def test_additive_real_work_rejects_out_of_range_inputs():
     with pytest.raises(ValueError, match=r"must be in \[0\.0, 1\.0\]"):
         tcf.compute_real_work_additive(1.5, 0.5, 0.5)
+
+
+def test_additive_real_work_rejects_negative_weights():
+    with pytest.raises(ValueError, match="non-negative"):
+        tcf.compute_real_work_additive(0.5, 0.5, 0.5, weights=(-1.0, 1.0, 1.0, 1.0, 1.0, 1.0))
+
+
+@pytest.mark.parametrize("bad_weight", [float("nan"), float("inf"), float("-inf")])
+def test_additive_real_work_rejects_nonfinite_weights(bad_weight):
+    # Same rationale as compute_real_work_scale's identical guard: `w < 0`
+    # alone lets NaN/inf through, and a nonfinite weight here would
+    # otherwise propagate into a nonfinite real_work total that fails
+    # inside round() in compute_token_ceiling_additive -- not here, where
+    # the actual invalid input was given.
+    with pytest.raises(ValueError, match="finite"):
+        tcf.compute_real_work_additive(0.5, 0.5, 0.5, weights=(bad_weight, 1.0, 1.0, 1.0, 1.0, 1.0))
+
+
+def test_additive_token_ceiling_nan_weight_raises_at_the_source_not_inside_round():
+    """Regression guard: before the finite check, a NaN weight propagated
+    into round() deep inside compute_token_ceiling_additive, raising an
+    unrelated-looking ValueError/TypeError there instead of failing at the
+    actual invalid input."""
+    with pytest.raises(ValueError, match="finite"):
+        tcf.compute_token_ceiling_additive(
+            "claude-sonnet-5", 0.8, 0.8, 0.8, weights=(float("nan"), 1.0, 1.0, 0.0, 0.0, 0.0)
+        )
 
 
 def test_additive_token_ceiling_unknown_tier_raises():
