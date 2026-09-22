@@ -113,31 +113,50 @@ def test_warning_template_tail_matches_even_at_the_zero_ceiling_degenerate_case(
 # Full-template fidelity: the whole quoted template, not just its fixed tail
 # ---------------------------------------------------------------------------
 
-# The full template as quoted in the agent file, with every `{...}` span
-# translated into a real Python format field. Kept as a literal template
-# string here (not read out of the agent file) so a corruption of EITHER
-# copy shows up as a mismatch against format_budget_warning()'s real
-# output, rather than the agent file's copy only ever being compared to
-# itself.
-FULL_WARNING_TEMPLATE = (
-    "Budget warning for '{unit_id}': you have used {pct_used} your "
-    "{token_ceiling}-token budget ({actual_tokens} tokens spent), crossing the "
-    "{warning_threshold_pct} warning threshold. " + WARNING_TEMPLATE_TAIL
-)
+
+def _extract_quoted_warning_template(agent_text: str) -> str:
+    """Pull the literal blockquote line out of the agent file itself, rather
+    than comparing format_budget_warning()'s output to a second,
+    hand-maintained copy of the template that could itself drift from the
+    real prose unnoticed (a real Greptile finding on an earlier version of
+    this test: it only ever checked format_budget_warning() against a
+    test-local constant, never against what the agent file actually says --
+    a drifted variable-prefix in the prose would still have passed).
+
+    The quote is a single markdown blockquote line starting with
+    '> Budget warning for'; every `{name}` span in it is already a real
+    Python str.format() field, so the extracted line can be used as the
+    format template directly."""
+    marker = "> Budget warning for"
+    for line in agent_text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith(marker):
+            return stripped.removeprefix(">").strip()
+    raise AssertionError(f"no line starting with {marker!r} found in {AGENT_FILE}")
+
+
+QUOTED_WARNING_TEMPLATE = _extract_quoted_warning_template(AGENT_TEXT)
+
+
+def test_quoted_warning_template_ends_with_the_fixed_tail():
+    """Sanity check on the extraction itself, before trusting it below."""
+    assert QUOTED_WARNING_TEMPLATE.endswith(WARNING_TEMPLATE_TAIL)
 
 
 def test_full_warning_template_matches_format_budget_warnings_actual_return_value():
     """The agent file claims character-for-character parity for the WHOLE
     template, not just its fixed tail (see the prose immediately above the
-    quote) -- confirm that holds, including the two percentage clauses a
-    naive reader could otherwise mis-reconstruct (each placeholder's own
-    formatting already carries its `%` sign; there is no separate literal
-    `%` sitting next to either one)."""
+    quote) -- confirm that holds against the template AS EXTRACTED FROM THE
+    AGENT FILE, including the two percentage clauses a naive reader could
+    otherwise mis-reconstruct (each placeholder's own formatting already
+    carries its `%` sign; there is no separate literal `%` sitting next to
+    either one). A drift in the agent file's own wording -- not just in a
+    second hardcoded copy -- now fails this test."""
     unit_id, actual_tokens, token_ceiling, warning_threshold_pct = "unit-x", 7500, 10000, 0.7
 
     message = budget_threshold.format_budget_warning(unit_id, actual_tokens, token_ceiling, warning_threshold_pct)
 
-    expected = FULL_WARNING_TEMPLATE.format(
+    expected = QUOTED_WARNING_TEMPLATE.format(
         unit_id=unit_id,
         pct_used="75% of",
         token_ceiling=token_ceiling,
@@ -150,7 +169,7 @@ def test_full_warning_template_matches_format_budget_warnings_actual_return_valu
 def test_full_warning_template_matches_at_the_zero_ceiling_degenerate_case():
     message = budget_threshold.format_budget_warning(unit_id="zero-budget-unit", actual_tokens=5, token_ceiling=0)
 
-    expected = FULL_WARNING_TEMPLATE.format(
+    expected = QUOTED_WARNING_TEMPLATE.format(
         unit_id="zero-budget-unit",
         pct_used="an undefined percentage of",
         token_ceiling=0,

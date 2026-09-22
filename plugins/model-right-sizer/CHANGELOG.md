@@ -5,6 +5,15 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
 ## Unreleased
 
 ### Fixed
+- **`tests/model_right_sizer/test_budget_warning_prose_fidelity.py`'s
+  full-template check now sources its expected value from the agent file
+  itself, not a second hand-maintained copy** (a Greptile finding on the
+  prior fix): the previous version only ever compared
+  `format_budget_warning()`'s output to a test-local constant, so a real
+  drift in the agent file's own prose would still have passed. The test
+  now extracts the literal blockquote line straight out of
+  `agents/model-right-sizer.md` and formats that directly — verified to
+  actually fail on a real drift (checked by hand, reverted).
 - **`agents/model-right-sizer.md`'s quoted budget-warning template corrected
   to match `format_budget_warning()`'s real output character-for-character**
   (a human-reviewer finding): the doc showed a literal `%` immediately after
