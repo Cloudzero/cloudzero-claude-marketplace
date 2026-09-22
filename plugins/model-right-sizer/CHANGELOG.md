@@ -36,6 +36,26 @@ All notable changes to `model-right-sizer.md` are documented here, most recent f
   percentage with Python's built-in `:.0%` formatter directly on the raw
   ratio, instead of manually multiplying by 100 first — consistent with
   the `warning_threshold_pct` percentage two lines below it.
+- **`schemas/blueprint.schema.json`'s `routingMapRow.id` is now bounded and
+  identifier-shaped** (`maxLength: 64`, `pattern: "^[A-Za-z0-9._-]+$"`),
+  per a security review finding: this `id` flows verbatim into a
+  dispatched sub-agent's own context via
+  `budget_threshold.format_budget_warning` (a string
+  `model-right-sizer-budget-guard` sends "exact ... not a paraphrase"),
+  and under `model-right-sizer-audit` can be derived from a target repo's
+  own contents rather than agent-generated. `routingMapRow.build_unit` is
+  a human-readable label, not an identifier, and stays free text
+  (unconstrained) on purpose — the checked-in example's own value already
+  contains spaces and punctuation.
+
+**Breaking**: `schema_version` is a `const` — the `"1.0"` → `"1.1"` →
+`"1.2"` chain of bumps in this changelog means any blueprint instance
+carrying an older `schema_version` string, or a `work_routing_map[]` row
+missing the newly-required `status`/`status_updated_at` pair, now fails
+validation outright. Intentional (this plugin is pre-1.0, and
+`scripts/validate_blueprint.py` only ever validates the one checked-in
+worked example, not externally stored instances) but called out here for
+anyone holding a blueprint JSON saved from an earlier version.
 
 ### Added
 - **`eval/token_ceiling_formula.py`: `AGENT_TOOL_HARNESS_FLOORS` +

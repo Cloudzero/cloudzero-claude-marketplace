@@ -234,8 +234,12 @@
       ],
       "description": "allOf/if/then below enforces the status_updated_at <-> status coupling: null exactly while status is 'not_started', a real timestamp string once it isn't -- the same conditional-requirement idiom as budget.token_ceiling's own 'required, never a null stand-in for unset' rule above, expressed mechanically instead of only in prose.",
       "properties": {
-        "id": { "type": "string", "minLength": 1 },
-        "build_unit": { "type": "string", "minLength": 1 },
+        "id": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[A-Za-z0-9._-]+$" },
+        "build_unit": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A short human-readable label for this unit of work (e.g. 'Slack bot: message-fetch + summarization module') -- free text by design, not an identifier, so it carries no pattern/maxLength constraint."
+        },
         "derived_from_stage_id": {
           "type": ["string", "null"],
           "description": "blueprint_rows[].id this build unit was decomposed from, if traceable to one."
