@@ -2,6 +2,369 @@
 
 All notable changes to `model-right-sizer.md` are documented here, most recent first. This project doesn't cut version tags — entries are dated. Loosely follows [Keep a Changelog](https://keepachangelog.com/) conventions (Added / Changed / Fixed).
 
+## Unreleased
+
+### Fixed
+- **`tests/model_right_sizer/test_budget_warning_prose_fidelity.py`'s
+  full-template check now sources its expected value from the agent file
+  itself, not a second hand-maintained copy** (a Greptile finding on the
+  prior fix): the previous version only ever compared
+  `format_budget_warning()`'s output to a test-local constant, so a real
+  drift in the agent file's own prose would still have passed. The test
+  now extracts the literal blockquote line straight out of
+  `agents/model-right-sizer.md` and formats that directly — verified to
+  actually fail on a real drift (checked by hand, reverted).
+- **`agents/model-right-sizer.md`'s quoted budget-warning template corrected
+  to match `format_budget_warning()`'s real output character-for-character**
+  (a human-reviewer finding): the doc showed a literal `%` immediately after
+  both `{pct_used}` and `{warning_threshold_pct}`, but each placeholder's own
+  formatting already carries its `%` sign (`pct_used` renders as e.g. `75%
+  of`; `warning_threshold_pct` as e.g. `70%` via `:.0%`) — the extra literal
+  `%` would have rendered a naively hand-reconstructed threshold clause as
+  `0.7%` instead of the real `70%`. Extended
+  `tests/model_right_sizer/test_budget_warning_prose_fidelity.py` to check
+  the full template against the function's real return value, not just its
+  previously-checked fixed tail.
+- **`eval/token_ceiling_formula.py`'s `FORMULA_VERSION` bump-rationale
+  comment corrected to stop reading as if the `v1.0.0 → v1.1.0` bump had
+  already happened** — the constant deliberately still reads `"1.0.0"`,
+  pending a real `model-right-sizer-release-report` run; only the comment's
+  wording was misleading, not the constant itself.
+- **`.claude-plugin/plugin.json`'s description brought up to date** with the
+  full eleven-companion-skill surface (it still only named the original
+  four) — same doc-lag pattern already fixed once in `README.md` earlier in
+  this changelog.
+
+- **Zero-ceiling rows no longer distort accuracy metrics.**
+  `reasoning_budget.classify_budget_adherence(0, 0)` now returns
+  `within_budget` (the ideal, exact match) instead of falling through the
+  ratio buckets to `under_budget_oversized`, and a zero-ceiling row that
+  still spent tokens is now classified `over_budget` instead of raising —
+  so both `eval/ablation/metrics.py::accuracy_metrics` and
+  `eval/tuning/optimizer.py::score_candidate` count a real ceiling
+  violation in their headline `accuracy_rate` instead of silently
+  excluding it from `n_scored` (a batch could previously report 100%
+  accuracy despite one record violating its ceiling). `optimizer.py` gives
+  such a violation the worst possible loss (`float("inf")`) rather than
+  dropping it from the search's scoring. `eval/tuning/compare_results.py`'s
+  `diff_records` reports the same violation as `"over_budget"` with
+  `ratio: inf`, not an `"error: ..."` string. `classify_budget_adherence`
+  still raises for the one genuinely invalid input, `budgeted_tokens < 0`.
+- **`eval/token_ceiling_formula.py`'s weight validation now rejects NaN and
+  infinite weights**, not just negative ones — `w < 0` is `False` for both
+  `nan` and `inf` in Python, so a `NaN` weight previously collapsed
+  silently through the `[0.0, 1.0]` clamp to a scale of exactly `0.0`
+  (`compute_real_work_scale`) instead of raising, and a nonfinite weight in
+  `compute_real_work_additive` surfaced only later as an unrelated-looking
+  crash inside `round()` in `compute_token_ceiling_additive`.
+- **`eval/ablation/generate_variant.py` and `eval/tuning/generate_variant.py`
+  reject `--out` resolving to the same file as `--agent-file`** — both
+  modules promise never to touch the shipped
+  `agents/model-right-sizer.md`, but neither previously checked that a
+  (mis)matched `--out`/`--agent-file` pair couldn't overwrite it.
+- **`eval/budget_threshold.py::format_budget_warning`** now formats its
+  percentage with Python's built-in `:.0%` formatter directly on the raw
+  ratio, instead of manually multiplying by 100 first — consistent with
+  the `warning_threshold_pct` percentage two lines below it.
+- **`schemas/blueprint.schema.json`'s `routingMapRow.id` is now bounded and
+  identifier-shaped** (`maxLength: 64`, `pattern: "^[A-Za-z0-9._-]+$"`),
+  per a security review finding: this `id` flows verbatim into a
+  dispatched sub-agent's own context via
+  `budget_threshold.format_budget_warning` (a string
+  `model-right-sizer-budget-guard` sends "exact ... not a paraphrase"),
+  and under `model-right-sizer-audit` can be derived from a target repo's
+  own contents rather than agent-generated. `routingMapRow.build_unit` is
+  a human-readable label, not an identifier, and stays free text
+  (unconstrained) on purpose — the checked-in example's own value already
+  contains spaces and punctuation.
+- **`eval/budget_threshold.py::format_budget_warning` now validates
+  `unit_id` against that same identifier shape directly** (defense-in-depth,
+  per the same review — this function can be called with any string, not
+  only ones that already passed schema validation).
+
+**Breaking**: `schema_version` is a `const` — the `"1.0"` → `"1.1"` →
+`"1.2"` chain of bumps in this changelog means any blueprint instance
+carrying an older `schema_version` string, or a `work_routing_map[]` row
+missing the newly-required `status`/`status_updated_at` pair, now fails
+validation outright. Intentional (this plugin is pre-1.0, and
+`scripts/validate_blueprint.py` only ever validates the one checked-in
+worked example, not externally stored instances) but called out here for
+anyone holding a blueprint JSON saved from an earlier version.
+
+### Added
+- **`eval/token_ceiling_formula.py`: `AGENT_TOOL_HARNESS_FLOORS` +
+  `rebase_onto_canonical_floor()`** — closes v1.0.0 gap #6. Promotes the
+  ad hoc two-harness floor-reconciliation arithmetic from
+  `tuning/results/2026-08-22-fresh-held-out-task-signal-and-formula-
+  validation.md` into a real, tested utility (canonical-frame re-basing,
+  not mean/max — see the function's own docstring for why). 11 new test
+  cases in `tests/model_right_sizer/test_token_ceiling_formula.py`,
+  including a real-computed per-tier drift check that found haiku's two
+  floor measurements disagree by 27.23% — outside the "5-15%" band
+  informally claimed elsewhere, and fresh evidence for gap #1. Built and
+  dispatched for real as a dogfooding test of
+  `model-right-sizer-budget-guard`'s threshold-warning mechanism against
+  live sub-agent dispatches — see
+  `tuning/results/2026-08-22-budget-guard-real-dogfooding-test.md` for the
+  real numbers, including one real case where an injected budget warning
+  changed a dispatched sub-agent's actual decision. `FORMULA_VERSION`
+  deliberately stays at `1.0.0` pending a real
+  `model-right-sizer-release-report` run for v1.1.0.
+
+### Removed
+- **`skills/repo-slack-channel`** — retired. This was the first real
+  dogfooding build used to generalization-test the tuned knobs against a
+  novel, non-synthetic intent (`results/2026-08-22-novel-use-case-
+  validation.md`), and it also became a contamination risk once its real
+  outcome got read by name inside a supposedly-blind dry-run twice (the
+  exact failure mode `eval/tuning/overfitting_guard.py` exists to catch).
+  Its `HOLDOUT_TASKS["repo-slack-channel-provisioning"]` entry and every
+  dated results file that reports on it stay in place as the historical
+  record — only the shipped skill itself is removed, since this repo never
+  intended it as a permanent product feature.
+
+### Added
+- **`eval/token_ceiling_formula.py` published as `FORMULA_VERSION = "1.0.0"`**
+  — this module's first formal version, tracking the signal set and
+  calibration constants independently of the plugin-wide version and each
+  skill's own. Full release report, including a ranked list of gaps and
+  opportunities for future contributors (haiku-tier calibration is the
+  top-ranked one):
+  `eval/tuning/results/2026-08-22-token-ceiling-formula-v1.0.0-release.md`.
+  Revised to interweave a "why this matters" clause into every claim (the
+  real dollar/trust cost of a wrong constant or an open gap), immediately
+  after the fact it explains, rather than a version report that's just a
+  changelog with extra prose.
+- **`skills/model-right-sizer-release-report`** — a new companion skill
+  codifying the per-version release-report discipline the v1.0.0 report
+  above established: publish a dated report on every `FORMULA_VERSION`
+  bump stating the exact configuration, the ranked gap list, and the
+  settled/don't-re-relitigate list — with every claim required to carry its
+  real-world stakes in the same breath, not a separate section. Also the
+  designated tool for backfilling a report for a version that shipped
+  before this skill existed, reconstructed from that version's git history
+  and contemporaneous results files, never from current constants.
+- **`skills/model-right-sizer-signal-validation`** — a new companion skill
+  codifying the blind multi-draw + correlation methodology this pass used
+  to test `validation_loop_iterations`, `context_ingestion_volume`, and
+  `investigative_uncertainty` against `eval/token_ceiling_formula.py`,
+  generalized for testing any future candidate signal. Its load-bearing
+  rule is the anti-contamination fix this pass had to apply after a real
+  incident: candidate ratings must come from genuinely independent
+  sub-agent dispatches given only a forward-looking task spec, never a
+  context that already holds the real actual costs or this repo's own
+  retired write-ups (see
+  `eval/tuning/results/2026-08-22-second-signal-experiment-genuinely-blind.md`).
+  Requires replication on a second held-out task before proposing (never
+  silently applying) a nonzero default weight.
+- **`skills/model-right-sizer-research-report`** — a synthesis-only
+  companion skill that condenses every result from the layer-ablation
+  study, the prompt-tuning/holdout-tuning coordinate-ascent passes, the
+  `token_ceiling_formula.py` averaged-vs-additive pivot, and the
+  real-work-signal validation experiments into one short,
+  research-paper-style executive report with real charts (loads the
+  `dataviz` and `artifact-design` skills first), published as a
+  self-contained HTML artifact. Every figure and claim must trace to an
+  already-committed results file — it runs no new experiments and
+  dispatches no sub-agents. Includes a reproducibility appendix pointing
+  at the four companion skills that can re-run each piece of research
+  (`model-right-sizer-layer-ablation`, `model-right-sizer-prompt-tuning`,
+  `model-right-sizer-holdout-tuning`, `model-right-sizer-signal-validation`).
+- `README.md` updated with entries for both new skills (plus a
+  pre-existing gap fix: `model-right-sizer-holdout-tuning` had never been
+  documented in the skills list or the blast-radius section — added
+  alongside the two new skills rather than left inconsistent).
+- **`schemas/blueprint.schema.json` bumped to `schema_version: "1.2"`: `budget.real_work_signals`.**
+  A fresh, independent addition (no compatibility claim against any other
+  `schema_version: "1.2"` work on a sibling branch, same disclaimer 1.1's
+  status-ledger addition carried). New `$defs.realWorkSignal` (`{value:
+  0.0-1.0, reason}`, same "never a bare number" discipline as `$defs.score`)
+  and `$defs.realWorkSignals` (all six of `tool_call_volume`,
+  `content_volume`, `cross_reference_load`, `validation_loop_iterations`,
+  `context_ingestion_volume`, `investigative_uncertainty` required). `budget`
+  gains an optional `real_work_signals` property plus a new `allOf`/`if`/`then`
+  requiring it whenever `token_ceiling` is nonzero (same conditional idiom as
+  `routingMapRow`'s `status`/`status_updated_at` pair) — a real model
+  dispatch's `token_ceiling` must now be traceable to rated signals, not a
+  free-handed integer; only a `token_ceiling: 0` row (nothing dispatched to a
+  model) may omit it. This is the schema-level half of moving `token_ceiling`
+  computation from "the LLM invents an integer" to "the LLM rates bounded
+  [0.0, 1.0] signals, deterministic code computes the integer" — see
+  `eval/token_ceiling_formula.py`'s own docstring and
+  `eval/tuning/results/2026-08-22-signal-rating-formula-validation.md` for
+  why. `blueprint.example.json` updated to `schema_version: "1.2"` with
+  `stage-1`/`unit-1` now carrying a worked `real_work_signals` block and a
+  `token_ceiling` (55,836, up from an illustrative 20,000) that is the actual
+  output of `compute_token_ceiling("claude-sonnet-5", ...)` for those ratings,
+  not a hand-picked round number.
+- **`eval/token_ceiling_formula.py` extended from four to six signals**:
+  `context_ingestion_volume` and `investigative_uncertainty`, derived from a
+  breakdown of token-consumption drivers across sub-agent archetypes (build,
+  review, finder/discovery, synthesis/panel, query-shaped — see
+  `eval/tuning/results/2026-08-22-signal-candidates-by-subagent-archetype.md`).
+  All four public functions (`compute_real_work_scale`,
+  `compute_token_ceiling`, `compute_real_work_additive`,
+  `compute_token_ceiling_additive`) take the two new signals as additional
+  optional positional args (default `0.0`) with default WEIGHT `0.0` in both
+  the averaged and additive models, preserving every existing caller's
+  behavior exactly. Unlike `validation_loop_iterations` (tested against a
+  fresh 3-draw rating pass and found to dilute rather than help — see
+  `-validation-loop-iterations-signal.md`), these two are simply UNTESTED —
+  their zero weight is "unproven," not "tested and rejected," and the
+  docstring says so explicitly to avoid conflating the two.
+- **`agents/model-right-sizer.md`'s Pass A gains a new item 5**: rate all six
+  `real_work_signals` per row (including the three at zero default weight,
+  so real calibration data accumulates for a future validation pass), guided
+  by a per-archetype table naming which signals usually carry a row's cost
+  for that shape; then derive `token_ceiling` from the ratings via
+  `eval/token_ceiling_formula.py` rather than free-handing it — preferring a
+  `Task`-delegated code-execution sub-agent (mirroring the existing
+  pricing-fetch delegation pattern), falling back to reading the module's
+  constants and reproducing the formula by hand with an "unverified this
+  run" disclosure if no such delegate is available. Uses
+  `compute_token_ceiling_additive` (better empirically, `UNVALIDATED`
+  calibration) over `compute_token_ceiling` (proven worse capacity ceiling),
+  with the `UNVALIDATED` status required in `uncertainty_ledger.assumptions`
+  on every blueprint that uses it. Item 4's original "not a vibe" sentence
+  is unchanged verbatim (both to keep it correct and because
+  `eval/tuning/knobs.py`'s `budget_margin`/`dispatch_floor_awareness` knobs
+  anchor on exact substrings of it).
+
+### Added
+- **`schemas/blueprint.schema.json` bumped to `schema_version: "1.1"`** with
+  two independent additions. (1) A status ledger on `work_routing_map[]`
+  rows: `status` (enum `not_started` / `dispatched` / `in_progress` /
+  `done` / `blocked`, every row emitted `not_started` at blueprint time),
+  `status_updated_at` (nullable ISO-8601 timestamp, enforced by a new
+  `allOf`/`if`/`then` pair to be `null` exactly while `status` is
+  `not_started` and a real string once it leaves that state — this file
+  had no existing `if`/`then` conditional to imitate, only prose-documented
+  "required-in-spirit" conventions like `budget.token_ceiling`'s and
+  `query_layer_note`'s, so the mechanical form here is newly introduced,
+  not ported from an existing pattern), and optional `status_note` (names
+  the concrete reason for `blocked`, also usable for `done`). This is a
+  fresh, independent authoring of the status-ledger concept for this
+  schema — it is *not* a port of, and makes no compatibility claim against,
+  any `schema_version: "1.2"` status-field work on a sibling branch that
+  hasn't merged into this history. (2) `budget.warning_threshold_pct`: an
+  optional number in `(0, 1]`, default `0.7`, documented as the fraction of
+  `token_ceiling` at which the invoking session should warn a dispatched
+  sub-agent to course-correct before it blows its ceiling; omitting it
+  means "use the default of 0.7." Both additions land on the shared
+  `$defs.budget`/`$defs.routingMapRow` definitions only, so
+  `blueprint_rows[]` gains `warning_threshold_pct` too but not the status
+  fields, which are `work_routing_map[]`-only by design. `blueprint.example.json`
+  updated to `schema_version: "1.1"` with its `unit-1` row now carrying
+  `status: "done"`, a realistic `status_updated_at` timestamp, no
+  `status_note`, and `budget.warning_threshold_pct: 0.65`. Verified against
+  `scripts/validate_blueprint.py` and the full `tests/` suite, plus ad hoc
+  checks that the conditional actually rejects a `not_started` row with a
+  non-null timestamp, a non-`not_started` row with a null timestamp, and an
+  out-of-range `warning_threshold_pct`.
+- **`skills/model-right-sizer-prompt-tuning` + `eval/tuning/` — a discrete
+  coordinate-ascent search over four wording knobs**, starting from the
+  premise the ablation study below already established (all four layers
+  stay) and asking a different question: given all four are present, which
+  exact wording maximizes real-execution `accuracy_rate`. Named precisely
+  rather than dressed up as literal gradient descent — there is no
+  derivative of a Markdown file — this is the ordinal, finite-difference
+  analog: four small worded edits (`eval/tuning/knobs.py`), each at one
+  exact anchor plausibly touching the budget-adherence ratio (how much
+  margin `token_ceiling` carries above expected spend, how hard the effort
+  dial leans down under difficulty-uncertainty, and two calibration-
+  feedback knobs in Pass A's ledger and Pass B's report), searched one
+  coordinate at a time (`eval/tuning/optimizer.py`'s pure, dispatch-free
+  scoring + step logic) against a fixed tuning-task subset with a held-out
+  check reserved for the final winner only, to catch overfitting to the
+  benchmark suite itself. All-knobs-at-0 is required to render
+  byte-identical to the shipped agent file, same invariant the ablation
+  study's all-four condition holds. Read-mostly: never edits
+  `agents/model-right-sizer.md`; the winning wording is reported as a
+  proposed diff for a human to review. See `eval/tuning/DESIGN.md` for the
+  full design, including the "what gradient descent means here" framing and
+  the known limitations (single-draw noise per candidate, a local rather
+  than global optimum, a deliberately small four-knob v1 search space).
+
+- **`skills/model-right-sizer-layer-ablation` + `eval/ablation/` — an
+  empirical ablation study measuring what each of the four research-grounded
+  citation layers actually does to the blueprints the agent produces**,
+  instead of trusting each paper's own claims to transfer. Two outcomes,
+  matching the request this was built for: (1) each layer's effect ALONE, in
+  isolation against a zero-layer baseline, and (2) the effect of every
+  COMBINATION across the full 16-subset grid (all four layers,
+  independently included/excluded), so a redundancy or synergy between
+  layers is visible rather than assumed away. `eval/ablation/layers.py`
+  renders any of the 16 subsets from the UNMODIFIED agent file via
+  structural-anchor slicing (section headings / numbered-list markers) --
+  no permanent ablation markup was added to the shipped agent file, so real
+  consumers of the plugin pay zero cost for this audit tooling; anchor
+  drift fails loudly (`LayerAnchorNotFoundError`) rather than silently
+  producing a wrong variant, and is caught by a full-16-subset test against
+  the real, current agent file on every CI run, not just at authoring time.
+  "Accuracy" is defined exactly as asked: whether real effort, from actually
+  running the recommended build, stayed within the blueprint's own predicted
+  budget -- `eval/ablation/metrics.accuracy_metrics()` wraps the
+  already-shipped `reasoning_budget.classify_budget_adherence()` (the same
+  function Pass B itself calls), so this study and a real usage report can
+  never define "stayed within prediction" two different ways. A fixed,
+  checked-in six-task benchmark suite (`eval/ablation/benchmark_tasks.json`)
+  spans each layer's signature scenario (bulk classification, an ambiguous
+  high-cost-of-error refactor, a long-horizon agentic build, an interactive
+  low-concurrency chat feature for the speculative-decoding layer
+  specifically, a fan-out review pass, and a trivially bounded fix) so every
+  layer has at least one task where its own stated rationale should bite.
+  `eval/ablation/DESIGN.md` documents the full design, including what's
+  deliberately out of scope (no statistical-significance claims from a
+  six-task pilot; small parenthetical citation asides elsewhere in the file
+  aren't scrubbed when a layer is excluded) rather than silently assuming
+  either gap away. `skills/model-right-sizer-layer-ablation/SKILL.md` is the
+  runbook: generate variants, a cheap 16-condition composition sweep
+  (Pass A blueprints only), a scoped real-execution accuracy sweep (the
+  5 isolation conditions + the all-four/shipped condition by default,
+  stating the marginal cost before extending to the full 16), then compute
+  and report. New tests under `tests/model_right_sizer/test_ablation_*.py`,
+  including an exhaustive check of all 16 subsets against the real agent
+  file (not a synthetic fixture) and a tamper test proving anchor drift
+  fails loudly.
+- **Speculative decoding (arXiv:2211.17192) as a fourth research-grounded
+  layer — a new "Serving-layer lever" section.** Grounded in Leviathan,
+  Kalman & Matias, *"Fast Inference from Transformers via Speculative
+  Decoding"* (ICML 2023, Google Research): a smaller draft model proposes γ
+  candidate tokens, the target model verifies all of them in one parallel
+  pass with the output distribution provably unchanged, giving an expected
+  walltime-improvement factor (Theorem 3.8) gated by whether the draft
+  model's acceptance rate clears its cost (Corollary 3.9) — and always
+  costing more total compute (Theorem 3.11), which only pays off as latency
+  when that extra compute is otherwise idle. Framed explicitly as a
+  **serving-layer lever, not a model-tier lever**: it can buy back latency on
+  an already-right-sized top-tier pick without downgrading it, but only for
+  low-concurrency/interactive rows where the org controls its own inference
+  stack — the opposite regime from the existing Batch APIs lever, and not a
+  lever available against a closed frontier API whose decode strategy you
+  don't control. Added a matching Levers-list cross-reference bullet, and
+  renumbered the message-schema section from "the third lever" to "the
+  fourth lever" accordingly.
+- **`eval/speculative_decoding.py` + a fourth `citation_ledger.json` paper
+  entry (arXiv:2211.17192), wired into `check_citations.py` and exercised by
+  `tests/model_right_sizer/test_speculative_decoding_formulas.py`.** Same
+  discipline as the three existing grounding papers: Eq. 1 (expected tokens
+  per iteration), Theorem 3.8 (expected walltime-improvement factor),
+  Corollary 3.9 (the improvement gate and its guaranteed minimum bound), and
+  Theorem 3.11 (the always-≥1 total-operations-increase factor) each carry a
+  `formula_expr` + independently hand-computed `sample_inputs` — two of the
+  four cross-checked directly against the paper's own printed Table 1 (its
+  SPEED/OPERATIONS columns, at c=ĉ=0, equal Eq. 1/Theorem 3.11 exactly).
+  Corollary 3.6 (acceptance rate from the two models' raw distributions) is
+  implemented and pytest-covered but deliberately carries no `formula_expr`
+  in the ledger: `check_formula_claims`'s eval sandbox
+  (`{"math": math, "__builtins__": {}}`) blocks the `sum`/`min` builtins its
+  list-reduction needs, unlike every other claim here which reduces to bare
+  arithmetic/comparison — the ledger entry's own note says so, rather than
+  shipping a `formula_expr` that would silently never run. Also not quoted
+  in the agent file's own prose (`appears_in_agent_file: false`), since the
+  rubric treats the acceptance rate as an already-known input, not something
+  it derives from raw per-token distributions itself.
+
 ## 2026-09-01
 
 ### Added

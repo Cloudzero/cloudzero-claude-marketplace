@@ -1,0 +1,160 @@
+{
+  "budget_margin_1": {
+    "settings": {
+      "budget_margin": 1
+    },
+    "n_records": 3,
+    "n": 3,
+    "n_scored": 3,
+    "accuracy_rate": 0.0,
+    "mean_loss": 0.6134333333333334,
+    "score": [
+      0.0,
+      -0.6134333333333334
+    ],
+    "classification_counts": {
+      "within_budget": 0,
+      "over_budget": 2,
+      "under_budget_oversized": 1
+    },
+    "computation_errors": []
+  },
+  "budget_margin_2": {
+    "settings": {
+      "budget_margin": 2
+    },
+    "n_records": 2,
+    "n": 2,
+    "n_scored": 2,
+    "accuracy_rate": 0.5,
+    "mean_loss": 0.03836842105263158,
+    "score": [
+      0.5,
+      -0.03836842105263158
+    ],
+    "classification_counts": {
+      "within_budget": 1,
+      "over_budget": 0,
+      "under_budget_oversized": 1
+    },
+    "computation_errors": []
+  },
+  "budget_margin_neg1": {
+    "settings": {
+      "budget_margin": -1
+    },
+    "n_records": 2,
+    "n": 2,
+    "n_scored": 2,
+    "accuracy_rate": 0.0,
+    "mean_loss": 0.19050833333333334,
+    "score": [
+      0.0,
+      -0.19050833333333334
+    ],
+    "classification_counts": {
+      "within_budget": 0,
+      "over_budget": 0,
+      "under_budget_oversized": 2
+    },
+    "computation_errors": []
+  },
+  "calibration_aggressiveness_1": {
+    "settings": {
+      "calibration_aggressiveness": 1
+    },
+    "n_records": 2,
+    "n": 2,
+    "n_scored": 2,
+    "accuracy_rate": 0.5,
+    "mean_loss": 0.14882499999999999,
+    "score": [
+      0.5,
+      -0.14882499999999999
+    ],
+    "classification_counts": {
+      "within_budget": 1,
+      "over_budget": 0,
+      "under_budget_oversized": 1
+    },
+    "computation_errors": []
+  },
+  "effort_tax_1": {
+    "settings": {
+      "effort_tax": 1
+    },
+    "n_records": 2,
+    "n": 2,
+    "n_scored": 2,
+    "accuracy_rate": 0.0,
+    "mean_loss": 0.6365583333333333,
+    "score": [
+      0.0,
+      -0.6365583333333333
+    ],
+    "classification_counts": {
+      "within_budget": 0,
+      "over_budget": 1,
+      "under_budget_oversized": 1
+    },
+    "computation_errors": []
+  },
+  "effort_tax_neg1": {
+    "settings": {
+      "effort_tax": -1
+    },
+    "n_records": 2,
+    "n": 2,
+    "n_scored": 2,
+    "accuracy_rate": 0.5,
+    "mean_loss": 0.3783333333333333,
+    "score": [
+      0.5,
+      -0.3783333333333333
+    ],
+    "classification_counts": {
+      "within_budget": 1,
+      "over_budget": 1,
+      "under_budget_oversized": 0
+    },
+    "computation_errors": []
+  },
+  "pass_b_feedback_1": {
+    "settings": {
+      "pass_b_feedback": 1
+    },
+    "n_records": 2,
+    "n": 2,
+    "n_scored": 2,
+    "accuracy_rate": 0.5,
+    "mean_loss": 0.20466666666666666,
+    "score": [
+      0.5,
+      -0.20466666666666666
+    ],
+    "classification_counts": {
+      "within_budget": 1,
+      "over_budget": 0,
+      "under_budget_oversized": 1
+    },
+    "computation_errors": []
+  },
+  "current": {
+    "settings": {},
+    "n_records": 2,
+    "n": 2,
+    "n_scored": 2,
+    "accuracy_rate": 0.0,
+    "mean_loss": 0.7489166666666667,
+    "score": [
+      0.0,
+      -0.7489166666666667
+    ],
+    "classification_counts": {
+      "within_budget": 0,
+      "over_budget": 1,
+      "under_budget_oversized": 1
+    },
+    "computation_errors": []
+  }
+}

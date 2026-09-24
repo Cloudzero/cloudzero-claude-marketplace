@@ -1,0 +1,12 @@
+{
+  "overhead_floor_haiku": 28508,
+  "records": [
+    {"candidate": "pass2_current", "task": "t6", "model": "haiku", "budgeted_tokens": 1300, "actual_raw": 28846},
+    {"candidate": "budget_margin_neg1", "task": "t6", "model": "haiku", "budgeted_tokens": 6000, "actual_raw": 28973},
+    {"candidate": "budget_margin_0", "task": "t6", "model": "haiku", "budgeted_tokens": 3000, "actual_raw": 29370},
+    {"candidate": "budget_margin_1", "task": "t6", "model": "haiku", "budgeted_tokens": 3000, "actual_raw": 29433},
+    {"candidate": "effort_tax_0", "task": "t6", "model": "haiku", "budgeted_tokens": 4000, "actual_raw": 29002},
+    {"candidate": "effort_tax_1", "task": "t6", "model": "haiku", "budgeted_tokens": 6000, "actual_raw": 29373},
+    {"candidate": "calibration_aggressiveness_0", "task": "t6", "model": "haiku", "budgeted_tokens": 4000, "actual_raw": 28917}
+  ]
+}

@@ -9,9 +9,8 @@ University / Alibaba Cloud).
 Every function here is a pure, literal transcription of one numbered equation,
 footnote formula, or named inequality from that paper -- see
 `citation_ledger.json` (same directory) for the exact source quote each function
-implements. The point of this module is the same one `xdp-tools:math-auditor`
-makes for prose audits, applied here as a standing suite instead of a one-off
-pass: the agent's rubric talks about factor substitution, shadow prices, and
+implements. This module's whole point is a standing suite, not a one-off pass:
+the agent's rubric talks about factor substitution, shadow prices, and
 cost-minimization in prose, and this module is what lets a test assert those
 relationships actually hold arithmetically -- instead of trusting an LLM's mental
 math every time the rubric gets read or extended.

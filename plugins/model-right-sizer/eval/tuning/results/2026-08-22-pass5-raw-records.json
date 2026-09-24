@@ -1,0 +1,11 @@
+{
+  "haiku_zero_tool_floor": 25664,
+  "sonnet_zero_tool_floor": 40669,
+  "note": "calibration_decay_1's dry-run picked Sonnet this round (every other calibration_decay dry-run across passes 2-5 picked Haiku) -- sampling variance in the blueprint step itself, used here as evidence that the resulting tie with pass5_current is not attributable to calibration_decay's wording.",
+  "records": {
+    "pass5_current":       {"model": "haiku",  "budgeted": 15000, "raw": 38624, "settings": {"budget_margin": -1, "effort_tax": 1, "calibration_aggressiveness": 1, "calibration_decay": 0, "pass_b_feedback": 1}},
+    "calibration_decay_1": {"model": "sonnet", "budgeted": 15000, "raw": 49891, "settings": {"budget_margin": -1, "effort_tax": 1, "calibration_aggressiveness": 1, "calibration_decay": 1, "pass_b_feedback": 1}},
+    "calibration_decay_2": {"model": "haiku",  "budgeted": 12000, "raw": 38184, "settings": {"budget_margin": -1, "effort_tax": 1, "calibration_aggressiveness": 1, "calibration_decay": 2, "pass_b_feedback": 1}},
+    "calibration_decay_3": {"model": "haiku",  "budgeted": 12000, "raw": 38873, "settings": {"budget_margin": -1, "effort_tax": 1, "calibration_aggressiveness": 1, "calibration_decay": 3, "pass_b_feedback": 1}}
+  }
+}

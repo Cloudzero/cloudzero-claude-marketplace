@@ -51,6 +51,31 @@ def test_classify_budget_adherence_boundaries(actual, budgeted, expected):
     assert rb.classify_budget_adherence(actual, budgeted) == expected
 
 
+def test_classify_budget_adherence_zero_budget_zero_actual_is_within_budget():
+    # The ideal, exact match -- zero spend against a zero ceiling (e.g. a
+    # deterministic_query_layer row). Handled before the ratio buckets:
+    # budget_adherence_ratio(0, 0) == 0.0, which the buckets above would
+    # otherwise call 'under_budget_oversized' (0.0 < the default 0.5
+    # threshold) despite this being a perfect match, not an oversized one.
+    assert rb.classify_budget_adherence(0, 0) == "within_budget"
+
+
+def test_classify_budget_adherence_zero_budget_nonzero_actual_is_over_budget():
+    # A real ceiling violation -- spending anything against a zero budget
+    # -- must be classified, not raised: budget_adherence_ratio itself
+    # raises for this exact input (see
+    # test_budget_adherence_ratio_zero_budget_nonzero_actual_raises above),
+    # but classify_budget_adherence must not propagate that, or a caller
+    # tallying accuracy across many records would drop the violating
+    # record out of its denominator entirely instead of counting it.
+    assert rb.classify_budget_adherence(5, 0) == "over_budget"
+
+
+def test_classify_budget_adherence_negative_budget_still_raises():
+    with pytest.raises(ValueError):
+        rb.classify_budget_adherence(5, -1)
+
+
 # ---------------------------------------------------------------------------
 # The agent's own agentic-down-pin measurement gate
 # ---------------------------------------------------------------------------

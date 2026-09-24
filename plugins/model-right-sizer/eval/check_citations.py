@@ -81,6 +81,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import reasoning_budget  # noqa: E402
+import speculative_decoding  # noqa: E402
 import token_economics  # noqa: E402
 
 EVAL_DIR = Path(__file__).resolve().parent
@@ -90,7 +91,11 @@ AGENT_FILE_PATH = EVAL_DIR.parent / "agents" / "model-right-sizer.md"
 # The only modules a claim's `module` field may name -- deliberately closed,
 # not a dynamic import, so a ledger entry can't point formula_expr evaluation
 # at an arbitrary module.
-FORMULA_MODULES = {"token_economics": token_economics, "reasoning_budget": reasoning_budget}
+FORMULA_MODULES = {
+    "token_economics": token_economics,
+    "reasoning_budget": reasoning_budget,
+    "speculative_decoding": speculative_decoding,
+}
 
 # Absolute tolerance for "the recomputed figure should land within this much of
 # the claimed one" -- loose enough to cover a paper's own rounding ("nearly
