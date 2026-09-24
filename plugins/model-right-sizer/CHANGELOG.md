@@ -2,7 +2,7 @@
 
 All notable changes to `model-right-sizer.md` are documented here, most recent first. This project doesn't cut version tags — entries are dated. Loosely follows [Keep a Changelog](https://keepachangelog.com/) conventions (Added / Changed / Fixed).
 
-## Unreleased
+## 2026-09-24
 
 ### Fixed
 - **`tests/model_right_sizer/test_budget_warning_prose_fidelity.py`'s

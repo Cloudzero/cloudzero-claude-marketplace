@@ -531,11 +531,15 @@ precisely because each one got its own dry-run instead of a shared one.
 ### 4. Assemble ONE schema-conformant blueprint — no rendering, no model
 
 Merge the N dry-runs into a single document conforming to
-`model-right-sizer`'s `blueprint.schema.json` v1.0 — this merge is
+`model-right-sizer`'s `blueprint.schema.json` — this merge is
 mechanical assembly, not a model call:
 
-- `schema_version: "1.0"`, `mode: "dry_run"`, `intent`: one sentence naming
-  the target repo and what was swept.
+- `schema_version`: read the current required value straight off
+  `schemas/blueprint.schema.json`'s own `schema_version.const` at run time —
+  never hardcode a version number here, since a bump there (1.0 → 1.1 → 1.2
+  so far) otherwise silently breaks this assembly step until someone
+  notices the drift. `mode: "dry_run"`, `intent`: one sentence naming the
+  target repo and what was swept.
 - `price_sheet`: reuse whichever dry-run's fetched sheet is most complete
   (dedupe `models[]` by `id`) — don't re-fetch per candidate if one dry-run
   already did.
