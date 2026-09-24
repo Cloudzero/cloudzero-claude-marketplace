@@ -1,0 +1,6 @@
+{
+  "extraKnownMarketplaces": {
+    "xdp": { "source": { "source": "github", "repo": "Cloudzero/project-xdp-tools" } }
+  },
+  "enabledPlugins": { "xdp-tools@xdp": true }
+}
