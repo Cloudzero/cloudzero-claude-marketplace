@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Model Right Sizer Plugin**
 - Removed `skills/repo-slack-channel` — a dogfooding-only build used to generalization-test tuned knobs against a novel task; never intended as a permanent feature.
 
-**Breaking (plugin is pre-1.0):** the `schema_version` chain above means a blueprint instance carrying an older `schema_version` string now fails validation. Only affects externally stored blueprint JSON from an earlier version.
+**Breaking (plugin is pre-1.0):** the `schema_version` chain above means a blueprint instance carrying an older `schema_version` string now fails validation. Affects externally stored blueprint JSON from an earlier version, and also affected `skills/model-right-sizer-audit`'s own instructions, which still hardcoded `schema_version: "1.0"` — fixed in this same release to read the required value off the schema file itself instead of a literal, so this class of drift can't recur.
 
 ---
 
