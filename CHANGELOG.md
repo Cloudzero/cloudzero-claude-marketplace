@@ -18,6 +18,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.0] - 2026-09-24
+
+### Added
+
+**Model Right Sizer Plugin**
+- Added `eval/token_ceiling_formula.py` (`FORMULA_VERSION = "1.0.0"`) — a six-signal formula that derives a blueprint's `token_ceiling` from rated `real_work_signals` instead of a free-handed integer. Extended from four to six signals (`context_ingestion_volume`, `investigative_uncertainty` newly added), with `agents/model-right-sizer.md`'s Pass A now rating all six per row and deriving the ceiling from the formula rather than inventing it.
+- Added speculative decoding ([arXiv:2211.17192](https://arxiv.org/abs/2211.17192)) as a fourth research-grounded lever — a serving-layer optimization distinct from the existing model-tier levers, scoped to self-hosted, low-concurrency/interactive workloads.
+- Added seven companion skills: `model-right-sizer-budget-guard`, `model-right-sizer-layer-ablation`, `model-right-sizer-prompt-tuning`, `model-right-sizer-holdout-tuning`, `model-right-sizer-signal-validation`, `model-right-sizer-release-report`, `model-right-sizer-research-report` — covering budget-threshold warnings to in-flight sub-agent dispatches, empirical ablation/tuning of the agent's research-grounded citation layers and wording, blind signal-validation methodology, and dated per-version release reporting.
+- `schemas/blueprint.schema.json` bumped `1.0 → 1.1 → 1.2`: a `work_routing_map[]` status ledger (`status`/`status_updated_at`/`status_note`), `budget.warning_threshold_pct`, and `budget.real_work_signals` (required whenever `token_ceiling` is nonzero, so a dispatch's ceiling is now traceable to rated signals rather than a bare number).
+
+### Fixed
+
+**Model Right Sizer Plugin**
+- Corrected several accuracy-metric and validation bugs in the evaluation harness: zero-ceiling rows no longer distort `accuracy_rate`, `token_ceiling_formula.py`'s weight validation now rejects NaN/infinite weights (previously collapsed silently through the clamp), and `format_budget_warning`'s percentage formatting and doc examples now match its real output.
+- `schemas/blueprint.schema.json`'s `routingMapRow.id` is now bounded and identifier-shaped, and `format_budget_warning` validates `unit_id` against the same shape — closing a security-review finding, since this value flows verbatim into a dispatched sub-agent's own context.
+- Brought `README.md` and `.claude-plugin/plugin.json`'s descriptions up to date with the full companion-skill surface.
+
+### Removed
+
+**Model Right Sizer Plugin**
+- Removed `skills/repo-slack-channel` — a dogfooding-only build used to generalization-test tuned knobs against a novel task; never intended as a permanent feature.
+
+**Breaking (plugin is pre-1.0):** the `schema_version` chain above means a blueprint instance carrying an older `schema_version` string now fails validation. Only affects externally stored blueprint JSON from an earlier version.
+
+---
+
 ## [1.4.0] - 2026-09-01
 
 ### Added
@@ -273,7 +299,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/cloudzero/cloudzero-claude-marketplace/compare/v1.0.0...v1.2.0
