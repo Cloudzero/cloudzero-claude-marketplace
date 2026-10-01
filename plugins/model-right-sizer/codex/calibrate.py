@@ -23,6 +23,7 @@ from calibration import fit_profile, publish
 from live_guard import BudgetPoller
 from rpc import AppServer, RpcError
 from usage_report import model_spread
+from isolated_checks import isolated_python
 
 BASE = 'You are executing a bounded Codex calibration task. Work only in the supplied workspace. Do not delegate, access credentials, inspect other task directories, or use external services. Complete the task and report a short result. Do not estimate token usage or budgets; the host measures them.'
 
@@ -48,7 +49,7 @@ def token_usage(message):
 
 
 def _run_turn(cwd, model, effort, prompt, timeout=150, ceiling=None, output_schema=None):
-    start=time.monotonic();usage=None;guard=None;messages=[];commands=0;rerouted=False
+    start=time.monotonic();usage=None;guard=None;messages=[];commands=0;tool_items=0;rerouted=False
     with AppServer() as rpc:
         rpc.initialize()
         thread=rpc.request('thread/start',{'cwd':str(cwd),'model':model,'sandbox':'workspace-write',
@@ -79,6 +80,8 @@ def _run_turn(cwd, model, effort, prompt, timeout=150, ceiling=None, output_sche
                 rerouted=True
             elif method=='item/completed' and message['params'].get('threadId')==thread_id:
                 item=message['params']['item']
+                if item['type'] not in ('agentMessage','userMessage','reasoning','plan'):
+                    tool_items+=1
                 if item['type']=='agentMessage':
                     messages.append(item.get('text',''))
                 elif item['type']=='commandExecution':
@@ -109,7 +112,7 @@ def _run_turn(cwd, model, effort, prompt, timeout=150, ceiling=None, output_sche
     return {'thread_id':thread_id,'actual_model':actual_model,'requested_model':model,'effort':effort,
             'usage':usage,'usage_source':'codex_app_server' if usage else 'unavailable',
             'wall_clock_seconds':time.monotonic()-start,'final_message':messages[-1] if messages else None,
-            'tool_commands':commands,'rerouted':rerouted,'guard':guard.outcome() if guard else None}
+            'tool_commands':commands,'tool_items':tool_items,'rerouted':rerouted,'guard':guard.outcome() if guard else None}
 
 
 def run_turn(cwd, model, effort, prompt, timeout=150, ceiling=None, output_schema=None):
@@ -138,8 +141,7 @@ def prepare_task(task,directory):
 
 
 def grade(task,directory):
-    process=subprocess.run([sys.executable,'-c',task['test']],cwd=directory,
-                           capture_output=True,text=True,timeout=15)
+    process=isolated_python(directory, task['test'])
     frozen = task['id'] in ('review_context','holdout_review','fresh_config')
     unchanged=all((directory/name).read_text()==content for name,content in task['files'].items()) if frozen else True
     return {'passed':process.returncode==0 and unchanged,'test_exit':process.returncode,
@@ -157,7 +159,7 @@ def blind_draw(root,model,effort,draw):
         'required':list(SIGNAL_DEFINITIONS),'properties':{key:{'type':'number','minimum':0,'maximum':1} for key in SIGNAL_DEFINITIONS}}}}}}}
     prompt='Rate all six signals for each task, using only the specs and definitions below. Do not use tools or look up actuals, results, weights or budgets. Return the specified JSON.\n'+json.dumps({'signal_definitions':SIGNAL_DEFINITIONS,'tasks':specs})
     record=run_turn(cwd,model,effort,prompt,output_schema=schema)
-    if record['tool_commands']:
+    if record['tool_items']:
         raise ValueError('Blind rating draw used tools; isolation evidence is insufficient')
     ratings=json.loads(record['final_message'])['ratings']
     if {row['task_id'] for row in ratings}!={task['id'] for task in TASKS} or len(ratings)!=len(TASKS):

@@ -120,9 +120,20 @@ class BudgetPoller:
             params = message['params']
             if params['threadId'] == self.thread_id:
                 total = params['tokenUsage']['total']
-                # Dedicated unit thread; provider total must agree with component accounting.
-                tokens = total['inputTokens'] + total['outputTokens']
-                if total.get('totalTokens',tokens) != tokens:
+                components = (total.get('inputTokens'), total.get('outputTokens'))
+                if any(isinstance(value, bool) or not isinstance(value, int) or value < 0
+                       for value in components):
+                    self.events.append({'type':'inconsistent_usage','at':timestamp()}); return
+                for subset, whole in (('cachedInputTokens', 'inputTokens'),
+                                      ('reasoningOutputTokens', 'outputTokens')):
+                    if subset in total:
+                        value = total[subset]
+                        if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= total[whole]:
+                            self.events.append({'type':'inconsistent_usage','at':timestamp()}); return
+                # Provider total must agree before subtraction of the measured unit baseline.
+                tokens = sum(components)
+                declared = total.get('totalTokens', tokens)
+                if isinstance(declared, bool) or not isinstance(declared, int) or declared != tokens:
                     self.events.append({'type':'inconsistent_usage','at':timestamp()}); return
                 self.observe(tokens, 'token_usage_notification', rpc)
         elif message.get('method') == 'turn/completed':

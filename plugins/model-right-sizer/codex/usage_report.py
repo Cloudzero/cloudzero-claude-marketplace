@@ -15,8 +15,20 @@ def model_spread(records, scope):
     models = {}
     unknown = 0
     unknown_usage = 0
+    missing_ids = 0
+    threads = {}
     for record in records:
         model = record.get('actual_model')
+        thread_id = record.get('thread_id')
+        if not thread_id:
+            missing_ids += 1
+        else:
+            record_scope = record.get('usage_scope', 'thread')
+            previous = threads.setdefault(thread_id, set())
+            identity = ('thread_model_group', model) if record_scope == 'thread_model_group' else ('thread', None)
+            if previous and (record_scope != 'thread_model_group' or ('thread', None) in previous or identity in previous):
+                raise ValueError('Duplicate or overlapping thread records cannot establish definitive model spread')
+            previous.add(identity)
         usage = record.get('usage')
         if not usage:
             unknown_usage += 1; continue
@@ -24,7 +36,7 @@ def model_spread(records, scope):
         if any(isinstance(v,bool) or not isinstance(v,int) or v<0 for v in (input_tokens,output_tokens)):
             raise ValueError('Model spread needs observed integer token counts')
         total = input_tokens + output_tokens
-        if model is None or record.get('rerouted'):
+        if not isinstance(model, str) or not model.strip() or record.get('rerouted'):
             unknown += total; continue
         item = models.setdefault(model, {'records':0,'input_tokens':0,'output_tokens':0,'total_tokens':0})
         item['records'] += 1; item['input_tokens'] += input_tokens
@@ -35,12 +47,15 @@ def model_spread(records, scope):
         rows.append({'model':model,**value,'share_of_observed_tokens':value['total_tokens']/observed if observed else None})
     return {'scope':scope,'model_spread':rows,'observed_total_tokens':observed if observed else None,
             'unattributed_tokens':unknown,'records_with_unknown_usage':unknown_usage,
-            'definitive_for_observed_records':bool(observed) and not unknown_usage and unknown == 0,
+            'records_without_thread_id':missing_ids,
+            'definitive_for_observed_records':bool(observed) and not unknown_usage and not missing_ids and unknown == 0,
             'account_wide_model_spread_available':False,
             'coverage_note':'These shares describe only the named observed dataset, not unobserved account history.'}
 
 
 def account_usage_probe(thread_ids=()):
+    if len(thread_ids) != len(set(thread_ids)):
+        raise ValueError('Requested thread IDs must be unique')
     from rpc import AppServer, RpcError
     with AppServer() as rpc:
         rpc.initialize()
@@ -56,13 +71,22 @@ def account_usage_probe(thread_ids=()):
         for thread_id in thread_ids:
             usage = rpc.request('account/usage/read', {'threadId':thread_id}, timeout=20)
             thread = usage.get('threadUsage')
-            if thread is None:
+            if thread is None or thread.get('threadId') != thread_id:
                 result['records'].append({'thread_id':thread_id,'actual_model':None,'usage':None}); continue
+            grouped = {}
             for group in thread.get('groups',[]):
-                result['records'].append({'thread_id':thread_id,'actual_model':group.get('model'),
-                    'effort':group.get('reasoningEffort'),'usage':{'input_tokens':group['inputTokens'],
-                    'output_tokens':group['outputTokens']} if isinstance(group.get('inputTokens'),int)
-                    and isinstance(group.get('outputTokens'),int) else None})
+                model = group.get('model')
+                entry = grouped.setdefault(model, {'thread_id':thread_id,'actual_model':model,
+                    'usage_scope':'thread_model_group','usage':{'input_tokens':0,'output_tokens':0}})
+                values = (group.get('inputTokens'), group.get('outputTokens'))
+                if any(isinstance(v,bool) or not isinstance(v,int) or v<0 for v in values):
+                    entry['usage'] = None
+                elif entry['usage'] is not None:
+                    entry['usage']['input_tokens'] += values[0]
+                    entry['usage']['output_tokens'] += values[1]
+            result['records'].extend(grouped.values())
+            if not grouped:
+                result['records'].append({'thread_id':thread_id,'actual_model':None,'usage':None})
         result['spread'] = model_spread(result['records'],'explicitly requested Codex account thread IDs')
         return result
 

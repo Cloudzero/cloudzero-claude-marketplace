@@ -113,6 +113,9 @@ def fit_profile(dataset, evidence_ref):
     rows = dataset.get('rows', [])
     if not rows:
         raise ValueError('No measured executions: calibration is blocked, not zero-cost')
+    identities = [(row['model'], row['effort'], row['task_id']) for row in rows]
+    if len(identities) != len(set(identities)):
+        raise ValueError('Duplicate model/effort/task rows would overweight fitting or held-out gates')
     test_ids = set(dataset['held_out_task_ids'])
     train_ids = {r['task_id'] for r in rows if r['task_id'] not in test_ids and not r.get('floor_probe')}
     if len(test_ids) < 2 or len(train_ids) < 8 or test_ids & train_ids:

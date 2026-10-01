@@ -72,6 +72,14 @@ def test_holdout_actuals_do_not_fit_coefficients_or_margin():
     assert second['promotion_status']=='candidate'
 
 
+@pytest.mark.parametrize('task', ['train-0','hold-0','floor-0'])
+def test_duplicate_task_measurements_cannot_skew_fit_or_promotion(task):
+    data=synthetic_dataset()
+    data['rows'].append(copy.deepcopy(next(r for r in data['rows'] if r['task_id']==task)))
+    with pytest.raises(ValueError,match='Duplicate model/effort/task'):
+        fit_profile(data,'synthetic-unit-test')
+
+
 def test_collinear_shapes_and_duplicate_raters_are_rejected():
     dataset=synthetic_dataset()
     for row in dataset['rows']:
@@ -139,6 +147,21 @@ def test_main_thread_unit_baseline_excludes_earlier_work():
     assert rpc.requests[-1][0]=='turn/steer' and guard.actual_tokens==70
 
 
+@pytest.mark.parametrize('total', [
+    {'inputTokens':-50,'outputTokens':120,'totalTokens':70},
+    {'inputTokens':True,'outputTokens':69,'totalTokens':70},
+    {'inputTokens':60,'outputTokens':10,'cachedInputTokens':61},
+    {'inputTokens':60,'outputTokens':10,'reasoningOutputTokens':11},
+    {'inputTokens':0,'outputTokens':1,'totalTokens':True},
+])
+def test_invalid_notification_components_cannot_trigger_a_budget_warning(total):
+    rpc=FakeRpc();guard=BudgetPoller('build','thread-1','turn-1',100)
+    guard.handle({'method':'thread/tokenUsage/updated','params':{
+        'threadId':'thread-1','tokenUsage':{'total':total}}},rpc)
+    assert guard.actual_tokens is None and not rpc.requests
+    assert guard.events[-1]['type']=='inconsistent_usage'
+
+
 def test_foreign_thread_stale_usage_and_last_turn_cannot_steer():
     rpc=FakeRpc();guard=BudgetPoller('build','thread-1','turn-1',100)
     guard.handle({'method':'thread/tokenUsage/updated','params':{'threadId':'other','tokenUsage':{'total':{'inputTokens':90,'outputTokens':0}}}},rpc)
@@ -152,8 +175,8 @@ def test_foreign_thread_stale_usage_and_last_turn_cannot_steer():
 
 
 def test_spread_is_actual_per_model_not_session_default():
-    records=[{'actual_model':'small','usage':{'input_tokens':80,'output_tokens':20}},
-             {'actual_model':'large','usage':{'input_tokens':250,'output_tokens':50}}]
+    records=[{'thread_id':'t1','actual_model':'small','usage':{'input_tokens':80,'output_tokens':20}},
+             {'thread_id':'t2','actual_model':'large','usage':{'input_tokens':250,'output_tokens':50}}]
     value=model_spread(records,'explicit observed run')
     assert value['model_spread'][0]['model']=='large'
     assert value['model_spread'][0]['share_of_observed_tokens']==.75
@@ -161,6 +184,28 @@ def test_spread_is_actual_per_model_not_session_default():
     assert not value['account_wide_model_spread_available']
     records.append({'actual_model':'small','usage':None})
     assert not model_spread(records,'partial')['definitive_for_observed_records']
+
+
+def test_duplicate_threads_rejected_and_unidentified_records_not_definitive():
+    row={'thread_id':'t1','actual_model':'small','usage':{'input_tokens':80,'output_tokens':20}}
+    with pytest.raises(ValueError,match='Duplicate or overlapping'):
+        model_spread([row,dict(row)],'duplicate')
+    unidentified={k:v for k,v in row.items() if k!='thread_id'}
+    assert not model_spread([unidentified],'unidentified')['definitive_for_observed_records']
+    groups=[{**row,'usage_scope':'thread_model_group'},
+            {**row,'usage_scope':'thread_model_group','actual_model':'large'}]
+    assert model_spread(groups,'billing groups')['observed_total_tokens']==200
+    with pytest.raises(ValueError,match='Duplicate or overlapping'):
+        model_spread(groups+[row],'overlapping totals')
+
+
+def test_speculative_decoding_exclusion_removes_native_instruction():
+    from experiments import render,NATIVE_SPECULATIVE_INSTRUCTION
+    without=render(['token_economics','ibpo','budget_thinker'])
+    assert NATIVE_SPECULATIVE_INSTRUCTION not in without
+    assert 'Speculative decoding is a recommendation' not in without
+    assert 'arXiv:2211.17192' not in without
+    assert NATIVE_SPECULATIVE_INSTRUCTION in render()
 
 
 def test_rerouted_and_missing_usage_do_not_become_zero_usage():
@@ -187,3 +232,11 @@ def test_shipped_profiles_reproduce_measured_fit_and_runtime_heldout_budgets():
             signals=dict(zip(SIGNALS,rating_vector(row)))
             ceiling=budget(profile,model,signals,'medium')['token_ceiling']
             assert .5 <= usage_tokens(row)/ceiling <= 1
+
+
+def test_spread_preserves_scope_and_rejects_blank_model_attribution():
+    from usage_report import model_spread
+    records = [{'thread_id':'one','actual_model':'sol','usage':{'input_tokens':10,'output_tokens':2}}]
+    assert model_spread(records,'named experimental scope')['scope'] == 'named experimental scope'
+    records[0]['actual_model'] = ''
+    assert not model_spread(records,'scope')['definitive_for_observed_records']

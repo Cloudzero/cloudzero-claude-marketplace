@@ -155,6 +155,21 @@ def test_warning_generation_is_not_delivery(session):
     assert r.report(session)['rows'][0]['warning_outcome'] == 'warned_and_ignored'
 
 
+def test_delivered_warning_does_not_reappear_on_later_crossed_continuations(session):
+    row=session['blueprint']['work_routing_map'][0];unit=row['id']
+    row['budget']['token_ceiling']=100;r.transition(session,unit,'in_progress')
+    def observation(n):return {'usage':{'input_tokens':n,'cached_input_tokens':0,'output_tokens':0}}
+    first=r.observe(session,unit,observation(70),next_turn=True)
+    pending=r.observe(session,unit,observation(75),next_turn=True)
+    assert pending['warning'] is None
+    assert session['observations'][unit]['pending_warning']==first['warning']
+    r.mark_warning_delivered(session,unit,first['warning'])
+    second=r.observe(session,unit,observation(110),next_turn=True)
+    assert second['warning'] is None and second['guard']=='warning_already_delivered'
+    assert 'pending_warning' not in session['observations'][unit]
+    assert r.report(session)['rows'][0]['warning_outcome']=='warned_and_ignored'
+
+
 def test_last_turn_crossing_and_unknown_are_distinct(session):
     row = session['blueprint']['work_routing_map'][0]; unit = row['id']
     row['budget']['token_ceiling'] = 100
@@ -233,6 +248,38 @@ def test_install_refuses_symlink_destination(tmp_path):
     with pytest.raises(ValueError, match='symlink'):
         r.install(tmp_path)
     assert not (tmp_path / 'AGENTS.md').exists()
+
+
+def test_failed_staging_never_changes_repository_and_retry_succeeds(tmp_path,monkeypatch):
+    (tmp_path/'AGENTS.md').write_text('Existing instructions\n')
+    original=Path.write_bytes
+    def fail_stage(path,content):
+        if 'new' in path.parts and path.name=='SKILL.md':raise OSError('simulated full disk')
+        return original(path,content)
+    with monkeypatch.context() as m:
+        m.setattr(Path,'write_bytes',fail_stage)
+        with pytest.raises(OSError,match='full disk'):r.install(tmp_path)
+    assert (tmp_path/'AGENTS.md').read_text()=='Existing instructions\n'
+    assert not (tmp_path/'.agents').exists()
+    assert not list(tmp_path.glob('.right-sizer-install-*'))
+    assert len(r.install(tmp_path)['installed'])==12
+
+
+def test_publish_failure_rolls_back_bundle_instructions_and_manifest(tmp_path,monkeypatch):
+    r.install(tmp_path)
+    before={p.relative_to(tmp_path):p.read_bytes() for p in tmp_path.rglob('*') if p.is_file()}
+    replace=r.os.replace
+    def fail_manifest(source,destination):
+        if 'new' in Path(source).parts and Path(destination).name=='model-right-sizer-install.json':
+            raise OSError('simulated publication failure')
+        return replace(source,destination)
+    with monkeypatch.context() as m:
+        m.setattr(r,'MANDATE',r.MANDATE+'Additional managed instruction.\n')
+        m.setattr(r.os,'replace',fail_manifest)
+        with pytest.raises(OSError,match='publication failure'):r.install(tmp_path)
+    after={p.relative_to(tmp_path):p.read_bytes() for p in tmp_path.rglob('*') if p.is_file()}
+    assert before==after and not list(tmp_path.glob('.right-sizer-install-*'))
+    r.install(tmp_path)
 
 
 def test_export_contains_attribution_without_prompt_content(session):

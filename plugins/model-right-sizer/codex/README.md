@@ -175,3 +175,27 @@ execution, tokens, price estimates, and separately sourced realized spend.
 It excludes task prompts and raw logs. This JSON is **not a verified CloudZero
 AnyCost ingestion format**. No CloudZero account connection, ingestion endpoint,
 or actual export delivery is claimed; that needs a verified account/API contract.
+
+## Review hardening and isolated quality checks
+
+Live calibration and guard grading require Linux, `bubblewrap` (`bwrap`),
+working unprivileged user namespaces, and system `python3`. For example, install
+`bubblewrap` with your Linux distribution's package manager before live runs.
+Grading fails closed if isolation is unavailable. Ordinary installation, budget
+calculation, attribution and workflows do not require this grading backend.
+Model-written Python runs with a read-only task mount, private network and process
+namespaces, a cleared environment, dropped capabilities, execution deadlines and
+CPU, memory, output and descriptor limits. The checker uses system Python rather
+than the caller's virtual environment; benchmark outputs must be compatible.
+The committed isolated replay verifies 48 final benchmark outputs and seven
+guard outputs without new model calls.
+
+Installation stages every bundle file, AGENTS.md and manifest before publication.
+Handled publication failures restore prior file contents; failed rollback retains
+recovery backups and reports their location. Individual replacements are atomic;
+this is not a global multi-file atomic transaction across process termination or
+concurrent writers. Continuation budget warnings remain pending until acknowledged
+and are not issued again after delivery. Calibration rejects duplicate
+model/effort/task rows, including floor probes. Model-spread reports reject
+overlapping thread records, require thread IDs for definitive attribution and
+allow disjoint actual-model billing groups within one thread.

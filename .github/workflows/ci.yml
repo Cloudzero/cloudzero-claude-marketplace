@@ -33,7 +33,12 @@ jobs:
       - name: Validate model-right-sizer blueprint worked example
         run: uv run --no-project --with 'jsonschema==4.26.0' scripts/validate_blueprint.py
       - name: Run tests
-        run: uv run --no-project --with 'pyyaml==6.0.3' --with 'jsonschema==4.26.0' --with 'pytest==9.1.1' -- pytest tests/ -q
+        # Sandbox regression tests import adversarial fixtures only in private namespaces.
+        # Live model calibration is still excluded from CI.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bubblewrap
+          uv run --no-project --with 'pyyaml==6.0.3' --with 'jsonschema==4.26.0' --with 'pytest==9.1.1' -- pytest tests/ -q
       - name: Validate native Codex research variants
         run: uv run --no-project --with 'jsonschema==4.26.0' plugins/model-right-sizer/codex/experiments.py check
       - name: Reproduce native Codex dogfood task checks

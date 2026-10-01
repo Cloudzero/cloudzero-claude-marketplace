@@ -51,6 +51,9 @@ NATIVE_KNOBS = {
         1: 'Report a corrected numeric ceiling for the next comparable task.'},
 }
 
+NATIVE_SPECULATIVE_INSTRUCTION = (' Speculative decoding is a recommendation\n'
+    '   only for inference stacks the organization controls.')
+
 
 def shared_excerpt():
     text = (CORE / 'agents/model-right-sizer.md').read_text()
@@ -71,6 +74,10 @@ def render(included=None, settings=None):
         statements.append(f'{name}={level}: ' + NATIVE_KNOBS[name][level])
     native = (SKILL / 'SKILL.md').read_text().replace('Read `references/economics.md` for the shared research grounding and',
         'Use only the research grounding included inline in this experiment, and read')
+    if 'speculative_decoding' not in included:
+        if NATIVE_SPECULATIVE_INSTRUCTION not in native:
+            raise ValueError('Native speculative-decoding anchor drifted')
+        native = native.replace(NATIVE_SPECULATIVE_INSTRUCTION, '', 1)
     source = (native + '\n' + layers._SD_LEVER_BULLET + '\n' +
               (SKILL / 'references/economics.md').read_text())
     return layers.render_variant(source, included) + '\n## Native experiment wording\n\n' + '\n'.join(statements) + '\n'

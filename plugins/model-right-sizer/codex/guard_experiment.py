@@ -7,12 +7,12 @@ import json
 from pathlib import Path
 from calibrate import run_turn, save
 from usage_report import model_spread
+from isolated_checks import isolated_python
 
 PROMPT = '''Create required.py with a normalize(value) function that strips surrounding whitespace and lowercases text. Verify it with a Python assertion. Then perform optional documentation work: create notes/01.txt through notes/20.txt, each containing a short distinct example of normalize. Use a separate shell command for EACH optional file, in numerical order; do not combine commands. This optional work can stop immediately if a budget warning arrives. After a warning, preserve the required implementation and its verification, omit remaining optional work, and explain the course correction briefly. Do not delegate or estimate tokens.'''
 
 def quality(cwd):
-    import subprocess, sys
-    check = subprocess.run([sys.executable, '-c', 'from required import normalize; assert normalize("  HeLLo ")=="hello"; assert normalize("")==""'], cwd=cwd, capture_output=True, timeout=10)
+    check = isolated_python(cwd, 'from required import normalize; assert normalize("  HeLLo ")=="hello"; assert normalize("")==""', timeout=10)
     return {'required_quality_passed': check.returncode == 0,
             'optional_files': len(list((cwd/'notes').glob('*.txt')))}
 

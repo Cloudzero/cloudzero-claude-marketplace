@@ -165,6 +165,61 @@ def budget(profile, model, signals, effort=None):
             'caveat': 'Provisional weights are unvalidated; measured weights apply to their stated harness and effort.'}
 
 
+def publish_install(target, files):
+    """Stage complete bytes and backups, then replace files; roll back on error.
+
+    Every destination is always an old or complete new file. An interrupted
+    process can be retried using the old manifest; handled failures restore
+    published files and remove only directories this transaction created.
+    """
+    scratch = Path(tempfile.mkdtemp(prefix='.right-sizer-install-', dir=target))
+    cleanup = True
+    try:
+        previous = {}
+        for relative, content in files.items():
+            staged = scratch / 'new' / relative
+            staged.parent.mkdir(parents=True, exist_ok=True)
+            staged.write_bytes(content)
+            destination = target / relative
+            if destination.exists():
+                backup = scratch / 'old' / relative
+                backup.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(destination, backup)
+                shutil.copystat(destination, staged)
+                previous[relative] = backup
+        published, directories = [], []
+        try:
+            for relative in files:
+                destination = target / relative
+                missing = []
+                parent = destination.parent
+                while not parent.exists():
+                    missing.append(parent)
+                    parent = parent.parent
+                for directory in reversed(missing):
+                    directory.mkdir()
+                    directories.append(directory)
+                os.replace(scratch / 'new' / relative, destination)
+                published.append(relative)
+        except BaseException:
+            try:
+                for relative in reversed(published):
+                    destination = target / relative
+                    if relative in previous:
+                        os.replace(previous[relative], destination)
+                    else:
+                        destination.unlink()
+                for directory in reversed(directories):
+                    directory.rmdir()
+            except BaseException as rollback_error:
+                cleanup = False
+                raise RuntimeError(f'Install rollback failed; recovery files preserved at {scratch}') from rollback_error
+            raise
+    finally:
+        if cleanup:
+            shutil.rmtree(scratch)
+
+
 def install(target):
     """Copy one standalone skill bundle, preserving unmanaged files and local edits."""
     target = Path(target).absolute()
@@ -179,7 +234,7 @@ def install(target):
             planned[Path('.agents/skills') / file.relative_to(source_skills)] = file.read_bytes()
     prefix = Path('.agents/skills/model-right-sizer')
     planned[prefix / 'scripts/right_sizer.py'] = Path(__file__).read_bytes()
-    for helper in ('experiments.py', 'catalog.py', 'rpc.py', 'calibration.py', 'live_guard.py', 'usage_report.py', 'calibrate.py', 'benchmark_suite.py', 'guard_experiment.py', 'remeasure.py', 'validation_round.py'):
+    for helper in ('experiments.py', 'catalog.py', 'rpc.py', 'calibration.py', 'live_guard.py', 'usage_report.py', 'calibrate.py', 'benchmark_suite.py', 'guard_experiment.py', 'remeasure.py', 'validation_round.py', 'isolated_checks.py'):
         source = CORE / 'codex' / helper
         if not source.exists():
             source = Path(__file__).resolve().parent / helper
@@ -197,6 +252,8 @@ def install(target):
     # Include legacy source only as an experimental baseline, never a runtime persona.
     planned[prefix / 'assets/core/agents/model-right-sizer.md'] = (CORE / 'agents/model-right-sizer.md').read_bytes()
     manifest_path = target / '.agents/model-right-sizer-install.json'
+    if manifest_path.is_symlink():
+        raise ValueError('Install manifest may not be a symlink')
     old = read_json(manifest_path) if manifest_path.exists() else {'files': {}}
     hashes = {}
     for relative, content in planned.items():
@@ -228,12 +285,10 @@ def install(target):
         updated = text[:start] + block + text[stop:]
     else:
         updated = text + ('\n\n' if text else '') + block + '\n'
-    for relative, content in planned.items():
-        destination = target / relative
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_bytes(content)
-    agents.write_text(updated)
-    atomic_json(manifest_path, {'version': VERSION, 'files': hashes})
+    transaction = {**planned, Path('AGENTS.md'): updated.encode(),
+                   Path('.agents/model-right-sizer-install.json'): (json.dumps(
+                       {'version': VERSION, 'files': hashes}, indent=2, allow_nan=False) + '\n').encode()}
+    publish_install(target, transaction)
     return {'installed': sorted(p.name for p in source_skills.iterdir() if p.is_dir()),
             'target': str(target), 'instructions': 'AGENTS.md', 'separate_agent': False,
             'files': len(planned)}
@@ -374,8 +429,14 @@ def observe(session, unit_id, observation, actual_model=None, actual_effort=None
         ceiling = row['budget']['token_ceiling']
         threshold = row['budget'].get('warning_threshold_pct', 0.7)
         crossed = threshold_crossed(total, ceiling, threshold)
-        warning = format_budget_warning(unit_id, total, ceiling, threshold) if crossed and next_turn else None
-        saved['guard'] = 'warning_pending_delivery' if warning else ('crossed_on_last_turn' if crossed else 'below_threshold')
+        already_delivered = previous.get('warning_delivered', False)
+        already_pending = bool(previous.get('pending_warning'))
+        warning = format_budget_warning(unit_id, total, ceiling, threshold) if crossed and next_turn and not (already_delivered or already_pending) else None
+        saved['guard'] = ('warning_already_delivered' if already_delivered else
+                          'warning_pending_delivery' if warning or already_pending else
+                          'crossed_on_last_turn' if crossed else 'below_threshold')
+        if already_delivered:
+            saved.pop('pending_warning', None)
         if warning:
             saved['pending_warning'] = warning
     session['observations'][unit_id] = saved
