@@ -38,6 +38,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y bubblewrap
+          # Ubuntu 24.04 restricts capabilities inside unprivileged user namespaces.
+          # Enable the sandbox backend only on this disposable hosted test runner.
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
           uv run --no-project --with 'pyyaml==6.0.3' --with 'jsonschema==4.26.0' --with 'pytest==9.1.1' -- pytest tests/ -q
       - name: Validate native Codex research variants
         run: uv run --no-project --with 'jsonschema==4.26.0' plugins/model-right-sizer/codex/experiments.py check
