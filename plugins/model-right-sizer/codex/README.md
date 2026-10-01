@@ -199,3 +199,10 @@ and are not issued again after delivery. Calibration rejects duplicate
 model/effort/task rows, including floor probes. Model-spread reports reject
 overlapping thread records, require thread IDs for definitive attribution and
 allow disjoint actual-model billing groups within one thread.
+
+Checker-owned standard-library imports are loaded before model modules become
+importable, and model helpers follow system modules on the import path. Pending
+warnings stay visible, including their exact delivery text, when a later usage
+observation is unavailable. Missing telemetry does not reset the last known
+cumulative baseline. Billing aggregation preserves measured groups alongside an
+explicit incomplete-group count; incomplete coverage cannot be definitive.

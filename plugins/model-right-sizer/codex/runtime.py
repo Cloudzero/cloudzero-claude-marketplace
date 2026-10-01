@@ -411,7 +411,8 @@ def observe(session, unit_id, observation, actual_model=None, actual_effort=None
     usage = observation['usage']
     if usage is not None:
         usage = normalize_usage(usage)
-        if previous.get('usage') and usage['total_tokens'] < previous['usage']['total_tokens']:
+        last_known = previous.get('usage') or previous.get('last_known_usage')
+        if last_known and usage['total_tokens'] < last_known['total_tokens']:
             raise ValueError('Observation must be cumulative for the unit; usage cannot decrease')
     if observation.get('scope') == 'thread_cumulative':
         raise ValueError('Thread totals need a start-of-unit baseline; use a dedicated thread or delta first')
@@ -420,9 +421,12 @@ def observe(session, unit_id, observation, actual_model=None, actual_effort=None
         saved['actual_model'] = actual_model
     if actual_effort is not None:
         saved['actual_effort'] = actual_effort
+    if usage is not None:
+        saved['last_known_usage'] = usage
     # A recommendation is never used as evidence of the actual selected model.
     if usage is None:
-        saved['guard'] = 'usage_unknown'
+        saved['guard'] = ('warning_already_delivered' if previous.get('warning_delivered') else
+                          'warning_pending_delivery' if previous.get('pending_warning') else 'usage_unknown')
         warning = None
     else:
         total = usage['total_tokens']
@@ -485,6 +489,7 @@ def report(session, rates=None):
                      'scores': stage.get('signals'), 'rationale': row['rationale'],
                      'actual_model': model, 'actual_effort': obs.get('actual_effort'), 'usage': usage,
                      'token_ceiling': ceiling, 'budget_adherence_ratio': (total / ceiling if ceiling and total is not None else None),
+                     'pending_warning': obs.get('pending_warning'),
                      'over_budget': total > ceiling if total is not None else None, 'warning_outcome': warning,
                      'schema_adherence': obs.get('schema_adherence', 'unknown'),
                      'wall_clock_seconds': obs.get('wall_clock_seconds'),

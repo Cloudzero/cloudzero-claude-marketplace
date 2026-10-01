@@ -287,3 +287,23 @@ def test_export_contains_attribution_without_prompt_content(session):
     assert value['cloudzero_ingestion'] == 'not_connected'
     assert value['records'][0]['record_id'].startswith('integration-test:')
     assert 'intent' not in json.dumps(value)
+
+
+def test_pending_warning_survives_unknown_usage_and_later_observation(session):
+    row=session['blueprint']['work_routing_map'][0];unit=row['id']
+    row['budget']['token_ceiling']=100;r.transition(session,unit,'in_progress')
+    def observation(n):return {'usage':{'input_tokens':n,'cached_input_tokens':0,'output_tokens':0}}
+    first=r.observe(session,unit,observation(70),next_turn=True)
+    unknown=r.observe(session,unit,{'usage':None},next_turn=True)
+    assert unknown['guard']=='warning_pending_delivery'
+    report=r.report(session)['rows'][0]
+    assert report['usage'] is None and report['warning_outcome']=='warning_pending_delivery'
+    assert report['pending_warning']==first['warning']
+    with pytest.raises(ValueError,match='cannot decrease'):
+        r.observe(session,unit,observation(60),next_turn=True)
+    r.observe(session,unit,observation(80),next_turn=True)
+    assert r.report(session)['rows'][0]['pending_warning']==first['warning']
+    r.mark_warning_delivered(session,unit,first['warning'])
+    r.observe(session,unit,{'usage':None},next_turn=True)
+    assert r.report(session)['rows'][0]['warning_outcome']=='warning_outcome_unknown'
+    assert r.report(session)['rows'][0]['pending_warning'] is None

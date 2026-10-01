@@ -14,14 +14,22 @@ import subprocess
 import sys
 import tempfile
 
-BOOTSTRAP = '''import resource, sys
+BOOTSTRAP = '''import ast, importlib, resource, sys
 resource.setrlimit(resource.RLIMIT_CPU, (10, 10))
 resource.setrlimit(resource.RLIMIT_AS, (268435456, 268435456))
 resource.setrlimit(resource.RLIMIT_FSIZE, (1048576, 1048576))
 resource.setrlimit(resource.RLIMIT_NOFILE, (64, 64))
 resource.setrlimit(resource.RLIMIT_NPROC, (64, 64))
-sys.path.insert(0, "/work")
-exec(compile(sys.stdin.read(), "<external-quality-check>", "exec"))
+check = sys.stdin.read()
+# Resolve checker-owned standard-library imports before any model module runs.
+# Model helpers remain importable, after trusted system modules on sys.path.
+for node in ast.walk(ast.parse(check)):
+    names = [alias.name for alias in node.names] if isinstance(node, ast.Import) else [node.module] if isinstance(node, ast.ImportFrom) and node.level == 0 else []
+    for name in names:
+        if name and name.split(".")[0] in sys.stdlib_module_names:
+            importlib.import_module(name)
+sys.path.append("/work")
+exec(compile(check, "<external-quality-check>", "exec"))
 '''
 
 

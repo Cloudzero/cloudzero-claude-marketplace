@@ -16,6 +16,7 @@ def model_spread(records, scope):
     unknown = 0
     unknown_usage = 0
     missing_ids = 0
+    incomplete_groups = 0
     threads = {}
     for record in records:
         model = record.get('actual_model')
@@ -29,6 +30,10 @@ def model_spread(records, scope):
             if previous and (record_scope != 'thread_model_group' or ('thread', None) in previous or identity in previous):
                 raise ValueError('Duplicate or overlapping thread records cannot establish definitive model spread')
             previous.add(identity)
+        incomplete = record.get('incomplete_usage_groups', 0)
+        if isinstance(incomplete,bool) or not isinstance(incomplete,int) or incomplete < 0:
+            raise ValueError('Incomplete billing group counts must be nonnegative integers')
+        incomplete_groups += incomplete
         usage = record.get('usage')
         if not usage:
             unknown_usage += 1; continue
@@ -47,8 +52,8 @@ def model_spread(records, scope):
         rows.append({'model':model,**value,'share_of_observed_tokens':value['total_tokens']/observed if observed else None})
     return {'scope':scope,'model_spread':rows,'observed_total_tokens':observed if observed else None,
             'unattributed_tokens':unknown,'records_with_unknown_usage':unknown_usage,
-            'records_without_thread_id':missing_ids,
-            'definitive_for_observed_records':bool(observed) and not unknown_usage and not missing_ids and unknown == 0,
+            'records_without_thread_id':missing_ids,'incomplete_usage_groups':incomplete_groups,
+            'definitive_for_observed_records':bool(observed) and not unknown_usage and not missing_ids and not incomplete_groups and unknown == 0,
             'account_wide_model_spread_available':False,
             'coverage_note':'These shares describe only the named observed dataset, not unobserved account history.'}
 
@@ -77,11 +82,13 @@ def account_usage_probe(thread_ids=()):
             for group in thread.get('groups',[]):
                 model = group.get('model')
                 entry = grouped.setdefault(model, {'thread_id':thread_id,'actual_model':model,
-                    'usage_scope':'thread_model_group','usage':{'input_tokens':0,'output_tokens':0}})
+                    'usage_scope':'thread_model_group','usage':None,'incomplete_usage_groups':0})
                 values = (group.get('inputTokens'), group.get('outputTokens'))
                 if any(isinstance(v,bool) or not isinstance(v,int) or v<0 for v in values):
-                    entry['usage'] = None
-                elif entry['usage'] is not None:
+                    entry['incomplete_usage_groups'] += 1
+                else:
+                    if entry['usage'] is None:
+                        entry['usage'] = {'input_tokens':0,'output_tokens':0}
                     entry['usage']['input_tokens'] += values[0]
                     entry['usage']['output_tokens'] += values[1]
             result['records'].extend(grouped.values())

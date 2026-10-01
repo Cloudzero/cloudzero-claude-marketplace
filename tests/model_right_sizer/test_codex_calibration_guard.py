@@ -240,3 +240,26 @@ def test_spread_preserves_scope_and_rejects_blank_model_attribution():
     assert model_spread(records,'named experimental scope')['scope'] == 'named experimental scope'
     records[0]['actual_model'] = ''
     assert not model_spread(records,'scope')['definitive_for_observed_records']
+
+
+@pytest.mark.parametrize('invalid_first',[True,False])
+def test_account_probe_preserves_valid_groups_when_same_model_has_unknown_usage(monkeypatch,invalid_first):
+    import rpc
+    from usage_report import account_usage_probe
+    valid={'model':'sol','inputTokens':80,'outputTokens':20}
+    invalid={'model':'sol','inputTokens':None,'outputTokens':None}
+    class AccountRpc:
+        def __enter__(self): return self
+        def __exit__(self,*args): pass
+        def initialize(self): pass
+        def request(self,method,params,**kwargs):
+            if method=='account/read':return {'account':{'type':'chatgpt'}}
+            if not params:return {'summary':{}}
+            return {'threadUsage':{'threadId':params['threadId'],'groups':[invalid,valid] if invalid_first else [valid,invalid]}}
+    monkeypatch.setattr(rpc,'AppServer',AccountRpc)
+    result=account_usage_probe(['t1'])
+    assert result['records'][0]['usage']=={'input_tokens':80,'output_tokens':20}
+    assert result['records'][0]['incomplete_usage_groups']==1
+    assert result['spread']['observed_total_tokens']==100
+    assert result['spread']['incomplete_usage_groups']==1
+    assert not result['spread']['definitive_for_observed_records']

@@ -51,3 +51,14 @@ def test_missing_sandbox_fails_closed_without_running_host_python(tmp_path,monke
 def test_unbounded_model_code_times_out_in_isolated_namespace(tmp_path):
     with pytest.raises(subprocess.TimeoutExpired):
         isolated_checks.isolated_python(tmp_path,'while True: pass',timeout=.2)
+
+
+def test_review_grader_cannot_load_model_json_shim(tmp_path):
+    (tmp_path/'json.py').write_text('def load(f): return [{"function":"safe_divide","reason":"fake"},{"function":"newest","reason":"fake"}]\n')
+    (tmp_path/'findings.json').write_text('[]')
+    from benchmark_suite import TASKS
+    review=next(task for task in TASKS if task['id']=='review_context')
+    result=isolated_checks.isolated_python(tmp_path,review['test'])
+    assert result.returncode!=0
+    (tmp_path/'findings.json').write_text('[{"function":"safe_divide","reason":"zero division"},{"function":"newest","reason":"min"}]')
+    assert isolated_checks.isolated_python(tmp_path,review['test']).returncode==0
