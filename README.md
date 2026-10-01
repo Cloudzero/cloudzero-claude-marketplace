@@ -33,6 +33,11 @@ A model-selection economist for Claude Code that keeps AI spend as intentional a
 
 See the [Model Right Sizer README](plugins/model-right-sizer/README.md) for full details.
 
+For Codex, use the [native main-agent integration](plugins/model-right-sizer/codex/README.md).
+It installs right-sizing and all eleven companion workflows as repository skills,
+without a separate economist agent. Its [parity checklist](plugins/model-right-sizer/codex/PARITY.md)
+records verified behavior and the remaining live-execution gaps.
+
 ## Table of Contents
 
 - [Repository Structure](#repository-structure)

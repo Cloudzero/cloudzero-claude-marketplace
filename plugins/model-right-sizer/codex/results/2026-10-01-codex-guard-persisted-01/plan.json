@@ -1,0 +1,7 @@
+{
+  "purpose": "test billing polling with a persisted main-agent thread",
+  "ceiling": 362114,
+  "ceiling_source": "matched baseline 0 in codex-guard-live-01",
+  "model": "gpt-6.1-sol",
+  "effort": "medium"
+}

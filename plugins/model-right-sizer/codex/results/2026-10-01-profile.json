@@ -1,0 +1,12 @@
+{
+  "runtime": "codex",
+  "profile_version": "dogfood-provisional-v1",
+  "models": {
+    "gpt-6-astra": {
+      "dispatch_floor": 10000,
+      "work_span": 60000,
+      "status": "provisional",
+      "assumption": "Planning fixture; these numbers are not measured Codex overhead."
+    }
+  }
+}

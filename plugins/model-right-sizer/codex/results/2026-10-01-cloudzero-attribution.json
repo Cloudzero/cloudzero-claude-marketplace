@@ -1,0 +1,85 @@
+{
+  "format": "cloudzero-model-right-sizer-attribution-v1",
+  "delivery": "local_only",
+  "cloudzero_ingestion": "not_connected",
+  "records": [
+    {
+      "record_id": "2026-10-01-main-agent-dogfood:build",
+      "session_id": "2026-10-01-main-agent-dogfood",
+      "unit_id": "build",
+      "status": "done",
+      "recommended": {
+        "model": "gpt-6-astra",
+        "effort": "medium",
+        "confidence": 70
+      },
+      "scores": {
+        "effectiveness": {
+          "score": 60,
+          "reason": "Money precision and invalid input must be correct."
+        },
+        "efficiency": {
+          "score": 45,
+          "reason": "One bounded local development task."
+        },
+        "difficulty": {
+          "score": 40,
+          "reason": "Known CSV and Decimal APIs."
+        }
+      },
+      "rationale": "Keep ambient main model; effort recommendation unapplied. Native additive budget is provisional and UNVALIDATED.",
+      "actual_model": null,
+      "actual_effort": null,
+      "usage": null,
+      "token_ceiling": 52000,
+      "budget_adherence_ratio": null,
+      "over_budget": null,
+      "warning_outcome": "usage_unknown",
+      "schema_adherence": "unknown",
+      "wall_clock_seconds": null,
+      "estimated_list_cost_usd": null,
+      "realized_spend": null,
+      "cost_basis": "API list-price estimate; not a subscription charge",
+      "price_sheet_freshness": "unverified"
+    },
+    {
+      "record_id": "2026-10-01-main-agent-dogfood:verify",
+      "session_id": "2026-10-01-main-agent-dogfood",
+      "unit_id": "verify",
+      "status": "done",
+      "recommended": {
+        "model": "gpt-6-astra",
+        "effort": "medium",
+        "confidence": 70
+      },
+      "scores": {
+        "effectiveness": {
+          "score": 60,
+          "reason": "Money precision and invalid input must be correct."
+        },
+        "efficiency": {
+          "score": 45,
+          "reason": "One bounded local development task."
+        },
+        "difficulty": {
+          "score": 40,
+          "reason": "Known CSV and Decimal APIs."
+        }
+      },
+      "rationale": "Keep ambient main model; effort recommendation unapplied. Native additive budget is provisional and UNVALIDATED.",
+      "actual_model": null,
+      "actual_effort": null,
+      "usage": null,
+      "token_ceiling": 58000,
+      "budget_adherence_ratio": null,
+      "over_budget": null,
+      "warning_outcome": "usage_unknown",
+      "schema_adherence": "unknown",
+      "wall_clock_seconds": null,
+      "estimated_list_cost_usd": null,
+      "realized_spend": null,
+      "cost_basis": "API list-price estimate; not a subscription charge",
+      "price_sheet_freshness": "unverified"
+    }
+  ]
+}

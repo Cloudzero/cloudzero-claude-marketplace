@@ -1,0 +1,83 @@
+{
+  "source": "codex_app_server_skills_list",
+  "repositories": [
+    {
+      "cwd": "/workspace/model-right-sizer-calibrated-dogfood",
+      "errors": [],
+      "skills": [
+        {
+          "name": "model-right-sizer",
+          "enabled": true,
+          "path": "/workspace/model-right-sizer-calibrated-dogfood/.agents/skills/model-right-sizer/SKILL.md",
+          "scope": "repo"
+        },
+        {
+          "name": "model-right-sizer-audit",
+          "enabled": true,
+          "path": "/workspace/model-right-sizer-calibrated-dogfood/.agents/skills/model-right-sizer-audit/SKILL.md",
+          "scope": "repo"
+        },
+        {
+          "name": "model-right-sizer-budget-guard",
+          "enabled": true,
+          "path": "/workspace/model-right-sizer-calibrated-dogfood/.agents/skills/model-right-sizer-budget-guard/SKILL.md",
+          "scope": "repo"
+        },
+        {
+          "name": "model-right-sizer-dryrun",
+          "enabled": true,
+          "path": "/workspace/model-right-sizer-calibrated-dogfood/.agents/skills/model-right-sizer-dryrun/SKILL.md",
+          "scope": "repo"
+        },
+        {
+          "name": "model-right-sizer-holdout-tuning",
+          "enabled": true,
+          "path": "/workspace/model-right-sizer-calibrated-dogfood/.agents/skills/model-right-sizer-holdout-tuning/SKILL.md",
+          "scope": "repo"
+        },
+        {
+          "name": "model-right-sizer-install",
+          "enabled": true,
+          "path": "/workspace/model-right-sizer-calibrated-dogfood/.agents/skills/model-right-sizer-install/SKILL.md",
+          "scope": "repo"
+        },
+        {
+          "name": "model-right-sizer-layer-ablation",
+          "enabled": true,
+          "path": "/workspace/model-right-sizer-calibrated-dogfood/.agents/skills/model-right-sizer-layer-ablation/SKILL.md",
+          "scope": "repo"
+        },
+        {
+          "name": "model-right-sizer-prompt-tuning",
+          "enabled": true,
+          "path": "/workspace/model-right-sizer-calibrated-dogfood/.agents/skills/model-right-sizer-prompt-tuning/SKILL.md",
+          "scope": "repo"
+        },
+        {
+          "name": "model-right-sizer-release-report",
+          "enabled": true,
+          "path": "/workspace/model-right-sizer-calibrated-dogfood/.agents/skills/model-right-sizer-release-report/SKILL.md",
+          "scope": "repo"
+        },
+        {
+          "name": "model-right-sizer-research-report",
+          "enabled": true,
+          "path": "/workspace/model-right-sizer-calibrated-dogfood/.agents/skills/model-right-sizer-research-report/SKILL.md",
+          "scope": "repo"
+        },
+        {
+          "name": "model-right-sizer-schema",
+          "enabled": true,
+          "path": "/workspace/model-right-sizer-calibrated-dogfood/.agents/skills/model-right-sizer-schema/SKILL.md",
+          "scope": "repo"
+        },
+        {
+          "name": "model-right-sizer-signal-validation",
+          "enabled": true,
+          "path": "/workspace/model-right-sizer-calibrated-dogfood/.agents/skills/model-right-sizer-signal-validation/SKILL.md",
+          "scope": "repo"
+        }
+      ]
+    }
+  ]
+}

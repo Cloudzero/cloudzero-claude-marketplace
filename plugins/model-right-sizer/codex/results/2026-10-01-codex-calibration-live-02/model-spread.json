@@ -1,0 +1,35 @@
+{
+  "scope": "all attempted calls in this calibration attempt, including failures with unknown usage",
+  "model_spread": [
+    {
+      "model": "gpt-6-luna",
+      "records": 16,
+      "input_tokens": 827346,
+      "output_tokens": 10442,
+      "total_tokens": 837788,
+      "share_of_observed_tokens": 0.33615728759153374
+    },
+    {
+      "model": "gpt-6-astra",
+      "records": 18,
+      "input_tokens": 822329,
+      "output_tokens": 13418,
+      "total_tokens": 835747,
+      "share_of_observed_tokens": 0.33533834888153274
+    },
+    {
+      "model": "gpt-6.1-sol",
+      "records": 15,
+      "input_tokens": 807506,
+      "output_tokens": 11209,
+      "total_tokens": 818715,
+      "share_of_observed_tokens": 0.3285043635269335
+    }
+  ],
+  "observed_total_tokens": 2492250,
+  "unattributed_tokens": 0,
+  "records_with_unknown_usage": 0,
+  "definitive_for_observed_records": true,
+  "account_wide_model_spread_available": false,
+  "coverage_note": "These shares describe only the named observed dataset, not unobserved account history."
+}
