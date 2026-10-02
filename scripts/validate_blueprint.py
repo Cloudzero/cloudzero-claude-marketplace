@@ -31,7 +31,8 @@ import json
 import sys
 from pathlib import Path
 
-from jsonschema import Draft202012Validator
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "plugins" / "model-right-sizer" / "eval"))
+from contracts import validate  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_PATH = REPO_ROOT / "plugins" / "model-right-sizer" / "schemas" / "blueprint.schema.json"
@@ -55,31 +56,6 @@ def load_json(path: Path) -> dict | None:
         fail(f"{path} is not valid JSON: {e}")
         return None
 
-
-def validate(schema: dict, instance: dict) -> list[str]:
-    """Return human-readable error strings for `instance` against `schema`; empty means conformant."""
-    schema_errors = sorted(
-        Draft202012Validator(schema).iter_errors(instance),
-        key=lambda e: [str(p) for p in e.path],
-    )
-    if schema_errors:
-        # A payload with structural violations may not have well-formed
-        # arrays to walk for the referential check below — report schema
-        # errors alone rather than risk a confusing secondary failure.
-        return [f"{'.'.join(str(p) for p in e.path) or '<root>'}: {e.message}" for e in schema_errors]
-
-    errors: list[str] = []
-    schema_ids = {row.get("id") for row in instance.get("message_schemas", [])}
-    valid_refs = schema_ids | NON_REFERENCE_HANDOFFS
-    for group in ("blueprint_rows", "work_routing_map"):
-        for row in instance.get(group, []):
-            ref = row.get("handoff_schema_ref")
-            if ref not in valid_refs:
-                errors.append(
-                    f"{group}[id={row.get('id')!r}].handoff_schema_ref: {ref!r} does not "
-                    f"match any message_schemas[].id (and isn't {sorted(NON_REFERENCE_HANDOFFS)!r})"
-                )
-    return errors
 
 
 def main() -> int:

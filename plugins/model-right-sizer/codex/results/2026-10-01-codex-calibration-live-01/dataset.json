@@ -1,0 +1,2501 @@
+{
+  "runtime": "codex",
+  "experiment_id": "codex-calibration-live-01",
+  "measurement_kind": "real_codex_execution",
+  "models": [
+    "gpt-6-luna",
+    "gpt-6.1-sol",
+    "gpt-6-astra"
+  ],
+  "effort": "medium",
+  "tasks": 12,
+  "floor_probes_per_model": 3,
+  "blind_draws": 3,
+  "completion_calls": 48,
+  "held_out_task_ids": [
+    "holdout_toposort",
+    "holdout_intervals",
+    "holdout_review",
+    "holdout_search"
+  ],
+  "harness_sha256": "8affff3aae02e3d8d29ee1ad8b11fa0048293e9a863aa127bcf737f329ffb4bb",
+  "rows": [
+    {
+      "thread_id": "01a0f580-43f7-7540-9b56-cce43856c3d4",
+      "actual_model": "gpt-6-luna",
+      "requested_model": "gpt-6-luna",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 13930,
+        "cached_input_tokens": 11008,
+        "output_tokens": 5,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 13935
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 3.3587932900009037,
+      "final_message": "READY",
+      "tool_commands": 0,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "floor-0",
+      "model": "gpt-6-luna",
+      "floor_probe": true,
+      "quality_passed": true
+    },
+    {
+      "thread_id": "01a0f580-511a-7f61-8977-07dd29696e7d",
+      "actual_model": "gpt-6-luna",
+      "requested_model": "gpt-6-luna",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 13930,
+        "cached_input_tokens": 11008,
+        "output_tokens": 5,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 13935
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 3.2050222589987243,
+      "final_message": "READY",
+      "tool_commands": 0,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "floor-1",
+      "model": "gpt-6-luna",
+      "floor_probe": true,
+      "quality_passed": true
+    },
+    {
+      "thread_id": "01a0f580-5da3-7fe1-a944-bd21b728a452",
+      "actual_model": "gpt-6-luna",
+      "requested_model": "gpt-6-luna",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 13930,
+        "cached_input_tokens": 11008,
+        "output_tokens": 5,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 13935
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 3.002891800000725,
+      "final_message": "READY",
+      "tool_commands": 0,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "floor-2",
+      "model": "gpt-6-luna",
+      "floor_probe": true,
+      "quality_passed": true
+    },
+    {
+      "thread_id": "01a0f580-6959-71e2-97ea-ff84a5bd7741",
+      "actual_model": "gpt-6.1-sol",
+      "requested_model": "gpt-6.1-sol",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 14630,
+        "cached_input_tokens": 12288,
+        "output_tokens": 5,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 14635
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 6.101823617998889,
+      "final_message": "READY",
+      "tool_commands": 0,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "floor-0",
+      "model": "gpt-6.1-sol",
+      "floor_probe": true,
+      "quality_passed": true
+    },
+    {
+      "thread_id": "01a0f580-812e-7a92-b4c0-840e09038a3b",
+      "actual_model": "gpt-6.1-sol",
+      "requested_model": "gpt-6.1-sol",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 14630,
+        "cached_input_tokens": 12288,
+        "output_tokens": 5,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 14635
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 4.51609399300105,
+      "final_message": "READY",
+      "tool_commands": 0,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "floor-1",
+      "model": "gpt-6.1-sol",
+      "floor_probe": true,
+      "quality_passed": true
+    },
+    {
+      "thread_id": "01a0f580-92da-7993-ad2c-ee2f64c798dd",
+      "actual_model": "gpt-6.1-sol",
+      "requested_model": "gpt-6.1-sol",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 14630,
+        "cached_input_tokens": 12288,
+        "output_tokens": 5,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 14635
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 4.817247986999064,
+      "final_message": "READY",
+      "tool_commands": 0,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "floor-2",
+      "model": "gpt-6.1-sol",
+      "floor_probe": true,
+      "quality_passed": true
+    },
+    {
+      "thread_id": "01a0f580-a5a4-7cf1-9cb9-341169aec29b",
+      "actual_model": "gpt-6-astra",
+      "requested_model": "gpt-6-astra",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 14558,
+        "cached_input_tokens": 12288,
+        "output_tokens": 5,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 14563
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 3.8955613750003977,
+      "final_message": "READY",
+      "tool_commands": 0,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "floor-0",
+      "model": "gpt-6-astra",
+      "floor_probe": true,
+      "quality_passed": true
+    },
+    {
+      "thread_id": "01a0f580-b4ed-74a3-a641-8a86b65f72c5",
+      "actual_model": "gpt-6-astra",
+      "requested_model": "gpt-6-astra",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 14558,
+        "cached_input_tokens": 12288,
+        "output_tokens": 5,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 14563
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 5.8254906040001515,
+      "final_message": "READY",
+      "tool_commands": 0,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "floor-1",
+      "model": "gpt-6-astra",
+      "floor_probe": true,
+      "quality_passed": true
+    },
+    {
+      "thread_id": "01a0f580-cb9f-7a10-9088-51e2f8c21c5e",
+      "actual_model": "gpt-6-astra",
+      "requested_model": "gpt-6-astra",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 14558,
+        "cached_input_tokens": 12288,
+        "output_tokens": 5,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 14563
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 4.57407422399956,
+      "final_message": "READY",
+      "tool_commands": 0,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "floor-2",
+      "model": "gpt-6-astra",
+      "floor_probe": true,
+      "quality_passed": true
+    },
+    {
+      "thread_id": "01a0f580-dd8d-7251-b1ab-7f90c8c0420b",
+      "actual_model": "gpt-6.1-sol",
+      "requested_model": "gpt-6.1-sol",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 44628,
+        "cached_input_tokens": 39168,
+        "output_tokens": 399,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 45027
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 19.94631594999919,
+      "final_message": "Created [solution.py](/workspace/codex-calibration-live-01/tasks/slug-gpt-6.1-sol-medium/solution.py) with `slug(text)` using only the standard library. All six checks passed.",
+      "tool_commands": 2,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "slug",
+      "model": "gpt-6.1-sol",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.1,
+            "content_volume": 0.03,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.05,
+            "context_ingestion_volume": 0.02,
+            "investigative_uncertainty": 0.01
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.1,
+            "content_volume": 0.04,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.05,
+            "context_ingestion_volume": 0.01,
+            "investigative_uncertainty": 0.01
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.1,
+            "content_volume": 0.03,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.05,
+            "context_ingestion_volume": 0.01,
+            "investigative_uncertainty": 0.02
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f580-ddbc-7ec3-9904-4210fbd7e903",
+      "actual_model": "gpt-6-astra",
+      "requested_model": "gpt-6-astra",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 44355,
+        "cached_input_tokens": 39040,
+        "output_tokens": 363,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 44718
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 20.797044433998963,
+      "final_message": "Created [solution.py](/workspace/codex-calibration-live-01/tasks/slug-gpt-6-astra-medium/solution.py) with `slug(text)`, using only Python\u2019s standard library. All six checks passed.",
+      "tool_commands": 2,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "slug",
+      "model": "gpt-6-astra",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.1,
+            "content_volume": 0.03,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.05,
+            "context_ingestion_volume": 0.02,
+            "investigative_uncertainty": 0.01
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.1,
+            "content_volume": 0.04,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.05,
+            "context_ingestion_volume": 0.01,
+            "investigative_uncertainty": 0.01
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.1,
+            "content_volume": 0.03,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.05,
+            "context_ingestion_volume": 0.01,
+            "investigative_uncertainty": 0.02
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f580-dd9c-74f2-899c-ba1e52d94f9b",
+      "actual_model": "gpt-6-luna",
+      "requested_model": "gpt-6-luna",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 56997,
+        "cached_input_tokens": 51200,
+        "output_tokens": 500,
+        "reasoning_output_tokens": 133,
+        "total_tokens": 57497
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 21.125316774001476,
+      "final_message": "Created [solution.py](/workspace/codex-calibration-live-01/tasks/slug-gpt-6-luna-medium/solution.py) with `slug(text)`. It lowercases and trims the input, replaces each run of non-ASCII-alphanumeric characters with one hyphen, and removes leading or trailing hyphens. No dependencies are used.",
+      "tool_commands": 2,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "slug",
+      "model": "gpt-6-luna",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.1,
+            "content_volume": 0.03,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.05,
+            "context_ingestion_volume": 0.02,
+            "investigative_uncertainty": 0.01
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.1,
+            "content_volume": 0.04,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.05,
+            "context_ingestion_volume": 0.01,
+            "investigative_uncertainty": 0.01
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.1,
+            "content_volume": 0.03,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.05,
+            "context_ingestion_volume": 0.01,
+            "investigative_uncertainty": 0.02
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f581-2b92-7bc3-82d8-f28e4c50bc4a",
+      "actual_model": "gpt-6-luna",
+      "requested_model": "gpt-6-luna",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 57326,
+        "cached_input_tokens": 51200,
+        "output_tokens": 788,
+        "reasoning_output_tokens": 334,
+        "total_tokens": 58114
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 21.144191903998944,
+      "final_message": "Created [solution.py](/workspace/codex-calibration-live-01/tasks/nested_merge-gpt-6-luna-medium/solution.py) with recursive dictionary merging. Values from `b` replace non-dictionary values, including lists; inputs remain unchanged.",
+      "tool_commands": 2,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "nested_merge",
+      "model": "gpt-6-luna",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.15,
+            "content_volume": 0.08,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.03,
+            "investigative_uncertainty": 0.05
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.15,
+            "content_volume": 0.08,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.1,
+            "context_ingestion_volume": 0.01,
+            "investigative_uncertainty": 0.03
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.15,
+            "content_volume": 0.08,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.02,
+            "investigative_uncertainty": 0.05
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f581-3041-74c3-8e1d-a3cea4512207",
+      "actual_model": "gpt-6-astra",
+      "requested_model": "gpt-6-astra",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 59890,
+        "cached_input_tokens": 54016,
+        "output_tokens": 698,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 60588
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 31.14242428000034,
+      "final_message": "Created [solution.py](solution.py) with `merge(a, b)`: recursive dictionary merging, `b` wins otherwise, lists replace, and deep copies preserve inputs. Standard library only.\n\nAll checks passed.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "nested_merge",
+      "model": "gpt-6-astra",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.15,
+            "content_volume": 0.08,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.03,
+            "investigative_uncertainty": 0.05
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.15,
+            "content_volume": 0.08,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.1,
+            "context_ingestion_volume": 0.01,
+            "investigative_uncertainty": 0.03
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.15,
+            "content_volume": 0.08,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.02,
+            "investigative_uncertainty": 0.05
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f581-2ecd-7440-a8ac-4e9acb8e68ac",
+      "actual_model": "gpt-6.1-sol",
+      "requested_model": "gpt-6.1-sol",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 60270,
+        "cached_input_tokens": 53632,
+        "output_tokens": 790,
+        "reasoning_output_tokens": 28,
+        "total_tokens": 61060
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 33.49438858999929,
+      "final_message": "Created [solution.py](/workspace/codex-calibration-live-01/tasks/nested_merge-gpt-6.1-sol-medium/solution.py) with `merge(a, b)`.\n\nIt recursively merges dictionaries, lets `b` win otherwise, replaces lists, and deep-copies values to preserve inputs. Uses only the standard library. All verification checks passed.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "nested_merge",
+      "model": "gpt-6.1-sol",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.15,
+            "content_volume": 0.08,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.03,
+            "investigative_uncertainty": 0.05
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.15,
+            "content_volume": 0.08,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.1,
+            "context_ingestion_volume": 0.01,
+            "investigative_uncertainty": 0.03
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.15,
+            "content_volume": 0.08,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.02,
+            "investigative_uncertainty": 0.05
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f581-7e33-7eb0-98cc-34532ad338f7",
+      "actual_model": "gpt-6-luna",
+      "requested_model": "gpt-6-luna",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 108729,
+        "cached_input_tokens": 98560,
+        "output_tokens": 2637,
+        "reasoning_output_tokens": 559,
+        "total_tokens": 111366
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 57.82348557200021,
+      "final_message": "Created [solution.py](/workspace/codex-calibration-live-01/tasks/csv_exact-gpt-6-luna-medium/solution.py) with exact Decimal totals, two-decimal string formatting, and validation for malformed rows, blank fields, invalid amounts, negatives, and nonfinite values.\n\nAdded [test_solution.py](/workspace/codex-calibration-live-01/tasks/csv_exact-gpt-6-luna-medium/test_solution.py). All 6 local tests pass.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "csv_exact",
+      "model": "gpt-6-luna",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.4,
+            "content_volume": 0.35,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.45,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.15
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.4,
+            "content_volume": 0.4,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.4,
+            "context_ingestion_volume": 0.02,
+            "investigative_uncertainty": 0.12
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.4,
+            "content_volume": 0.35,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.45,
+            "context_ingestion_volume": 0.03,
+            "investigative_uncertainty": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f581-a9de-7d70-803d-6dccbfb410a4",
+      "actual_model": "gpt-6.1-sol",
+      "requested_model": "gpt-6.1-sol",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 46889,
+        "cached_input_tokens": 39424,
+        "output_tokens": 2067,
+        "reasoning_output_tokens": 312,
+        "total_tokens": 48956
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 71.10459318599897,
+      "final_message": "Created `solution.py` with exact Decimal accumulation, strict validation, and two-decimal string totals. Fractions of a cent use half-even rounding after summation.\n\nAdded `test_solution.py`; all 6 tests pass with `python -m unittest -v`.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "csv_exact",
+      "model": "gpt-6.1-sol",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.4,
+            "content_volume": 0.35,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.45,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.15
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.4,
+            "content_volume": 0.4,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.4,
+            "context_ingestion_volume": 0.02,
+            "investigative_uncertainty": 0.12
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.4,
+            "content_volume": 0.35,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.45,
+            "context_ingestion_volume": 0.03,
+            "investigative_uncertainty": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f582-6025-7ab1-b95c-ea02bbd2f142",
+      "actual_model": "gpt-6-luna",
+      "requested_model": "gpt-6-luna",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 71738,
+        "cached_input_tokens": 63232,
+        "output_tokens": 713,
+        "reasoning_output_tokens": 153,
+        "total_tokens": 72451
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 27.795748422999168,
+      "final_message": "Created [solution.py](/workspace/codex-calibration-live-01/tasks/cross_files-gpt-6-luna-medium/solution.py). It uses `helpers.cents()`, reads the currency from `rates.json`, returns `(total_cents, currency)`, and raises `ValueError` for negative quantities. Line items are expected to contain `quantity` and `unit_price`.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "cross_files",
+      "model": "gpt-6-luna",
+      "quality_passed": false,
+      "quality": {
+        "passed": false,
+        "test_exit": 1,
+        "read_only_inputs_preserved": true,
+        "error": "Traceback (most recent call last):\n  File \"<string>\", line 2, in <module>\n  File \"/workspace/codex-calibration-live-01/tasks/cross_files-gpt-6-luna-medium/solution.py\", line 24, in invoice\n    total += cents(Decimal(str(line[\"unit_price\"])) * quantity)\n                               ~~~~^^^^^^^^^^^^^^\nKeyError: 'unit_price'\n"
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.3,
+            "content_volume": 0.1,
+            "cross_reference_load": 0.6,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.06,
+            "investigative_uncertainty": 0.1
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.3,
+            "content_volume": 0.1,
+            "cross_reference_load": 0.6,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.1
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.3,
+            "content_volume": 0.1,
+            "cross_reference_load": 0.65,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.05,
+            "investigative_uncertainty": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f581-b1b6-7a81-8505-4359cedecd30",
+      "actual_model": "gpt-6-astra",
+      "requested_model": "gpt-6-astra",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 62134,
+        "cached_input_tokens": 53632,
+        "output_tokens": 2236,
+        "reasoning_output_tokens": 426,
+        "total_tokens": 64370
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 77.77814068999942,
+      "final_message": "Created `solution.py` with exact Decimal accumulation, strict field validation, and two-decimal string totals. Final rounding uses half-even.\n\nAdded local tests in `test_solution.py`; all 7 pass with `python -m unittest -v`.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "csv_exact",
+      "model": "gpt-6-astra",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.4,
+            "content_volume": 0.35,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.45,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.15
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.4,
+            "content_volume": 0.4,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.4,
+            "context_ingestion_volume": 0.02,
+            "investigative_uncertainty": 0.12
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.4,
+            "content_volume": 0.35,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.45,
+            "context_ingestion_volume": 0.03,
+            "investigative_uncertainty": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f582-e19f-7162-b564-bc7afa2f91fb",
+      "actual_model": "gpt-6-luna",
+      "requested_model": "gpt-6-luna",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 56587,
+        "cached_input_tokens": 51200,
+        "output_tokens": 339,
+        "reasoning_output_tokens": 49,
+        "total_tokens": 56926
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 14.46499892599968,
+      "final_message": "Updated [part_11.py](/workspace/codex-calibration-live-01/tasks/search_bug-gpt-6-luna-medium/parts/part_11.py:1) so `lower_bound` returns the first index whose value is greater than or equal to the target, or `len(values)` when none exists. The public signature is unchanged.",
+      "tool_commands": 2,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "search_bug",
+      "model": "gpt-6-luna",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.35,
+            "content_volume": 0.08,
+            "cross_reference_load": 0.1,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.12,
+            "investigative_uncertainty": 0.4
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.4,
+            "content_volume": 0.08,
+            "cross_reference_load": 0.1,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.12,
+            "investigative_uncertainty": 0.4
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.35,
+            "content_volume": 0.07,
+            "cross_reference_load": 0.1,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.15,
+            "investigative_uncertainty": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f582-bfc9-71e1-b59c-0344be6c81ae",
+      "actual_model": "gpt-6.1-sol",
+      "requested_model": "gpt-6.1-sol",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 60387,
+        "cached_input_tokens": 56320,
+        "output_tokens": 755,
+        "reasoning_output_tokens": 137,
+        "total_tokens": 61142
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 31.794825541001046,
+      "final_message": "Created [solution.py](/workspace/codex-calibration-live-01/tasks/cross_files-gpt-6.1-sol-medium/solution.py). `invoice(lines)` accepts `price`/`quantity` records, uses `helpers.cents()`, reads currency from `rates.json`, and returns `{\"total_cents\": int, \"currency\": str}`. Negative quantities raise `ValueError`.\n\nVerification checks passed.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "cross_files",
+      "model": "gpt-6.1-sol",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.3,
+            "content_volume": 0.1,
+            "cross_reference_load": 0.6,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.06,
+            "investigative_uncertainty": 0.1
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.3,
+            "content_volume": 0.1,
+            "cross_reference_load": 0.6,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.1
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.3,
+            "content_volume": 0.1,
+            "cross_reference_load": 0.65,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.05,
+            "investigative_uncertainty": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f582-ccd7-7dc3-a7e8-b8aca76434ea",
+      "actual_model": "gpt-6-astra",
+      "requested_model": "gpt-6-astra",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 59667,
+        "cached_input_tokens": 53632,
+        "output_tokens": 708,
+        "reasoning_output_tokens": 97,
+        "total_tokens": 60375
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 30.599928802999784,
+      "final_message": "Created `solution.py` with `invoice(lines)`, using `price` and integer `quantity` fields. It reuses `helpers.cents()`, reads currency from `rates.json`, and returns `{\"total_cents\": ..., \"currency\": ...}`.\n\nNegative quantities raise `ValueError`. Checks passed for totals, empty invoices, zero quantities, and negative quantities.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "cross_files",
+      "model": "gpt-6-astra",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.3,
+            "content_volume": 0.1,
+            "cross_reference_load": 0.6,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.06,
+            "investigative_uncertainty": 0.1
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.3,
+            "content_volume": 0.1,
+            "cross_reference_load": 0.6,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.1
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.3,
+            "content_volume": 0.1,
+            "cross_reference_load": 0.65,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.05,
+            "investigative_uncertainty": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f583-1a2c-7c82-9a5d-d82fecd676cd",
+      "actual_model": "gpt-6.1-sol",
+      "requested_model": "gpt-6.1-sol",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 60394,
+        "cached_input_tokens": 53760,
+        "output_tokens": 557,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 60951
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 25.857146608999756,
+      "final_message": "Found and fixed [lower_bound in parts/part_11.py](/workspace/codex-calibration-live-01/tasks/search_bug-gpt-6.1-sol-medium/parts/part_11.py:1): changed `>` to `>=`, preserving its public signature and `len(values)` fallback.\n\nVerified 3,234 cases against `bisect_left`, including empty inputs, duplicates, and absent targets.",
+      "tool_commands": 4,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "search_bug",
+      "model": "gpt-6.1-sol",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.35,
+            "content_volume": 0.08,
+            "cross_reference_load": 0.1,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.12,
+            "investigative_uncertainty": 0.4
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.4,
+            "content_volume": 0.08,
+            "cross_reference_load": 0.1,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.12,
+            "investigative_uncertainty": 0.4
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.35,
+            "content_volume": 0.07,
+            "cross_reference_load": 0.1,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.15,
+            "investigative_uncertainty": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f583-4473-7631-a592-2d3ad1d62707",
+      "actual_model": "gpt-6-luna",
+      "requested_model": "gpt-6-luna",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 77023,
+        "cached_input_tokens": 68352,
+        "output_tokens": 459,
+        "reasoning_output_tokens": 102,
+        "total_tokens": 77482
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 16.180832411000665,
+      "final_message": "Created [findings.json](/workspace/codex-calibration-live-01/tasks/review_context-gpt-6-luna-medium/findings.json) with the two broken function identifiers and a short reason for each. `long_module.py` is unchanged.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "review_context",
+      "model": "gpt-6-luna",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.35,
+            "content_volume": 0.08,
+            "cross_reference_load": 0.05,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.85,
+            "investigative_uncertainty": 0.65
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.35,
+            "content_volume": 0.08,
+            "cross_reference_load": 0.1,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.85,
+            "investigative_uncertainty": 0.65
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.3,
+            "content_volume": 0.08,
+            "cross_reference_load": 0.1,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.95,
+            "investigative_uncertainty": 0.65
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f583-3c08-7870-b226-cfb7a00e539c",
+      "actual_model": "gpt-6-astra",
+      "requested_model": "gpt-6-astra",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 76717,
+        "cached_input_tokens": 69888,
+        "output_tokens": 608,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 77325
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 29.07601633900049,
+      "final_message": "Located and fixed [parts/part_11.py](/workspace/codex-calibration-live-01/tasks/search_bug-gpt-6-astra-medium/parts/part_11.py:1). Changed `>` to `>=`, preserving the public signature and `len(values)` fallback.\n\nAll 8 boundary checks passed, including empty input, duplicates, exact matches, and absent targets.",
+      "tool_commands": 4,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "search_bug",
+      "model": "gpt-6-astra",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.35,
+            "content_volume": 0.08,
+            "cross_reference_load": 0.1,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.12,
+            "investigative_uncertainty": 0.4
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.4,
+            "content_volume": 0.08,
+            "cross_reference_load": 0.1,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.12,
+            "investigative_uncertainty": 0.4
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.35,
+            "content_volume": 0.07,
+            "cross_reference_load": 0.1,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.15,
+            "investigative_uncertainty": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f583-7f39-7751-83a3-228d43271d77",
+      "actual_model": "gpt-6.1-sol",
+      "requested_model": "gpt-6.1-sol",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 64699,
+        "cached_input_tokens": 58624,
+        "output_tokens": 531,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 65230
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 25.304981540999506,
+      "final_message": "Created [findings.json](/workspace/codex-calibration-live-01/tasks/review_context-gpt-6.1-sol-medium/findings.json) identifying exactly `safe_divide` and `newest`, with brief reasons. Inspected the whole file and verified all 150 helpers. The module is unchanged.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "review_context",
+      "model": "gpt-6.1-sol",
+      "quality_passed": false,
+      "quality": {
+        "passed": false,
+        "test_exit": 1,
+        "read_only_inputs_preserved": true,
+        "error": "Traceback (most recent call last):\n  File \"<string>\", line 3, in <module>\nKeyError: 'function'\n"
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.35,
+            "content_volume": 0.08,
+            "cross_reference_load": 0.05,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.85,
+            "investigative_uncertainty": 0.65
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.35,
+            "content_volume": 0.08,
+            "cross_reference_load": 0.1,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.85,
+            "investigative_uncertainty": 0.65
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.3,
+            "content_volume": 0.08,
+            "cross_reference_load": 0.1,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.95,
+            "investigative_uncertainty": 0.65
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f583-83d4-7640-926c-56d91d743641",
+      "actual_model": "gpt-6-astra",
+      "requested_model": "gpt-6-astra",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 80807,
+        "cached_input_tokens": 74624,
+        "output_tokens": 609,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 81416
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 30.507822892999684,
+      "final_message": "Created [findings.json](findings.json) identifying exactly `safe_divide` and `newest`, with short reasons. Inspected all 152 functions and left `long_module.py` unchanged.",
+      "tool_commands": 4,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "review_context",
+      "model": "gpt-6-astra",
+      "quality_passed": false,
+      "quality": {
+        "passed": false,
+        "test_exit": 1,
+        "read_only_inputs_preserved": true,
+        "error": "Traceback (most recent call last):\n  File \"<string>\", line 3, in <module>\nKeyError: 'function'\n"
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.35,
+            "content_volume": 0.08,
+            "cross_reference_load": 0.05,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.85,
+            "investigative_uncertainty": 0.65
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.35,
+            "content_volume": 0.08,
+            "cross_reference_load": 0.1,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.85,
+            "investigative_uncertainty": 0.65
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.3,
+            "content_volume": 0.08,
+            "cross_reference_load": 0.1,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.95,
+            "investigative_uncertainty": 0.65
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f583-ada5-7980-8ddd-7c221495cc78",
+      "actual_model": "gpt-6-luna",
+      "requested_model": "gpt-6-luna",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 87244,
+        "cached_input_tokens": 79360,
+        "output_tokens": 1070,
+        "reasoning_output_tokens": 80,
+        "total_tokens": 88314
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 30.479083561000152,
+      "final_message": "Updated [solution.py](/workspace/codex-calibration-live-01/tasks/validation_fix-gpt-6-luna-medium/solution.py) to return every full window\u2019s arithmetic mean, reject nonpositive widths, and return `[]` when the width exceeds the input length. Added tests in [test_solution.py](/workspace/codex-calibration-live-01/tasks/validation_fix-gpt-6-luna-medium/test_solution.py) for those cases, including negative and fractional values.\n\nAll 5 tests pass with `python -m unittest -v`.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "validation_fix",
+      "model": "gpt-6-luna",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.45,
+            "content_volume": 0.22,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.6,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.15
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.4,
+            "content_volume": 0.25,
+            "cross_reference_load": 0.05,
+            "validation_loop_iterations": 0.45,
+            "context_ingestion_volume": 0.03,
+            "investigative_uncertainty": 0.1
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.45,
+            "content_volume": 0.25,
+            "cross_reference_load": 0.05,
+            "validation_loop_iterations": 0.6,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f583-e236-75d3-9538-ebaf494b4f91",
+      "actual_model": "gpt-6.1-sol",
+      "requested_model": "gpt-6.1-sol",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 60773,
+        "cached_input_tokens": 54272,
+        "output_tokens": 921,
+        "reasoning_output_tokens": 27,
+        "total_tokens": 61694
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 38.722580607000054,
+      "final_message": "Fixed `sliding_mean` to include every full window, use true division, and raise `ValueError` for `width <= 0`. Oversized windows return `[]`.\n\nAdded 8 tests covering boundaries, negative numbers, and fractions. All pass with `python -m unittest discover -v`.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "validation_fix",
+      "model": "gpt-6.1-sol",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.45,
+            "content_volume": 0.22,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.6,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.15
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.4,
+            "content_volume": 0.25,
+            "cross_reference_load": 0.05,
+            "validation_loop_iterations": 0.45,
+            "context_ingestion_volume": 0.03,
+            "investigative_uncertainty": 0.1
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.45,
+            "content_volume": 0.25,
+            "cross_reference_load": 0.05,
+            "validation_loop_iterations": 0.6,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f583-faff-78c2-8636-184ba4fda93b",
+      "actual_model": "gpt-6-astra",
+      "requested_model": "gpt-6-astra",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 60478,
+        "cached_input_tokens": 56192,
+        "output_tokens": 911,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 61389
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 39.322613297001226,
+      "final_message": "Fixed `sliding_mean` to include every full window, use true division, and raise `ValueError` for `width <= 0`. Oversized windows return `[]`; negative and fractional values work correctly.\n\nAdded 8 tests. All pass with `python -m unittest discover -v`.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "validation_fix",
+      "model": "gpt-6-astra",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.45,
+            "content_volume": 0.22,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.6,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.15
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.4,
+            "content_volume": 0.25,
+            "cross_reference_load": 0.05,
+            "validation_loop_iterations": 0.45,
+            "context_ingestion_volume": 0.03,
+            "investigative_uncertainty": 0.1
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.45,
+            "content_volume": 0.25,
+            "cross_reference_load": 0.05,
+            "validation_loop_iterations": 0.6,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f584-24c8-75c3-81a5-47aae128dc46",
+      "actual_model": "gpt-6-luna",
+      "requested_model": "gpt-6-luna",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 75162,
+        "cached_input_tokens": 66304,
+        "output_tokens": 1469,
+        "reasoning_output_tokens": 279,
+        "total_tokens": 76631
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 34.818153714999426,
+      "final_message": "Created [solution.py](/workspace/codex-calibration-live-01/tasks/migration-gpt-6-luna-medium/solution.py) with deep-copy migration from v1 to v2, idempotent handling of v2, and errors for unsupported versions. Added [README.md](/workspace/codex-calibration-live-01/tasks/migration-gpt-6-luna-medium/README.md) documenting the behavior and three examples. I did not run tests.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "migration",
+      "model": "gpt-6-luna",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.25,
+            "content_volume": 0.35,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.08
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.25,
+            "content_volume": 0.35,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.02,
+            "investigative_uncertainty": 0.05
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.25,
+            "content_volume": 0.35,
+            "cross_reference_load": 0.05,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.03,
+            "investigative_uncertainty": 0.08
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f584-7979-7f53-b48c-ab229763e244",
+      "actual_model": "gpt-6.1-sol",
+      "requested_model": "gpt-6.1-sol",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 60838,
+        "cached_input_tokens": 56320,
+        "output_tokens": 1253,
+        "reasoning_output_tokens": 48,
+        "total_tokens": 62091
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 49.07010964999972,
+      "final_message": "Created `solution.py` with v1-to-v2 migration, deep-copy preservation, idempotent v2 handling, and unsupported-version rejection.\n\nAdded `README.md` with documentation and three examples. All migration checks passed.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "migration",
+      "model": "gpt-6.1-sol",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.25,
+            "content_volume": 0.35,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.08
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.25,
+            "content_volume": 0.35,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.02,
+            "investigative_uncertainty": 0.05
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.25,
+            "content_volume": 0.35,
+            "cross_reference_load": 0.05,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.03,
+            "investigative_uncertainty": 0.08
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f584-94a6-7391-a883-0c75cea2372e",
+      "actual_model": "gpt-6-astra",
+      "requested_model": "gpt-6-astra",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 45783,
+        "cached_input_tokens": 39040,
+        "output_tokens": 1329,
+        "reasoning_output_tokens": 37,
+        "total_tokens": 47112
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 51.09733892500117,
+      "final_message": "Created `solution.py` with deep-copy migration, idempotent v2 handling, and unsupported-version rejection.\n\nAdded `README.md` documenting behavior with three examples. All examples and migration checks passed.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "migration",
+      "model": "gpt-6-astra",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.25,
+            "content_volume": 0.35,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.08
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.25,
+            "content_volume": 0.35,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.02,
+            "investigative_uncertainty": 0.05
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.25,
+            "content_volume": 0.35,
+            "cross_reference_load": 0.05,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.03,
+            "investigative_uncertainty": 0.08
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f584-ace3-7483-8016-d8594465811a",
+      "actual_model": "gpt-6-luna",
+      "requested_model": "gpt-6-luna",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 75081,
+        "cached_input_tokens": 66304,
+        "output_tokens": 2085,
+        "reasoning_output_tokens": 387,
+        "total_tokens": 77166
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 47.15583998299917,
+      "final_message": "Implemented `topo(graph)` in [solution.py](/workspace/codex-calibration-live-01/tasks/holdout_toposort-gpt-6-luna-medium/solution.py). It returns a deterministic prerequisite-first order, includes prerequisite-only nodes, raises `ValueError` for cycles, and leaves the input unchanged.\n\nAdded six tests in [test_solution.py](/workspace/codex-calibration-live-01/tasks/holdout_toposort-gpt-6-luna-medium/test_solution.py). All passed with `python -m unittest -v`.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "holdout_toposort",
+      "model": "gpt-6-luna",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.45,
+            "content_volume": 0.35,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.45,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.15
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.4,
+            "content_volume": 0.4,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.4,
+            "context_ingestion_volume": 0.02,
+            "investigative_uncertainty": 0.12
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.45,
+            "content_volume": 0.4,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.45,
+            "context_ingestion_volume": 0.03,
+            "investigative_uncertainty": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f585-654a-7091-9faf-1d35a38a6af7",
+      "actual_model": "gpt-6-luna",
+      "requested_model": "gpt-6-luna",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 89447,
+        "cached_input_tokens": 80384,
+        "output_tokens": 1269,
+        "reasoning_output_tokens": 256,
+        "total_tokens": 90716
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 37.76000027500049,
+      "final_message": "Created [solution.py](/workspace/codex-calibration-live-01/tasks/holdout_intervals-gpt-6-luna-medium/solution.py) to sort and merge overlapping or touching closed intervals, raise `ValueError` for reversed intervals, and leave the input unchanged. Added coverage for these cases and empty input in [test_solution.py](/workspace/codex-calibration-live-01/tasks/holdout_intervals-gpt-6-luna-medium/test_solution.py). I didn\u2019t run the tests.",
+      "tool_commands": 4,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "holdout_intervals",
+      "model": "gpt-6-luna",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.3,
+            "content_volume": 0.22,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.3,
+            "context_ingestion_volume": 0.03,
+            "investigative_uncertainty": 0.08
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.3,
+            "content_volume": 0.25,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.25,
+            "context_ingestion_volume": 0.02,
+            "investigative_uncertainty": 0.05
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.3,
+            "content_volume": 0.25,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.3,
+            "context_ingestion_volume": 0.02,
+            "investigative_uncertainty": 0.08
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f585-5c54-7383-8879-3535b9abef4e",
+      "actual_model": "gpt-6-astra",
+      "requested_model": "gpt-6-astra",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 61104,
+        "cached_input_tokens": 56192,
+        "output_tokens": 1544,
+        "reasoning_output_tokens": 71,
+        "total_tokens": 62648
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 55.69716576600149,
+      "final_message": "Implemented `solution.py` with `topo(graph)`: includes prerequisite-only nodes, rejects cycles with `ValueError`, and preserves input. Ties follow encounter order.\n\nAdded 8 tests; all pass with `python -m unittest -v`.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "holdout_toposort",
+      "model": "gpt-6-astra",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.45,
+            "content_volume": 0.35,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.45,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.15
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.4,
+            "content_volume": 0.4,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.4,
+            "context_ingestion_volume": 0.02,
+            "investigative_uncertainty": 0.12
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.45,
+            "content_volume": 0.4,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.45,
+            "context_ingestion_volume": 0.03,
+            "investigative_uncertainty": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f585-3932-70a0-8c7a-808e23540ae3",
+      "actual_model": "gpt-6.1-sol",
+      "requested_model": "gpt-6.1-sol",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 61569,
+        "cached_input_tokens": 53760,
+        "output_tokens": 1694,
+        "reasoning_output_tokens": 155,
+        "total_tokens": 63263
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 69.38684523200027,
+      "final_message": "Created `solution.py` with `topo(graph)`: includes prerequisite-only nodes, rejects cycles with `ValueError`, preserves the graph, and deterministically breaks ties by input iteration order.\n\nAdded 8 tests. All pass with `python -m unittest -v`.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "holdout_toposort",
+      "model": "gpt-6.1-sol",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.45,
+            "content_volume": 0.35,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.45,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.15
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.4,
+            "content_volume": 0.4,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.4,
+            "context_ingestion_volume": 0.02,
+            "investigative_uncertainty": 0.12
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.45,
+            "content_volume": 0.4,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.45,
+            "context_ingestion_volume": 0.03,
+            "investigative_uncertainty": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f586-484d-7b72-820d-1c12d099e4e3",
+      "actual_model": "gpt-6-luna",
+      "requested_model": "gpt-6-luna",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 56803,
+        "cached_input_tokens": 51200,
+        "output_tokens": 393,
+        "reasoning_output_tokens": 53,
+        "total_tokens": 57196
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 15.877482268999302,
+      "final_message": "Created [findings.json](/workspace/codex-calibration-live-01/tasks/holdout_review-gpt-6-luna-medium/findings.json) with the two faulty function identifiers and explanations. `quota.py` is unchanged.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "holdout_review",
+      "model": "gpt-6-luna",
+      "quality_passed": false,
+      "quality": {
+        "passed": false,
+        "test_exit": 1,
+        "read_only_inputs_preserved": true,
+        "error": "Traceback (most recent call last):\n  File \"<string>\", line 3, in <module>\nAssertionError\n"
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.15,
+            "content_volume": 0.07,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.05,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.15
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.2,
+            "content_volume": 0.07,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.05,
+            "context_ingestion_volume": 0.03,
+            "investigative_uncertainty": 0.15
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.15,
+            "content_volume": 0.07,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.1,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.2
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f585-f8fb-73f2-8f1a-ab8727a5521a",
+      "actual_model": "gpt-6.1-sol",
+      "requested_model": "gpt-6.1-sol",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 60842,
+        "cached_input_tokens": 53760,
+        "output_tokens": 1057,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 61899
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 42.79766017700058,
+      "final_message": "Created `solution.py` with `union(intervals)`, returning sorted tuples, merging overlaps and touching endpoints, rejecting reversed intervals with `ValueError`, and preserving input.\n\nAdded 8 tests in `test_solution.py`. All pass with `python -m unittest -v`.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "holdout_intervals",
+      "model": "gpt-6.1-sol",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.3,
+            "content_volume": 0.22,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.3,
+            "context_ingestion_volume": 0.03,
+            "investigative_uncertainty": 0.08
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.3,
+            "content_volume": 0.25,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.25,
+            "context_ingestion_volume": 0.02,
+            "investigative_uncertainty": 0.05
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.3,
+            "content_volume": 0.25,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.3,
+            "context_ingestion_volume": 0.02,
+            "investigative_uncertainty": 0.08
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f586-8668-7431-9dcf-844405269619",
+      "actual_model": "gpt-6.1-sol",
+      "requested_model": "gpt-6.1-sol",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 59802,
+        "cached_input_tokens": 53632,
+        "output_tokens": 393,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 60195
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 24.82374056700064,
+      "final_message": "Created [findings.json](/workspace/codex-calibration-live-01/tasks/holdout_review-gpt-6.1-sol-medium/findings.json) naming exactly `exhausted` and `remaining` and explaining both bugs. JSON validation passed. `quota.py` was not edited.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "holdout_review",
+      "model": "gpt-6.1-sol",
+      "quality_passed": false,
+      "quality": {
+        "passed": false,
+        "test_exit": 1,
+        "read_only_inputs_preserved": true,
+        "error": "Traceback (most recent call last):\n  File \"<string>\", line 2, in <module>\nTypeError: string indices must be integers, not 'str'\n"
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.15,
+            "content_volume": 0.07,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.05,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.15
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.2,
+            "content_volume": 0.07,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.05,
+            "context_ingestion_volume": 0.03,
+            "investigative_uncertainty": 0.15
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.15,
+            "content_volume": 0.07,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.1,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.2
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f586-35ed-72f3-9cba-10a5a2b845b4",
+      "actual_model": "gpt-6-astra",
+      "requested_model": "gpt-6-astra",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 60772,
+        "cached_input_tokens": 56192,
+        "output_tokens": 1223,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 61995
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 46.84969484600151,
+      "final_message": "Created `solution.py` with `union(intervals)`: returns sorted tuples, merges overlapping or touching intervals, rejects reversed intervals with `ValueError`, preserves input, and handles empty lists.\n\nAdded 10 tests in `test_solution.py`. All pass with `python -m unittest -v`.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "holdout_intervals",
+      "model": "gpt-6-astra",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.3,
+            "content_volume": 0.22,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.3,
+            "context_ingestion_volume": 0.03,
+            "investigative_uncertainty": 0.08
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.3,
+            "content_volume": 0.25,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.25,
+            "context_ingestion_volume": 0.02,
+            "investigative_uncertainty": 0.05
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.3,
+            "content_volume": 0.25,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.3,
+            "context_ingestion_volume": 0.02,
+            "investigative_uncertainty": 0.08
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f586-9ff5-77d3-a32b-449951d14a73",
+      "actual_model": "gpt-6-astra",
+      "requested_model": "gpt-6-astra",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 59512,
+        "cached_input_tokens": 51328,
+        "output_tokens": 482,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 59994
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 26.029582617000415,
+      "final_message": "Created [findings.json](findings.json) naming exactly `exhausted` and `remaining` and explaining both bugs. Validated the JSON and confirmed `quota.py` is unchanged.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "holdout_review",
+      "model": "gpt-6-astra",
+      "quality_passed": false,
+      "quality": {
+        "passed": false,
+        "test_exit": 1,
+        "read_only_inputs_preserved": true,
+        "error": "Traceback (most recent call last):\n  File \"<string>\", line 3, in <module>\nAssertionError\n"
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.15,
+            "content_volume": 0.07,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.05,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.15
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.2,
+            "content_volume": 0.07,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.05,
+            "context_ingestion_volume": 0.03,
+            "investigative_uncertainty": 0.15
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.15,
+            "content_volume": 0.07,
+            "cross_reference_load": 0,
+            "validation_loop_iterations": 0.1,
+            "context_ingestion_volume": 0.04,
+            "investigative_uncertainty": 0.2
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f586-e772-73a2-a7e9-b2acedc3f753",
+      "actual_model": "gpt-6-luna",
+      "requested_model": "gpt-6-luna",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 85732,
+        "cached_input_tokens": 79360,
+        "output_tokens": 413,
+        "reasoning_output_tokens": 12,
+        "total_tokens": 86145
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 23.367193354999472,
+      "final_message": "Updated [c_7.py](/workspace/codex-calibration-live-01/tasks/holdout_search-gpt-6-luna-medium/components/c_7.py) so `checksum(text)` sums the UTF-8 bytes modulo 256. Verified it with the non-ASCII input `\"caf\u00e9\"`; the result was 150.",
+      "tool_commands": 4,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "holdout_search",
+      "model": "gpt-6-luna",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.35,
+            "content_volume": 0.05,
+            "cross_reference_load": 0.08,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.08,
+            "investigative_uncertainty": 0.3
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.35,
+            "content_volume": 0.05,
+            "cross_reference_load": 0.05,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.07,
+            "investigative_uncertainty": 0.3
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.35,
+            "content_volume": 0.05,
+            "cross_reference_load": 0.05,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.08,
+            "investigative_uncertainty": 0.4
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f586-ecfd-7612-be8a-4df974adc319",
+      "actual_model": "gpt-6.1-sol",
+      "requested_model": "gpt-6.1-sol",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 76289,
+        "cached_input_tokens": 69120,
+        "output_tokens": 628,
+        "reasoning_output_tokens": 45,
+        "total_tokens": 76917
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 31.201942399000473,
+      "final_message": "Updated [components/c_7.py](/workspace/codex-calibration-live-01/tasks/holdout_search-gpt-6.1-sol-medium/components/c_7.py:1) to sum UTF-8 bytes modulo 256, preserving `checksum(text)` and all other modules.\n\nTests passed for `\u00e9` \u2192 108, `\u4f60\u597d` \u2192 136, ASCII, and empty input. Corrected an initially miscalculated test expectation for `\u4f60\u597d`.",
+      "tool_commands": 4,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "holdout_search",
+      "model": "gpt-6.1-sol",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.35,
+            "content_volume": 0.05,
+            "cross_reference_load": 0.08,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.08,
+            "investigative_uncertainty": 0.3
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.35,
+            "content_volume": 0.05,
+            "cross_reference_load": 0.05,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.07,
+            "investigative_uncertainty": 0.3
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.35,
+            "content_volume": 0.05,
+            "cross_reference_load": 0.05,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.08,
+            "investigative_uncertainty": 0.4
+          }
+        }
+      ]
+    },
+    {
+      "thread_id": "01a0f587-05af-7f63-9d1c-8a27cbb1c931",
+      "actual_model": "gpt-6-astra",
+      "requested_model": "gpt-6-astra",
+      "effort": "medium",
+      "usage": {
+        "input_tokens": 60384,
+        "cached_input_tokens": 41472,
+        "output_tokens": 428,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 60812
+      },
+      "usage_source": "codex_app_server",
+      "wall_clock_seconds": 28.68150437800068,
+      "final_message": "Updated [components/c_7.py](components/c_7.py) to compute `sum(text.encode('utf-8')) % 256`, preserving `checksum(text)` and all other modules.\n\nTests passed for empty, ASCII, and non-ASCII input: `\u00e9` \u2192 108, `\u20ac` \u2192 16, `\ud83d\ude00` \u2192 167.",
+      "tool_commands": 3,
+      "rerouted": false,
+      "guard": null,
+      "task_id": "holdout_search",
+      "model": "gpt-6-astra",
+      "quality_passed": true,
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      },
+      "blind_ratings": [
+        {
+          "rater_id": "01a0f57f-cbe2-7530-9765-b26f11da75ea",
+          "signals": {
+            "tool_call_volume": 0.35,
+            "content_volume": 0.05,
+            "cross_reference_load": 0.08,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.08,
+            "investigative_uncertainty": 0.3
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbcc-7d81-8c46-e75e94de4a53",
+          "signals": {
+            "tool_call_volume": 0.35,
+            "content_volume": 0.05,
+            "cross_reference_load": 0.05,
+            "validation_loop_iterations": 0.15,
+            "context_ingestion_volume": 0.07,
+            "investigative_uncertainty": 0.3
+          }
+        },
+        {
+          "rater_id": "01a0f57f-cbf0-7962-be7e-9a206c149431",
+          "signals": {
+            "tool_call_volume": 0.35,
+            "content_volume": 0.05,
+            "cross_reference_load": 0.05,
+            "validation_loop_iterations": 0.2,
+            "context_ingestion_volume": 0.08,
+            "investigative_uncertainty": 0.4
+          }
+        }
+      ]
+    }
+  ],
+  "status": "blocked",
+  "blocker": "gpt-6-astra/medium: rerouted or quality-failed executions cannot calibrate successful work"
+}

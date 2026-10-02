@@ -73,8 +73,8 @@
           "description": "A model ID from price_sheet.models[], or the literal 'deterministic_query_layer' when the pick is to route via a deterministic query layer instead of a model."
         },
         "effort": {
-          "enum": ["none", "low", "medium", "high", "xhigh", "max"],
-          "description": "Omit (or 'none') when model is 'deterministic_query_layer' or the model has no effort dial."
+          "enum": ["none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"],
+          "description": "Use only effort values supported by the selected model/runtime. Omit (or 'none') when model is 'deterministic_query_layer' or the model has no effort dial. minimal and ultra are additive native-runtime vocabulary, not aliases for another provider's effort levels."
         },
         "confidence": { "type": "integer", "minimum": 0, "maximum": 100 }
       }

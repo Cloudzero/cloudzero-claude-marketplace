@@ -137,6 +137,7 @@ dmypy.json
 
 # uv
 .uv/
+.uv-cache/
 
 # Node.js
 node_modules/

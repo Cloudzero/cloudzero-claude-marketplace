@@ -1,0 +1,169 @@
+{
+  "date": "2026-10-01",
+  "codex_cli_version": "0.159.0-alpha.3",
+  "status": "live_verified_with_explicit_limits",
+  "calibration": {
+    "source": "2026-10-01-codex-calibration-live-04/dataset.json",
+    "shipped_profile": "../profiles/default.json",
+    "development_tasks_per_model": 12,
+    "fresh_heldout_tasks_per_model": 4,
+    "floor_probes_per_model": 3,
+    "blind_draws": 3,
+    "blind_draw_tool_commands": [
+      0,
+      0,
+      0
+    ],
+    "shipped_models": [
+      "gpt-6.1-sol",
+      "gpt-6-astra"
+    ],
+    "effort": "medium",
+    "metrics": {
+      "gpt-6.1-sol/medium": {
+        "held_out_coverage": 1.0,
+        "held_out_within_budget": 1.0,
+        "held_out_ratios": [
+          0.7609109781414092,
+          0.7567527945757743,
+          0.7128269613220252,
+          0.6700549746685351
+        ],
+        "promotion_gate_passed": true,
+        "feature_rank": 6
+      },
+      "gpt-6-astra/medium": {
+        "held_out_coverage": 1.0,
+        "held_out_within_budget": 1.0,
+        "held_out_ratios": [
+          0.7593250661699833,
+          0.7586934131149149,
+          0.5178194111846739,
+          0.6915794774240475
+        ],
+        "promotion_gate_passed": true,
+        "feature_rank": 6
+      }
+    },
+    "luna_status": "candidate",
+    "luna_reason": "One fresh held-out task exceeded its fitted ceiling by 8.53%.",
+    "method": "Six nonnegative coefficients fitted on measured development executions; normalized weights and span; multiplier selected on development residuals only; four new task shapes evaluate promotion.",
+    "development_history": "Attempt 01 exposed missing public output contracts. Attempt 02 corrected those but exposed the omitted independent-copy requirement. Attempt 03 remeasured that training contract for every model and collected fresh blind ratings. First fit failed gates; attempt 04 moved those holdouts into development and preregistered four new holdouts.",
+    "limitations": [
+      "One execution per task shape; small held-out sample.",
+      "Profiles apply to the recorded harness and medium effort only.",
+      "Zero coefficients describe this fit, not proof that a signal has no general cost.",
+      "Repository context drift, other efforts, other models and main-agent surface integration need separate validation."
+    ]
+  },
+  "guard": {
+    "matched_pairs": [
+      {
+        "pair": 0,
+        "passed": true,
+        "poll_returned_measured_usage": false,
+        "baseline_tokens": 402349,
+        "guarded_tokens": 300467,
+        "ceiling": 362114,
+        "baseline_optional_files": 20,
+        "guarded_optional_files": 15,
+        "guard_status": "warned_and_heeded"
+      },
+      {
+        "pair": 1,
+        "passed": true,
+        "poll_returned_measured_usage": false,
+        "baseline_tokens": 402290,
+        "guarded_tokens": 299591,
+        "ceiling": 362061,
+        "baseline_optional_files": 20,
+        "guarded_optional_files": 14,
+        "guard_status": "warned_and_heeded"
+      },
+      {
+        "pair": 2,
+        "passed": true,
+        "poll_returned_measured_usage": false,
+        "baseline_tokens": 419974,
+        "guarded_tokens": 302352,
+        "ceiling": 377976,
+        "baseline_optional_files": 20,
+        "guarded_optional_files": 14,
+        "guard_status": "warned_and_heeded"
+      }
+    ],
+    "course_correction_verified": true,
+    "billing_polling_verified": false,
+    "persisted_thread_probe": {
+      "status": "warned_and_heeded",
+      "polls_sent": 68,
+      "polls_with_unknown_usage": 68,
+      "required_quality_passed": true,
+      "optional_files": 14
+    },
+    "verified_source": "native thread/tokenUsage/updated notifications plus matching turn/steer acknowledgement",
+    "limitation": "Billing requests were sent periodically but the account returned no thread totals. Acknowledged warnings and behavioral correction are verified; billing-based polling is not."
+  },
+  "model_spread": {
+    "scope": "All 126 recorded execution calls across calibration attempts 01\u201304 and guard experiments, including failed quality checks, blind raters, floor probes and experiment readiness probes. Excludes this chat, separate CLI authentication probes, and unobserved account history.",
+    "model_spread": [
+      {
+        "model": "gpt-6.1-sol",
+        "records": 42,
+        "input_tokens": 4309025,
+        "output_tokens": 36739,
+        "total_tokens": 4345764,
+        "share_of_observed_tokens": 0.5050998562026051
+      },
+      {
+        "model": "gpt-6-luna",
+        "records": 37,
+        "input_tokens": 2159228,
+        "output_tokens": 27688,
+        "total_tokens": 2186916,
+        "share_of_observed_tokens": 0.25418107313861876
+      },
+      {
+        "model": "gpt-6-astra",
+        "records": 47,
+        "input_tokens": 2032745,
+        "output_tokens": 38347,
+        "total_tokens": 2071092,
+        "share_of_observed_tokens": 0.24071907065877618
+      }
+    ],
+    "observed_total_tokens": 8603772,
+    "unattributed_tokens": 0,
+    "records_with_unknown_usage": 0,
+    "definitive_for_observed_records": true,
+    "account_wide_model_spread_available": false,
+    "coverage_note": "These shares describe only the named observed dataset, not unobserved account history.",
+    "execution_calls": 126,
+    "experiments": [
+      "codex-calibration-live-01",
+      "codex-calibration-live-02",
+      "codex-calibration-live-03",
+      "codex-calibration-live-04",
+      "codex-guard-live-01",
+      "codex-guard-persisted-01"
+    ]
+  },
+  "verification": {
+    "repository_tests_passed": 615,
+    "native_budget_smoke": {
+      "fresh_install_files": 159,
+      "model": "gpt-6.1-sol",
+      "effort": "medium",
+      "profile_version": "codex-calibration-live-04",
+      "status": "measured",
+      "token_ceiling": 81890,
+      "default_profile_resolved_without_explicit_path": true
+    }
+  },
+  "remaining_parity_gaps": [
+    "Historical account-wide model spread unavailable.",
+    "Live CloudZero API ingestion is not implemented; exports are local.",
+    "Host-specific automatic polling attachment and model switches across all Codex surfaces are not certified.",
+    "Full ablation and prompt-tuning sweeps remain unmeasured."
+  ]
+}

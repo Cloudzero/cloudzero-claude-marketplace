@@ -2,6 +2,37 @@
 
 All notable changes to `model-right-sizer.md` are documented here, most recent first. This project doesn't cut version tags — entries are dated. Loosely follows [Keep a Changelog](https://keepachangelog.com/) conventions (Added / Changed / Fixed).
 
+## 2026-10-01 (Unreleased)
+
+### Added
+- Native Codex main-agent right-sizing skill, all eleven companion workflows,
+  repository installer with local-edit protection, and friendly skill metadata.
+- Deterministic native calibration-profile budget calculation, execution ledger,
+  CLI/app-server usage accounting, exact warning/delivery tracking, reconciliation,
+  and local CloudZero attribution records. Unknown usage and spend remain unknown.
+- Real app-server model and skill discovery; sixteen native research-layer variants
+  and six wording knobs using shared evaluation/optimization machinery.
+- Standalone shared validators, native regression tests and CI checks, and dated
+  main-session dogfood evidence. Full empirical parity is explicitly unverified.
+- Native six-signal fitting from real Codex actuals with three blind draws,
+  measured floors and fresh held-out gates. Shipped medium-effort profiles for
+  GPT-6.1-Sol and GPT-6-Astra; Luna remains candidate after underestimation.
+- Three matched live guard pairs and a persisted-thread probe: acknowledged
+  warnings, preserved required quality and 25–28% fewer tokens. Billing polling
+  returned no totals; native token notifications drove course correction.
+- Explicit observed model spread for 126 authenticated calls; no historical
+  account-wide usage claim. Default profiles and raw evidence travel in the bundle.
+
+### Changed
+- The shared blueprint schema accepts `minimal` and `ultra` effort in addition to
+  its existing values; the 1.2 object shape remains unchanged. Each host/model's
+  capability catalog remains authoritative for which values can actually run.
+- Blueprint and handoff validators are reusable from a standalone skill bundle;
+  existing repository CLI entry points and behavior remain supported.
+- Native runtime 0.2 requires explicit Codex signal weights, rejects old profiles
+  without them and never falls back to Claude weights. Active guards support
+  measured stage baselines within the main thread and retry stalled polls.
+
 ## 2026-09-24
 
 ### Fixed
