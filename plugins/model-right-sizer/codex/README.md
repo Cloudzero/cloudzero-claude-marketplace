@@ -36,23 +36,32 @@ it returns JSON and stops. The full blueprint remains inspectable in normal work
 ## Runtime helpers
 
 In an installed repository, the helper is:
-`.agents/skills/model-right-sizer/scripts/right_sizer.py`. The core resources
-live next to it under `../assets/core`; the source checkout uses `codex/runtime.py`.
-Run with `uv run --no-project --with jsonschema <helper> <command>`.
+`.agents/skills/model-right-sizer/scripts/right_sizer <command>`. This executable
+wrapper sets `UV_CACHE_DIR` to `.uv-cache` at the installed repository's git root,
+resolved from the wrapper's directory at invocation time. If git root lookup
+fails, it uses `${TMPDIR:-/tmp}/model-right-sizer-uv-cache`. It then runs the
+Python helper through `uv run --no-project`.
+Use the wrapper in a `workspace-write` sandbox: even bare `uv run` initializes
+its cache, so vendoring alone does not avoid an unwritable home cache. The cache
+directory can be git-ignored. Core resources live under `assets/core` in the
+same bundle; the source checkout uses `codex/runtime.py`.
+The installer vendors `jsonschema` and its dependencies under `assets/core/vendor`;
+post-install helpers need no dependency download. Use the same uv-managed Python
+version for installation and runtime because `rpds-py` includes a compiled extension.
 
-| Command | Behavior |
+| Installed wrapper command | Behavior |
 |---|---|
-| `doctor` | Reports local capabilities without inspecting credential contents. |
-| `validate blueprint.json` | Complete shared JSON Schema plus native semantic checks. |
-| `validate-handoff prescription.json` | Shared handoff schema, family and stamp-fidelity checks. |
-| `budget --profile profile.json --model ID --effort medium --signals signals.json` | Deterministic six-signal calculation using explicit Codex calibration. |
-| `start --blueprint blueprint.json --session session.json --session-id ID` | Creates an execution ledger; refuses dry-run blueprints or existing sessions. |
-| `transition --session session.json --unit ID --status in_progress` | Checks transitions and reads a fresh timestamp. Blocked units require `--note`. |
-| `observe --session session.json --unit ID --events events.jsonl` | Checks observed spend; add `--next-turn` only if a continuation exists. |
-| `warning-delivered --session session.json --unit ID --message-file warning.txt` | Acknowledges exact warning delivery, separately from generation. |
-| `report --session session.json` | Reconciles observations; unknowns stay unknown. |
-| `realized-spend --session session.json --unit ID --amount-usd AMOUNT --source SOURCE` | Records explicitly sourced realized spend. |
-| `export --session session.json` | Produces local attribution records; transmits nothing. |
+| `.agents/skills/model-right-sizer/scripts/right_sizer doctor` | Reports local capabilities without inspecting credential contents. |
+| `.agents/skills/model-right-sizer/scripts/right_sizer validate blueprint.json` | Complete shared JSON Schema plus native semantic checks. |
+| `.agents/skills/model-right-sizer/scripts/right_sizer validate-handoff prescription.json` | Shared handoff schema, family and stamp-fidelity checks. |
+| `.agents/skills/model-right-sizer/scripts/right_sizer budget --profile profile.json --model ID --effort medium --signals signals.json` | Deterministic six-signal calculation using explicit Codex calibration. |
+| `.agents/skills/model-right-sizer/scripts/right_sizer start --blueprint blueprint.json --session session.json --session-id ID` | Creates an execution ledger; refuses dry-run blueprints or existing sessions. |
+| `.agents/skills/model-right-sizer/scripts/right_sizer transition --session session.json --unit ID --status in_progress` | Checks transitions and reads a fresh timestamp. Blocked units require `--note`. |
+| `.agents/skills/model-right-sizer/scripts/right_sizer observe --session session.json --unit ID --events events.jsonl` | Checks observed spend; add `--next-turn` only if a continuation exists. |
+| `.agents/skills/model-right-sizer/scripts/right_sizer warning-delivered --session session.json --unit ID --message-file warning.txt` | Acknowledges exact warning delivery, separately from generation. |
+| `.agents/skills/model-right-sizer/scripts/right_sizer report --session session.json` | Reconciles observations; unknowns stay unknown. |
+| `.agents/skills/model-right-sizer/scripts/right_sizer realized-spend --session session.json --unit ID --amount-usd AMOUNT --source SOURCE` | Records explicitly sourced realized spend. |
+| `.agents/skills/model-right-sizer/scripts/right_sizer export --session session.json` | Produces local attribution records; transmits nothing. |
 
 An observation must be cumulative for **one real execution unit**. CLI
 `turn.completed` usage is aggregated across the supplied completed turns. Cached
@@ -151,8 +160,8 @@ layers share their canonical grounding; six native wording knobs share the
 existing optimizer's finite level domains without inheriting Claude winners.
 
 ```sh
-uv run --no-project --with jsonschema plugins/model-right-sizer/codex/experiments.py check
-uv run --no-project --with jsonschema plugins/model-right-sizer/codex/experiments.py \
+uv run --no-project plugins/model-right-sizer/codex/experiments.py check
+uv run --no-project plugins/model-right-sizer/codex/experiments.py \
   render --layers token_economics,ibpo --settings '{"effort_tax":1}' --out /tmp/native-variant.md
 ```
 

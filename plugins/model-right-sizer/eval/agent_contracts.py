@@ -90,9 +90,9 @@ Checks:
     step 7 would then treat as clean on the very next run.
 
 Usage:
-  uv run --no-project --with jsonschema scripts/validate_agent_schema.py                  # validate the checked-in worked example
-  uv run --no-project --with jsonschema scripts/validate_agent_schema.py path/to/inst.json # validate a file
-  uv run --no-project --with jsonschema scripts/validate_agent_schema.py -                 # validate JSON piped on stdin
+  uv run --no-project scripts/validate_agent_schema.py                  # validate the checked-in worked example
+  uv run --no-project scripts/validate_agent_schema.py path/to/inst.json # validate a file
+  uv run --no-project scripts/validate_agent_schema.py -                 # validate JSON piped on stdin
 """
 from __future__ import annotations
 
@@ -101,6 +101,7 @@ import re
 import sys
 from pathlib import Path
 
+import vendor_bootstrap  # noqa: F401
 from jsonschema import Draft202012Validator
 
 REPO_ROOT = Path(__file__).resolve().parents[3]

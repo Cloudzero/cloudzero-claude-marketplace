@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) CloudZero, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 """Shared blueprint validation, usable from a standalone installed skill."""
+import vendor_bootstrap  # noqa: F401
 from jsonschema import Draft202012Validator
 
 NON_REFERENCE_HANDOFFS = {"none", "route_via_query_layer"}

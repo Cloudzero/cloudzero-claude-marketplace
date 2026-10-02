@@ -22,10 +22,22 @@ definitions in `eval/token_ceiling_formula.py` directly, not from memory.
 Run deterministic helpers directly using the execution tool you already have:
 
 ```sh
-uv run --no-project --with jsonschema <skill-directory>/scripts/right_sizer.py --help
+<skill-directory>/scripts/right_sizer --help
 ```
 
-In the source checkout use `<core>/codex/runtime.py` instead. The helper is
+The installed executable wrapper sets `UV_CACHE_DIR` to `.uv-cache` at the installed
+repository's git root, resolved from the wrapper's directory at invocation time.
+If git root lookup fails, it uses `${TMPDIR:-/tmp}/model-right-sizer-uv-cache`.
+The wrapper runs `uv run --no-project` for you. Use it for every
+runtime command (`doctor`, `validate`, `budget`, `validate-handoff`, and ledger
+commands); do not invoke the Python helper through bare `uv run` in a sandbox.
+Even without dependency resolution, uv initializes its cache. The installer
+vendors `jsonschema` and its dependencies under `assets/core/vendor`, so
+post-install commands need no dependency download. Keep the same uv-managed
+Python version used for installation: `rpds-py` has a compiled extension.
+
+In the source checkout use `uv run --no-project --with jsonschema
+<core>/codex/runtime.py <command>` outside the sandbox instead. The helper is
 local code, not a daemon, another agent, or a model API client. Never fabricate
 a numeric result when you cannot execute the helper; disclose the limitation.
 

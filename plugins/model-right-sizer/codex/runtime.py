@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Native Codex helpers. No model API, credentials, or external writes required.
 
-Run with: uv run --no-project --with jsonschema runtime.py --help
+Run with: uv run --no-project runtime.py --help
 The main agent supplies judgments; code validates, computes, and reconciles.
 """
 from __future__ import annotations
@@ -165,7 +165,7 @@ def budget(profile, model, signals, effort=None):
             'caveat': 'Provisional weights are unvalidated; measured weights apply to their stated harness and effort.'}
 
 
-def publish_install(target, files):
+def publish_install(target, files, executable_files=()):
     """Stage complete bytes and backups, then replace files; roll back on error.
 
     Every destination is always an old or complete new file. An interrupted
@@ -187,6 +187,8 @@ def publish_install(target, files):
                 shutil.copy2(destination, backup)
                 shutil.copystat(destination, staged)
                 previous[relative] = backup
+            if relative in executable_files:
+                staged.chmod(0o755)
         published, directories = [], []
         try:
             for relative in files:
@@ -234,6 +236,18 @@ def install(target):
             planned[Path('.agents/skills') / file.relative_to(source_skills)] = file.read_bytes()
     prefix = Path('.agents/skills/model-right-sizer')
     planned[prefix / 'scripts/right_sizer.py'] = Path(__file__).read_bytes()
+    wrapper = prefix / 'scripts/right_sizer'
+    planned[wrapper] = b'''#!/bin/sh
+set -eu
+script_dir=$(CDPATH= cd -P -- "$(dirname -- "$0")" && pwd)
+if repo_root=$(git -C "$script_dir" rev-parse --show-toplevel 2>/dev/null); then
+    UV_CACHE_DIR="$repo_root/.uv-cache"
+else
+    UV_CACHE_DIR="${TMPDIR:-/tmp}/model-right-sizer-uv-cache"
+fi
+export UV_CACHE_DIR
+exec uv run --no-project "$script_dir/right_sizer.py" "$@"
+'''
     for helper in ('experiments.py', 'catalog.py', 'rpc.py', 'calibration.py', 'live_guard.py', 'usage_report.py', 'calibrate.py', 'benchmark_suite.py', 'guard_experiment.py', 'remeasure.py', 'validation_round.py', 'isolated_checks.py'):
         source = CORE / 'codex' / helper
         if not source.exists():
@@ -251,6 +265,15 @@ def install(target):
                 planned[prefix / 'assets/core/codex' / directory / file.relative_to(source)] = file.read_bytes()
     # Include legacy source only as an experimental baseline, never a runtime persona.
     planned[prefix / 'assets/core/agents/model-right-sizer.md'] = (CORE / 'agents/model-right-sizer.md').read_bytes()
+    # Resolve afresh on every install, using the interpreter that will import
+    # rpds-py's ABI-specific extension. Publish dependencies with the bundle.
+    with tempfile.TemporaryDirectory(prefix='.right-sizer-vendor-', dir=target) as vendor:
+        subprocess.run(['uv', 'run', '--no-project', 'uv', 'pip', 'install',
+                        '--python', sys.executable, '--target', vendor,
+                        '--upgrade', 'jsonschema'], check=True)
+        for file in Path(vendor).rglob('*'):
+            if file.is_file() and '__pycache__' not in file.parts and file.suffix != '.pyc':
+                planned[prefix / 'assets/core/vendor' / file.relative_to(vendor)] = file.read_bytes()
     manifest_path = target / '.agents/model-right-sizer-install.json'
     if manifest_path.is_symlink():
         raise ValueError('Install manifest may not be a symlink')
@@ -288,7 +311,7 @@ def install(target):
     transaction = {**planned, Path('AGENTS.md'): updated.encode(),
                    Path('.agents/model-right-sizer-install.json'): (json.dumps(
                        {'version': VERSION, 'files': hashes}, indent=2, allow_nan=False) + '\n').encode()}
-    publish_install(target, transaction)
+    publish_install(target, transaction, executable_files=(wrapper,))
     return {'installed': sorted(p.name for p in source_skills.iterdir() if p.is_dir()),
             'target': str(target), 'instructions': 'AGENTS.md', 'separate_agent': False,
             'files': len(planned)}
