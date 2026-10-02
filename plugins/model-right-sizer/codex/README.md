@@ -160,8 +160,8 @@ layers share their canonical grounding; six native wording knobs share the
 existing optimizer's finite level domains without inheriting Claude winners.
 
 ```sh
-uv run --no-project plugins/model-right-sizer/codex/experiments.py check
-uv run --no-project plugins/model-right-sizer/codex/experiments.py \
+uv run --no-project --with jsonschema plugins/model-right-sizer/codex/experiments.py check
+uv run --no-project --with jsonschema plugins/model-right-sizer/codex/experiments.py \
   render --layers token_economics,ibpo --settings '{"effort_tax":1}' --out /tmp/native-variant.md
 ```
 

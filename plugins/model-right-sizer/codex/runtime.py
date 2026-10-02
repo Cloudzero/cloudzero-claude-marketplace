@@ -237,6 +237,7 @@ def install(target):
     prefix = Path('.agents/skills/model-right-sizer')
     planned[prefix / 'scripts/right_sizer.py'] = Path(__file__).read_bytes()
     wrapper = prefix / 'scripts/right_sizer'
+    python_version = f'{sys.version_info.major}.{sys.version_info.minor}'.encode('ascii')
     planned[wrapper] = b'''#!/bin/sh
 set -eu
 script_dir=$(CDPATH= cd -P -- "$(dirname -- "$0")" && pwd)
@@ -246,8 +247,8 @@ else
     UV_CACHE_DIR="${TMPDIR:-/tmp}/model-right-sizer-uv-cache"
 fi
 export UV_CACHE_DIR
-exec uv run --no-project "$script_dir/right_sizer.py" "$@"
-'''
+exec uv run --no-project --python %s "$script_dir/right_sizer.py" "$@"
+''' % python_version
     for helper in ('experiments.py', 'catalog.py', 'rpc.py', 'calibration.py', 'live_guard.py', 'usage_report.py', 'calibrate.py', 'benchmark_suite.py', 'guard_experiment.py', 'remeasure.py', 'validation_round.py', 'isolated_checks.py'):
         source = CORE / 'codex' / helper
         if not source.exists():
@@ -270,7 +271,7 @@ exec uv run --no-project "$script_dir/right_sizer.py" "$@"
     with tempfile.TemporaryDirectory(prefix='.right-sizer-vendor-', dir=target) as vendor:
         subprocess.run(['uv', 'run', '--no-project', 'uv', 'pip', 'install',
                         '--python', sys.executable, '--target', vendor,
-                        '--upgrade', 'jsonschema'], check=True)
+                        'jsonschema==4.26.0'], check=True)
         for file in Path(vendor).rglob('*'):
             if file.is_file() and '__pycache__' not in file.parts and file.suffix != '.pyc':
                 planned[prefix / 'assets/core/vendor' / file.relative_to(vendor)] = file.read_bytes()
