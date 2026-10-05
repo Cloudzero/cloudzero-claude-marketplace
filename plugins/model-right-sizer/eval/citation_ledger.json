@@ -156,8 +156,8 @@
           "formula_expr": "P_m + w*tau_sync + delta_c_coord",
           "source_variables": ["P_m", "w", "tau_sync", "delta_c_coord"],
           "sample_inputs": [
-            { "inputs": { "P_m": 0.01, "w": 50, "tau_sync": 0.01, "delta_c_coord": 0.5 }, "expected_output": 1.01 },
-            { "inputs": { "P_m": 0.0, "w": 0, "tau_sync": 0, "delta_c_coord": 0.25 }, "expected_output": 0.25 }
+            { "inputs": { "P_m": 0.01, "w": 50, "tau_sync": 0.02, "delta_c_coord": 0.5 }, "expected_output": 1.51 },
+            { "inputs": { "P_m": 0.02, "w": 10, "tau_sync": 0.05, "delta_c_coord": 0.3 }, "expected_output": 0.82 }
           ],
           "verifiable": true
         },

@@ -6,6 +6,7 @@ rubric assumes. Every expected value below is a hand-computable closed form or a
 known analytic derivative, not another model's opinion."""
 from __future__ import annotations
 
+import math
 import sys
 from pathlib import Path
 
@@ -66,6 +67,38 @@ def test_ces_production_zero_labor_with_nonnegative_beta_is_fine():
 def test_ces_production_cobb_douglas_limit_zero_labor_with_negative_beta_raises():
     with pytest.raises(ValueError, match="L=0 combined with beta"):
         te.ces_production_cobb_douglas_limit(K=4, M=9, L=0, delta=0.5, theta=2, beta=-1.0)
+
+
+# ---------------------------------------------------------------------------
+# The epsilon overflow guard -- found by the model-right-sizer-eval-audit
+# skill's mutation/boundary-probing battery, the same "raw exception leaks
+# instead of a clean ValueError" pattern already fixed for K/M/L, on the
+# one parameter nobody had probed (epsilon -> math.exp).
+# ---------------------------------------------------------------------------
+
+
+def test_ces_production_extreme_epsilon_raises_valueerror_not_overflowerror():
+    with pytest.raises(ValueError, match="too large for math.exp"):
+        te.ces_production(K=4, M=16, L=1, delta=0.5, rho=0.5, theta=1, beta=0, epsilon=1000)
+
+
+def test_ces_production_very_negative_epsilon_is_fine():
+    # math.exp underflows to 0.0 for a very negative argument -- no exception,
+    # and the whole product correctly collapses to 0.
+    Y = te.ces_production(K=4, M=16, L=1, delta=0.5, rho=0.5, theta=1, beta=0, epsilon=-1000)
+    assert Y == pytest.approx(0.0)
+
+
+def test_ces_production_cobb_douglas_limit_extreme_epsilon_raises_valueerror():
+    with pytest.raises(ValueError, match="too large for math.exp"):
+        te.ces_production_cobb_douglas_limit(K=4, M=9, L=1, delta=0.5, theta=2, beta=0, epsilon=1000)
+
+
+def test_safe_exp_boundary_is_inclusive():
+    # _MAX_EXP_ARG itself must not raise -- only strictly exceeding it does.
+    assert te._safe_exp(te._MAX_EXP_ARG) == pytest.approx(math.exp(te._MAX_EXP_ARG))
+    with pytest.raises(ValueError):
+        te._safe_exp(te._MAX_EXP_ARG + 1)
 
 
 def test_ces_production_cobb_douglas_limit_matches_hand_computed_value():
