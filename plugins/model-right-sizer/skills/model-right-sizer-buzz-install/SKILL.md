@@ -3,18 +3,15 @@ name: model-right-sizer-buzz-install
 description: >-
   Extend the model-right-sizer mandate to a Buzz Nest — a persistent
   multi-agent workspace created by Buzz Desktop (github.com/block/buzz),
-  identifiable by an `AGENTS.md` whose content opens with a `# Buzz Nest`
-  heading. Runs `model-right-sizer-install` first to stamp the standard
-  mandate onto that `AGENTS.md`, then closes a Buzz-specific gap plain
-  `AGENTS.md`-stamping doesn't cover: every Buzz teammate delegates to its
-  real xdp-tools-style agent via an `Agent`/`Task`-tool sub-agent spawn,
-  and that spawn does NOT inherit the calling session's `AGENTS.md` or
-  project memory — confirmed by direct test, not assumed. So this skill
-  also patches the Buzz persona's own system-prompt source file(s) with a
-  short pointer paragraph ("read this Nest's AGENTS.md for standing
+  identifiable by an `AGENTS.md` that opens with a `# Buzz Nest` heading.
+  Runs `model-right-sizer-install` first to stamp the standard mandate onto
+  that `AGENTS.md`, then closes a Buzz-specific gap that stamp doesn't
+  cover: a Buzz teammate delegates to its real agent via an `Agent`/`Task`
+  sub-agent spawn, and that spawn does not inherit the calling session's
+  `AGENTS.md`. This skill patches the persona's own system-prompt source
+  with a short pointer paragraph ("read this Nest's AGENTS.md for standing
   mandates before your first action") — a pointer, never a copy of the
-  mandate text, so the wording stays single-sourced. Idempotent and
-  append-only throughout. Use when someone says "add Buzz support to
+  mandate text. Use when someone says "add Buzz support to
   model-right-sizer", "install the right-sizer mandate for my Buzz
   agents", or "make my Buzz teammates consult model-right-sizer".
 license: Apache-2.0
