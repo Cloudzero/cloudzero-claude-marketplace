@@ -68,6 +68,14 @@ _TIER_WORDS = ("opus", "sonnet", "haiku", "fable")
 # than feed it to `_tier_keyword`, which only knows real Claude model IDs.
 _DETERMINISTIC_QUERY_LAYER = "deterministic_query_layer"
 
+# `blueprint.schema.json`'s `modelChoice.model` also allows a `local:<model-id>`
+# pick: an open-weight model on hardware the operator owns. Like the query
+# layer, it has no pasteable counterpart on this side of the swap (you cannot
+# pin `model: local:...` in Claude Code frontmatter, and the pick is only valid
+# behind the routing gate the agent file describes), so it gets its own label
+# rather than being reported as a cross-provider reference, which it is not.
+_LOCAL_PREFIX = "local:"
+
 
 def _tier_keyword(model_id: str) -> str:
     lowered = model_id.lower()
@@ -104,6 +112,8 @@ def _model_label(model_id: str) -> str:
     propagate out of a display-only helper."""
     if model_id == _DETERMINISTIC_QUERY_LAYER:
         return "deterministic query layer, no model"
+    if model_id.startswith(_LOCAL_PREFIX):
+        return f"local tier ({model_id[len(_LOCAL_PREFIX):]}), unverified output"
     try:
         return _tier_keyword(model_id)
     except ValueError:
@@ -276,14 +286,17 @@ def render(candidates: list[dict], blueprint_rows: list[dict], target_label: str
         # pin_syntax values (only `frontmatter_tier_keyword` ever validated
         # the model id at all), so a reader could copy-paste "gpt-5" into
         # an Anthropic SDK call.
-        is_cross_provider_pick = not is_query_layer_pick and not _has_tier_keyword(
-            pick["primary"]["model"]
+        is_local_pick = pick["primary"]["model"].startswith(_LOCAL_PREFIX)
+        is_cross_provider_pick = (
+            not is_query_layer_pick
+            and not is_local_pick
+            and not _has_tier_keyword(pick["primary"]["model"])
         )
         current = cand["current_pin_literal"]
         is_keep = row["keep_or_override"] != "override"
         effort = pick["primary"].get("effort")
 
-        if is_query_layer_pick or is_cross_provider_pick:
+        if is_query_layer_pick or is_cross_provider_pick or is_local_pick:
             # Neither has a real, pasteable edit to apply yet — a structural
             # fix (query layer) or a reference pick with no counterpart on
             # this provider (cross-provider) alike. `None` (not a
@@ -320,7 +333,9 @@ def render(candidates: list[dict], blueprint_rows: list[dict], target_label: str
                 idx,
                 current,
                 None if is_keep else suggested,
-                None if (is_keep or is_query_layer_pick or is_cross_provider_pick) else effort,
+                None
+                if (is_keep or is_query_layer_pick or is_cross_provider_pick or is_local_pick)
+                else effort,
             ))
             current_cell = f"*(see appendix #{idx})*"
         else:
@@ -335,6 +350,9 @@ def render(candidates: list[dict], blueprint_rows: list[dict], target_label: str
         elif is_query_layer_pick:
             suggested_cell = "*(structural fix — see Why; no literal substitution)*"
             edit_cell = "*(no literal substitution — see Why)*"
+        elif is_local_pick:
+            suggested_cell = "*(local tier, gated: see Why)*"
+            edit_cell = "*(no live edit: routing-gate decision, not a pin swap)*"
         elif is_cross_provider_pick:
             suggested_cell = "*(cross-provider reference — see Why)*"
             edit_cell = "*(reference pick only — no live edit)*"

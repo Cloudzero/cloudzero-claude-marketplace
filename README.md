@@ -27,7 +27,7 @@ The flagship plugin providing comprehensive cost analysis capabilities:
 
 ### Model Right Sizer Plugin
 A model-selection economist for Claude Code that keeps AI spend as intentional as cloud spend:
-- The `model-right-sizer` agent scores each task on effectiveness need vs. efficiency pressure vs. difficulty, and recommends the smallest Claude model (plus effort and token budget) that clears the bar
+- The `model-right-sizer` agent scores each task on effectiveness need vs. efficiency pressure vs. difficulty, and recommends the smallest tier that clears the bar: a Claude model plus effort and token budget, a deterministic query layer where the stage is really a data lookup, or the local open-weight row below both where the work is mechanical bulk text off the critical path
 - Runs as a bookend around work: a right-sizing blueprint before, a model-usage report after
 - Companion skills to preview the routing map for an intent (`model-right-sizer-dryrun`), to stamp a standing right-sizing mandate onto a repo (`model-right-sizer-install`), to retroactively audit every model call already shipped in a target repo (`model-right-sizer-audit`), and to prescribe a minimal output schema for one agent's handoff to its controller (`model-right-sizer-schema`)
 
@@ -64,7 +64,7 @@ cloudzero-claude-marketplace/
 │       │   └── plugin.json       # Plugin manifest
 │       ├── agents/               # The model-right-sizer agent
 │       ├── schemas/              # Blueprint + agent-schema JSON Schemas, family catalogue
-│       ├── skills/               # Companion install/dry-run/schema skills
+│       ├── skills/               # Companion install/dry-run/audit/schema skills
 │       └── README.md             # Plugin documentation
 ├── scripts/                      # CI validators (manifests, agent files)
 ├── tests/                        # Tests for the validators
@@ -226,7 +226,7 @@ The Model Right Sizer plugin includes one agent and four skills:
 #### The `model-right-sizer` Agent
 **Triggered by:** "Blueprint this task", "Which model should this run on?", "Give me a usage report"
 
-A read-only model-selection economist. Before work starts it produces a right-sizing blueprint — a schema-conformant JSON object (task→model→effort→budget→confidence per stage) biased toward the smallest Claude model that clears the bar. After work closes it produces a usage report comparing recommended vs. actual model spend.
+A read-only model-selection economist. Before work starts it produces a right-sizing blueprint — a schema-conformant JSON object (task→model→effort→budget→confidence per stage) biased toward the smallest tier that clears the bar. After work closes it produces a usage report comparing recommended vs. actual model spend.
 
 **Example:**
 ```

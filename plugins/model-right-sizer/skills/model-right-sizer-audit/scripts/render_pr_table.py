@@ -42,6 +42,13 @@ def _tier_label(model_id: str) -> str:
         return "no model"
     if model_id == "inherit_session_model":
         return "inherit"
+    if model_id.startswith("local:"):
+        # A `local:<model-id>` pick (an open-weight model on hardware the
+        # operator owns) has no Claude tier word in it, and reporting the
+        # raw id here would put a 30-character model name in a column of
+        # one-word tier labels. "local" is the tier; the id itself is in
+        # the blueprint JSON this table never replaces.
+        return "local"
     lowered = model_id.lower()
     for word in _TIER_WORDS:
         if word in lowered:
