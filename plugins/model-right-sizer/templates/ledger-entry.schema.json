@@ -1,0 +1,249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cloudzero/cloudzero-claude-marketplace/plugins/model-right-sizer/templates/ledger-entry.schema.json",
+  "title": "model-right-sizer calibration ledger entry",
+  "description": "One row of recommended-vs-actual right-sizing evidence, appended by the `model-right-sizer-calibrate` skill to ~/.claude/skills/model-right-sizer-learned/ledger.jsonl (one JSON object per line). A row is meant to describe a TASK SHAPE, never a task, so that a learning recorded in one repo is safe and useful to read in every other one. WHAT THIS SCHEMA ACTUALLY ENFORCES, precisely: `additionalProperties: false` at every level rejects unknown KEYS, the closed `stage_kind` enum removes the main place a task could be named, and `lesson` is length-capped. WHAT IT DOES NOT ENFORCE: `lesson`, `recommended.model`, and `actual.model` accept arbitrary strings, so identifying text placed inside them is still schema-valid. Schema validation is NOT content sanitization. The controls that cover free text are the `model-right-sizer-calibrate` redaction check on append and the `model-right-sizer-verify` INTEGRITY pass, which reads the prose; neither is enforceable here, so do not treat a passing validation as proof a row is repo-agnostic.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "ts",
+    "stage_kind",
+    "loop_class",
+    "signals",
+    "recommended",
+    "actual",
+    "outcome",
+    "verdict",
+    "lesson"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^cal-[0-9]{4,}(-[0-9a-z]{4})?$",
+      "description": "Row id, e.g. cal-0008-k3x9. The trailing 4-char nonce is what makes concurrent appends collision-proof: this ledger is machine-wide, so two sessions can allocate at the same instant, and read-highest-then-append would hand both the same number. Writers MUST generate the nonce. It is optional in the pattern only so rows written before this rule existed stay valid \u2014 omitting it on a new write reintroduces the race. Cite the full id when a row moves a pick."
+    },
+    "ts": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "description": "Date only (YYYY-MM-DD). Deliberately not a timestamp \u2014 a wall-clock time correlates a row to a session, which is a fingerprint."
+    },
+    "stage_kind": {
+      "type": "string",
+      "description": "The shape of the work, from a closed vocabulary. The closed enum IS the redaction lever: there is no way to describe WHICH review or WHOSE refactor, only what kind of stage it was.",
+      "enum": [
+        "planning-decomposition",
+        "code-build-mechanical",
+        "code-build-bounded-feature",
+        "code-build-cross-cutting",
+        "long-horizon-refactor",
+        "code-review",
+        "test-authoring",
+        "qa-verification",
+        "debugging-diagnosis",
+        "doc-prose-authoring",
+        "doc-prose-review",
+        "structured-extraction",
+        "classification-labeling",
+        "summarization",
+        "synthesis-panel",
+        "data-query-aggregation",
+        "search-retrieval",
+        "tool-orchestration",
+        "research-web",
+        "translation-formatting"
+      ]
+    },
+    "loop_class": {
+      "type": "string",
+      "description": "Agentic loop length under the model \u2014 the dominant axis for down-pin safety, per the agent's latency-inversion rule.",
+      "enum": [
+        "single-shot",
+        "low-tool-turn",
+        "agentic"
+      ]
+    },
+    "signals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "effectiveness_need",
+        "efficiency_pressure",
+        "difficulty"
+      ],
+      "description": "The three 0-100 scores the blueprint assigned this stage.",
+      "properties": {
+        "effectiveness_need": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "efficiency_pressure": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "difficulty": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "recommended": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "effort"
+      ],
+      "description": "What Pass A recommended.",
+      "properties": {
+        "model": {
+          "type": "string",
+          "maxLength": 60,
+          "description": "Model id as published on the provider's sheet, e.g. claude-sonnet-5."
+        },
+        "effort": {
+          "type": "string",
+          "enum": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ]
+        },
+        "budget_tokens": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The explicit thinking/token ceiling the blueprint set (the BudgetThinker layer)."
+        },
+        "confidence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Pass A's stated confidence % in this primary pick."
+        }
+      }
+    },
+    "actual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "effort"
+      ],
+      "description": "What actually ran. Unknown numeric fields are omitted, never guessed.",
+      "properties": {
+        "model": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "effort": {
+          "type": "string",
+          "enum": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ]
+        },
+        "tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "wallclock_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "tool_turns": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quality"
+      ],
+      "properties": {
+        "quality": {
+          "type": "string",
+          "description": "held = cleared the bar first try \u00b7 missed = wrong output that was caught \u00b7 rework = needed further cycles to land.",
+          "enum": [
+            "held",
+            "missed",
+            "rework"
+          ]
+        },
+        "rework_cycles": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Human/agent correction cycles spent. This is the cost-of-error term \u2014 the number that justifies sizing up."
+        }
+      }
+    },
+    "adherence": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Graded alongside outcome quality, not as an afterthought. A correct-but-3x-over-budget stage is still a right-sizing miss.",
+      "properties": {
+        "budget": {
+          "type": "string",
+          "enum": [
+            "under",
+            "within",
+            "over",
+            "unmeasured"
+          ]
+        },
+        "schema": {
+          "type": "string",
+          "enum": [
+            "held",
+            "leaked",
+            "not-designed",
+            "unmeasured"
+          ]
+        }
+      }
+    },
+    "cost_delta_usd": {
+      "type": "number",
+      "description": "actual spend minus recommended-tier spend, at list price. Negative means the override was cheaper than the recommendation."
+    },
+    "pricing_freshness": {
+      "type": "string",
+      "description": "Where the prices behind cost_delta_usd came from \u2014 the agent never asserts a price from memory without saying so.",
+      "enum": [
+        "live-fetch",
+        "delegated-fetch",
+        "fallback-snapshot",
+        "unverified"
+      ]
+    },
+    "verdict": {
+      "type": "string",
+      "description": "What this row argues the next blueprint should do for this stage_kind.",
+      "enum": [
+        "size-up",
+        "size-down",
+        "keep",
+        "route-to-query-layer",
+        "measurement-required"
+      ]
+    },
+    "lesson": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 240,
+      "description": "One clause, task-shape vocabulary only. Hard cap is deliberate: prose long enough to narrate a specific incident is prose long enough to identify it."
+    }
+  }
+}
