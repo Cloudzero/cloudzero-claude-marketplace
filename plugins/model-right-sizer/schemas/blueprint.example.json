@@ -152,9 +152,20 @@
       },
       "default_model": "claude-haiku-4-5",
       "keep_or_override": "override",
-      "budget": { "token_ceiling": 400000, "thinking_budget": null },
+      "budget": {
+        "token_ceiling": 400000,
+        "real_work_signals": {
+          "tool_call_volume": { "value": 0.2, "reason": "One sweep over the day's threads and a shortlist write -- not a multi-turn tool loop." },
+          "content_volume": { "value": 0.85, "reason": "Every thread in every channel, the highest-volume stage in the flow." },
+          "cross_reference_load": { "value": 0.1, "reason": "One yes/no per thread against a single signal; no cross-thread reasoning." },
+          "validation_loop_iterations": { "value": 0.0, "reason": "The item-count check is an external validator, not a model retry loop." },
+          "context_ingestion_volume": { "value": 0.8, "reason": "Must read the day's backlog before shortlisting, not a single short thread." },
+          "investigative_uncertainty": { "value": 0.05, "reason": "The target (flag stuck or waiting) is specified; little to search for." }
+        },
+        "thinking_budget": null
+      },
       "handoff_schema_ref": "blocker-shortlist-v1",
-      "rationale": "Bulk, mechanical, off the critical path, and unverified output a stronger stage re-reads: the routing gate's deny and compound checks both pass, and the amortized local basis undercuts Haiku at this volume. Falls back to the Haiku runner-up wherever no local runtime is present."
+      "rationale": "Bulk, mechanical, off the critical path, and unverified output a stronger stage re-reads: the routing gate's deny and compound checks both pass, and the amortized local basis undercuts Haiku at this volume. Falls back to the Haiku runner-up wherever no local runtime is present. token_ceiling stays a volume bound: eval/token_ceiling_formula.py has no local-tier floor, so the six real_work_signals record the rating schema 1.2 requires without pretending compute_token_ceiling produced 400000."
     }
   ],
   "work_routing_map": [
