@@ -1,0 +1,53 @@
+{
+  "gpt-6-luna": {
+    "status": "candidate",
+    "metrics": {
+      "gpt-6-luna/medium": {
+        "held_out_coverage": 0.75,
+        "held_out_within_budget": 0.75,
+        "held_out_ratios": [
+          0.9918533981120573,
+          0.6926401303593147,
+          0.7993080228426868,
+          1.0223630654727294
+        ],
+        "promotion_gate_passed": false,
+        "feature_rank": 6
+      }
+    }
+  },
+  "gpt-6.1-sol": {
+    "status": "candidate",
+    "metrics": {
+      "gpt-6.1-sol/medium": {
+        "held_out_coverage": 1.0,
+        "held_out_within_budget": 0.75,
+        "held_out_ratios": [
+          0.4438662338302502,
+          0.5609624853142965,
+          0.7588316159870853,
+          0.6189020957650427
+        ],
+        "promotion_gate_passed": false,
+        "feature_rank": 6
+      }
+    }
+  },
+  "gpt-6-astra": {
+    "status": "candidate",
+    "metrics": {
+      "gpt-6-astra/medium": {
+        "held_out_coverage": 0.75,
+        "held_out_within_budget": 0.75,
+        "held_out_ratios": [
+          0.541606843485363,
+          0.6887282884600463,
+          1.0383255942892786,
+          0.7367142718352279
+        ],
+        "promotion_gate_passed": false,
+        "feature_rank": 6
+      }
+    }
+  }
+}

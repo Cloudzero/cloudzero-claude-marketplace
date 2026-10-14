@@ -1,0 +1,585 @@
+{
+  "measurement_kind": "isolated_replay_of_existing_outputs",
+  "new_model_calls": 0,
+  "backend": "Linux bubblewrap private namespaces, read-only task mount, no network, resource-limited system Python",
+  "checks_passed": 55,
+  "checks": [
+    {
+      "task_id": "slug",
+      "model": "gpt-6.1-sol",
+      "source": "/workspace/codex-calibration-live-02/tasks/slug-gpt-6.1-sol-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "slug",
+      "model": "gpt-6-astra",
+      "source": "/workspace/codex-calibration-live-02/tasks/slug-gpt-6-astra-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "slug",
+      "model": "gpt-6-luna",
+      "source": "/workspace/codex-calibration-live-02/tasks/slug-gpt-6-luna-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "nested_merge",
+      "model": "gpt-6.1-sol",
+      "source": "/workspace/codex-calibration-live-03/tasks/nested_merge-gpt-6.1-sol-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "nested_merge",
+      "model": "gpt-6-astra",
+      "source": "/workspace/codex-calibration-live-03/tasks/nested_merge-gpt-6-astra-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "nested_merge",
+      "model": "gpt-6-luna",
+      "source": "/workspace/codex-calibration-live-03/tasks/nested_merge-gpt-6-luna-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "csv_exact",
+      "model": "gpt-6.1-sol",
+      "source": "/workspace/codex-calibration-live-02/tasks/csv_exact-gpt-6.1-sol-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "csv_exact",
+      "model": "gpt-6-astra",
+      "source": "/workspace/codex-calibration-live-02/tasks/csv_exact-gpt-6-astra-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "csv_exact",
+      "model": "gpt-6-luna",
+      "source": "/workspace/codex-calibration-live-02/tasks/csv_exact-gpt-6-luna-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "cross_files",
+      "model": "gpt-6.1-sol",
+      "source": "/workspace/codex-calibration-live-02/tasks/cross_files-gpt-6.1-sol-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "cross_files",
+      "model": "gpt-6-astra",
+      "source": "/workspace/codex-calibration-live-02/tasks/cross_files-gpt-6-astra-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "cross_files",
+      "model": "gpt-6-luna",
+      "source": "/workspace/codex-calibration-live-02/tasks/cross_files-gpt-6-luna-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "search_bug",
+      "model": "gpt-6.1-sol",
+      "source": "/workspace/codex-calibration-live-02/tasks/search_bug-gpt-6.1-sol-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "search_bug",
+      "model": "gpt-6-astra",
+      "source": "/workspace/codex-calibration-live-02/tasks/search_bug-gpt-6-astra-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "search_bug",
+      "model": "gpt-6-luna",
+      "source": "/workspace/codex-calibration-live-02/tasks/search_bug-gpt-6-luna-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "review_context",
+      "model": "gpt-6.1-sol",
+      "source": "/workspace/codex-calibration-live-02/tasks/review_context-gpt-6.1-sol-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "review_context",
+      "model": "gpt-6-astra",
+      "source": "/workspace/codex-calibration-live-02/tasks/review_context-gpt-6-astra-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "review_context",
+      "model": "gpt-6-luna",
+      "source": "/workspace/codex-calibration-live-02/tasks/review_context-gpt-6-luna-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "validation_fix",
+      "model": "gpt-6.1-sol",
+      "source": "/workspace/codex-calibration-live-02/tasks/validation_fix-gpt-6.1-sol-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "validation_fix",
+      "model": "gpt-6-astra",
+      "source": "/workspace/codex-calibration-live-02/tasks/validation_fix-gpt-6-astra-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "validation_fix",
+      "model": "gpt-6-luna",
+      "source": "/workspace/codex-calibration-live-02/tasks/validation_fix-gpt-6-luna-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "migration",
+      "model": "gpt-6.1-sol",
+      "source": "/workspace/codex-calibration-live-02/tasks/migration-gpt-6.1-sol-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "migration",
+      "model": "gpt-6-astra",
+      "source": "/workspace/codex-calibration-live-02/tasks/migration-gpt-6-astra-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "migration",
+      "model": "gpt-6-luna",
+      "source": "/workspace/codex-calibration-live-02/tasks/migration-gpt-6-luna-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "holdout_toposort",
+      "model": "gpt-6.1-sol",
+      "source": "/workspace/codex-calibration-live-02/tasks/holdout_toposort-gpt-6.1-sol-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "holdout_toposort",
+      "model": "gpt-6-astra",
+      "source": "/workspace/codex-calibration-live-02/tasks/holdout_toposort-gpt-6-astra-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "holdout_toposort",
+      "model": "gpt-6-luna",
+      "source": "/workspace/codex-calibration-live-02/tasks/holdout_toposort-gpt-6-luna-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "holdout_intervals",
+      "model": "gpt-6.1-sol",
+      "source": "/workspace/codex-calibration-live-02/tasks/holdout_intervals-gpt-6.1-sol-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "holdout_intervals",
+      "model": "gpt-6-astra",
+      "source": "/workspace/codex-calibration-live-02/tasks/holdout_intervals-gpt-6-astra-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "holdout_intervals",
+      "model": "gpt-6-luna",
+      "source": "/workspace/codex-calibration-live-02/tasks/holdout_intervals-gpt-6-luna-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "holdout_review",
+      "model": "gpt-6.1-sol",
+      "source": "/workspace/codex-calibration-live-02/tasks/holdout_review-gpt-6.1-sol-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "holdout_review",
+      "model": "gpt-6-astra",
+      "source": "/workspace/codex-calibration-live-02/tasks/holdout_review-gpt-6-astra-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "holdout_review",
+      "model": "gpt-6-luna",
+      "source": "/workspace/codex-calibration-live-02/tasks/holdout_review-gpt-6-luna-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "holdout_search",
+      "model": "gpt-6.1-sol",
+      "source": "/workspace/codex-calibration-live-02/tasks/holdout_search-gpt-6.1-sol-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "holdout_search",
+      "model": "gpt-6-astra",
+      "source": "/workspace/codex-calibration-live-02/tasks/holdout_search-gpt-6-astra-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "holdout_search",
+      "model": "gpt-6-luna",
+      "source": "/workspace/codex-calibration-live-02/tasks/holdout_search-gpt-6-luna-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "fresh_dedupe",
+      "model": "gpt-6.1-sol",
+      "source": "/workspace/codex-calibration-live-04/tasks/fresh_dedupe-gpt-6.1-sol-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "fresh_dedupe",
+      "model": "gpt-6-astra",
+      "source": "/workspace/codex-calibration-live-04/tasks/fresh_dedupe-gpt-6-astra-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "fresh_dedupe",
+      "model": "gpt-6-luna",
+      "source": "/workspace/codex-calibration-live-04/tasks/fresh_dedupe-gpt-6-luna-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "fresh_jsonl",
+      "model": "gpt-6.1-sol",
+      "source": "/workspace/codex-calibration-live-04/tasks/fresh_jsonl-gpt-6.1-sol-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "fresh_jsonl",
+      "model": "gpt-6-astra",
+      "source": "/workspace/codex-calibration-live-04/tasks/fresh_jsonl-gpt-6-astra-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "fresh_jsonl",
+      "model": "gpt-6-luna",
+      "source": "/workspace/codex-calibration-live-04/tasks/fresh_jsonl-gpt-6-luna-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "fresh_config",
+      "model": "gpt-6.1-sol",
+      "source": "/workspace/codex-calibration-live-04/tasks/fresh_config-gpt-6.1-sol-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "fresh_config",
+      "model": "gpt-6-astra",
+      "source": "/workspace/codex-calibration-live-04/tasks/fresh_config-gpt-6-astra-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "fresh_config",
+      "model": "gpt-6-luna",
+      "source": "/workspace/codex-calibration-live-04/tasks/fresh_config-gpt-6-luna-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "fresh_repair",
+      "model": "gpt-6.1-sol",
+      "source": "/workspace/codex-calibration-live-04/tasks/fresh_repair-gpt-6.1-sol-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "fresh_repair",
+      "model": "gpt-6-astra",
+      "source": "/workspace/codex-calibration-live-04/tasks/fresh_repair-gpt-6-astra-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "task_id": "fresh_repair",
+      "model": "gpt-6-luna",
+      "source": "/workspace/codex-calibration-live-04/tasks/fresh_repair-gpt-6-luna-medium",
+      "quality": {
+        "passed": true,
+        "test_exit": 0,
+        "read_only_inputs_preserved": true,
+        "error": null
+      }
+    },
+    {
+      "source": "/workspace/codex-guard-live-01/baseline-0",
+      "quality": {
+        "required_quality_passed": true,
+        "optional_files": 20
+      }
+    },
+    {
+      "source": "/workspace/codex-guard-live-01/guarded-0",
+      "quality": {
+        "required_quality_passed": true,
+        "optional_files": 15
+      }
+    },
+    {
+      "source": "/workspace/codex-guard-live-01/baseline-1",
+      "quality": {
+        "required_quality_passed": true,
+        "optional_files": 20
+      }
+    },
+    {
+      "source": "/workspace/codex-guard-live-01/guarded-1",
+      "quality": {
+        "required_quality_passed": true,
+        "optional_files": 14
+      }
+    },
+    {
+      "source": "/workspace/codex-guard-live-01/baseline-2",
+      "quality": {
+        "required_quality_passed": true,
+        "optional_files": 20
+      }
+    },
+    {
+      "source": "/workspace/codex-guard-live-01/guarded-2",
+      "quality": {
+        "required_quality_passed": true,
+        "optional_files": 14
+      }
+    },
+    {
+      "source": "/workspace/codex-guard-persisted-01/guarded",
+      "quality": {
+        "required_quality_passed": true,
+        "optional_files": 14
+      }
+    }
+  ]
+}

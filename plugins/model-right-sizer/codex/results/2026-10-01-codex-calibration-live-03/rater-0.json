@@ -1,0 +1,153 @@
+{
+  "thread_id": "01a0f58d-12d1-7e93-b7e3-30d5365fd4ee",
+  "actual_model": "gpt-6-astra",
+  "requested_model": "gpt-6-astra",
+  "effort": "medium",
+  "usage": {
+    "input_tokens": 16221,
+    "cached_input_tokens": 0,
+    "output_tokens": 778,
+    "reasoning_output_tokens": 51,
+    "total_tokens": 16999
+  },
+  "usage_source": "codex_app_server",
+  "wall_clock_seconds": 27.082128629999715,
+  "final_message": "{\"ratings\":[{\"task_id\":\"slug\",\"signals\":{\"tool_call_volume\":0.15,\"content_volume\":0.04,\"cross_reference_load\":0,\"validation_loop_iterations\":0.05,\"context_ingestion_volume\":0.02,\"investigative_uncertainty\":0.02}},{\"task_id\":\"nested_merge\",\"signals\":{\"tool_call_volume\":0.25,\"content_volume\":0.1,\"cross_reference_load\":0,\"validation_loop_iterations\":0.2,\"context_ingestion_volume\":0.03,\"investigative_uncertainty\":0.08}},{\"task_id\":\"csv_exact\",\"signals\":{\"tool_call_volume\":0.4,\"content_volume\":0.3,\"cross_reference_load\":0,\"validation_loop_iterations\":0.4,\"context_ingestion_volume\":0.04,\"investigative_uncertainty\":0.15}},{\"task_id\":\"cross_files\",\"signals\":{\"tool_call_volume\":0.3,\"content_volume\":0.08,\"cross_reference_load\":0.6,\"validation_loop_iterations\":0.15,\"context_ingestion_volume\":0.06,\"investigative_uncertainty\":0.08}},{\"task_id\":\"search_bug\",\"signals\":{\"tool_call_volume\":0.4,\"content_volume\":0.08,\"cross_reference_load\":0.1,\"validation_loop_iterations\":0.2,\"context_ingestion_volume\":0.15,\"investigative_uncertainty\":0.45}},{\"task_id\":\"review_context\",\"signals\":{\"tool_call_volume\":0.35,\"content_volume\":0.08,\"cross_reference_load\":0.1,\"validation_loop_iterations\":0.15,\"context_ingestion_volume\":0.9,\"investigative_uncertainty\":0.65}},{\"task_id\":\"validation_fix\",\"signals\":{\"tool_call_volume\":0.45,\"content_volume\":0.22,\"cross_reference_load\":0.05,\"validation_loop_iterations\":0.5,\"context_ingestion_volume\":0.04,\"investigative_uncertainty\":0.15}},{\"task_id\":\"migration\",\"signals\":{\"tool_call_volume\":0.3,\"content_volume\":0.3,\"cross_reference_load\":0,\"validation_loop_iterations\":0.2,\"context_ingestion_volume\":0.04,\"investigative_uncertainty\":0.08}},{\"task_id\":\"holdout_toposort\",\"signals\":{\"tool_call_volume\":0.45,\"content_volume\":0.3,\"cross_reference_load\":0,\"validation_loop_iterations\":0.4,\"context_ingestion_volume\":0.04,\"investigative_uncertainty\":0.15}},{\"task_id\":\"holdout_intervals\",\"signals\":{\"tool_call_volume\":0.35,\"content_volume\":0.22,\"cross_reference_load\":0,\"validation_loop_iterations\":0.3,\"context_ingestion_volume\":0.03,\"investigative_uncertainty\":0.08}},{\"task_id\":\"holdout_review\",\"signals\":{\"tool_call_volume\":0.2,\"content_volume\":0.07,\"cross_reference_load\":0,\"validation_loop_iterations\":0.05,\"context_ingestion_volume\":0.04,\"investigative_uncertainty\":0.15}},{\"task_id\":\"holdout_search\",\"signals\":{\"tool_call_volume\":0.35,\"content_volume\":0.04,\"cross_reference_load\":0.08,\"validation_loop_iterations\":0.2,\"context_ingestion_volume\":0.1,\"investigative_uncertainty\":0.35}}]}",
+  "tool_commands": 0,
+  "rerouted": false,
+  "guard": null,
+  "ratings": [
+    {
+      "task_id": "slug",
+      "signals": {
+        "tool_call_volume": 0.15,
+        "content_volume": 0.04,
+        "cross_reference_load": 0,
+        "validation_loop_iterations": 0.05,
+        "context_ingestion_volume": 0.02,
+        "investigative_uncertainty": 0.02
+      }
+    },
+    {
+      "task_id": "nested_merge",
+      "signals": {
+        "tool_call_volume": 0.25,
+        "content_volume": 0.1,
+        "cross_reference_load": 0,
+        "validation_loop_iterations": 0.2,
+        "context_ingestion_volume": 0.03,
+        "investigative_uncertainty": 0.08
+      }
+    },
+    {
+      "task_id": "csv_exact",
+      "signals": {
+        "tool_call_volume": 0.4,
+        "content_volume": 0.3,
+        "cross_reference_load": 0,
+        "validation_loop_iterations": 0.4,
+        "context_ingestion_volume": 0.04,
+        "investigative_uncertainty": 0.15
+      }
+    },
+    {
+      "task_id": "cross_files",
+      "signals": {
+        "tool_call_volume": 0.3,
+        "content_volume": 0.08,
+        "cross_reference_load": 0.6,
+        "validation_loop_iterations": 0.15,
+        "context_ingestion_volume": 0.06,
+        "investigative_uncertainty": 0.08
+      }
+    },
+    {
+      "task_id": "search_bug",
+      "signals": {
+        "tool_call_volume": 0.4,
+        "content_volume": 0.08,
+        "cross_reference_load": 0.1,
+        "validation_loop_iterations": 0.2,
+        "context_ingestion_volume": 0.15,
+        "investigative_uncertainty": 0.45
+      }
+    },
+    {
+      "task_id": "review_context",
+      "signals": {
+        "tool_call_volume": 0.35,
+        "content_volume": 0.08,
+        "cross_reference_load": 0.1,
+        "validation_loop_iterations": 0.15,
+        "context_ingestion_volume": 0.9,
+        "investigative_uncertainty": 0.65
+      }
+    },
+    {
+      "task_id": "validation_fix",
+      "signals": {
+        "tool_call_volume": 0.45,
+        "content_volume": 0.22,
+        "cross_reference_load": 0.05,
+        "validation_loop_iterations": 0.5,
+        "context_ingestion_volume": 0.04,
+        "investigative_uncertainty": 0.15
+      }
+    },
+    {
+      "task_id": "migration",
+      "signals": {
+        "tool_call_volume": 0.3,
+        "content_volume": 0.3,
+        "cross_reference_load": 0,
+        "validation_loop_iterations": 0.2,
+        "context_ingestion_volume": 0.04,
+        "investigative_uncertainty": 0.08
+      }
+    },
+    {
+      "task_id": "holdout_toposort",
+      "signals": {
+        "tool_call_volume": 0.45,
+        "content_volume": 0.3,
+        "cross_reference_load": 0,
+        "validation_loop_iterations": 0.4,
+        "context_ingestion_volume": 0.04,
+        "investigative_uncertainty": 0.15
+      }
+    },
+    {
+      "task_id": "holdout_intervals",
+      "signals": {
+        "tool_call_volume": 0.35,
+        "content_volume": 0.22,
+        "cross_reference_load": 0,
+        "validation_loop_iterations": 0.3,
+        "context_ingestion_volume": 0.03,
+        "investigative_uncertainty": 0.08
+      }
+    },
+    {
+      "task_id": "holdout_review",
+      "signals": {
+        "tool_call_volume": 0.2,
+        "content_volume": 0.07,
+        "cross_reference_load": 0,
+        "validation_loop_iterations": 0.05,
+        "context_ingestion_volume": 0.04,
+        "investigative_uncertainty": 0.15
+      }
+    },
+    {
+      "task_id": "holdout_search",
+      "signals": {
+        "tool_call_volume": 0.35,
+        "content_volume": 0.04,
+        "cross_reference_load": 0.08,
+        "validation_loop_iterations": 0.2,
+        "context_ingestion_volume": 0.1,
+        "investigative_uncertainty": 0.35
+      }
+    }
+  ]
+}

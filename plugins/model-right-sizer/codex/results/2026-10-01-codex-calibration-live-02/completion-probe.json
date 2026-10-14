@@ -1,0 +1,19 @@
+{
+  "thread_id": "01a0f584-868b-7a82-8d1d-d2ba28744ec4",
+  "actual_model": "gpt-6-luna",
+  "requested_model": "gpt-6-luna",
+  "effort": "medium",
+  "usage": {
+    "input_tokens": 13877,
+    "cached_input_tokens": 11008,
+    "output_tokens": 8,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 13885
+  },
+  "usage_source": "codex_app_server",
+  "wall_clock_seconds": 2.8574214130003384,
+  "final_message": "CALIBRATION_READY",
+  "tool_commands": 0,
+  "rerouted": false,
+  "guard": null
+}

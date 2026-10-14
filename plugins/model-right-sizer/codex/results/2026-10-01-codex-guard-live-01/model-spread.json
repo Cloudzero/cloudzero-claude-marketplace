@@ -1,0 +1,19 @@
+{
+  "scope": "all completed calls in this matched guard experiment",
+  "model_spread": [
+    {
+      "model": "gpt-6.1-sol",
+      "records": 6,
+      "input_tokens": 2119820,
+      "output_tokens": 7203,
+      "total_tokens": 2127023,
+      "share_of_observed_tokens": 1.0
+    }
+  ],
+  "observed_total_tokens": 2127023,
+  "unattributed_tokens": 0,
+  "records_with_unknown_usage": 0,
+  "definitive_for_observed_records": true,
+  "account_wide_model_spread_available": false,
+  "coverage_note": "These shares describe only the named observed dataset, not unobserved account history."
+}

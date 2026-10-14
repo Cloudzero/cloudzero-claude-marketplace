@@ -1,0 +1,87 @@
+{
+  "date": "2026-10-01",
+  "baseline_commit": "f539a8b797449f31e11db660fbd8d6cd17695d1f",
+  "codex_cli": "0.159.0-alpha.3",
+  "validation": {
+    "repository_tests_passed": 602,
+    "required_validators": "passed",
+    "native_research_variants": 16,
+    "native_wording_knobs": 6
+  },
+  "native_discovery": {
+    "source": "codex_app_server_skills_list",
+    "enabled_skills": [
+      "model-right-sizer",
+      "model-right-sizer-audit",
+      "model-right-sizer-budget-guard",
+      "model-right-sizer-dryrun",
+      "model-right-sizer-holdout-tuning",
+      "model-right-sizer-install",
+      "model-right-sizer-layer-ablation",
+      "model-right-sizer-prompt-tuning",
+      "model-right-sizer-release-report",
+      "model-right-sizer-research-report",
+      "model-right-sizer-schema",
+      "model-right-sizer-signal-validation"
+    ],
+    "errors": []
+  },
+  "model_discovery": {
+    "source": "codex_app_server_model_list",
+    "visible_models": [
+      "gpt-6-astra",
+      "gpt-6-sol",
+      "gpt-6-luna",
+      "gpt-5.6-sol",
+      "gpt-5.6-terra",
+      "gpt-5.6-luna",
+      "gpt-5.5"
+    ]
+  },
+  "fresh_cli_execution": {
+    "status": "blocked",
+    "reason": "Cached Codex access token could not refresh; CLI asked for sign-in.",
+    "usage": null,
+    "credentials_changed": false
+  },
+  "main_agent_dogfood": {
+    "status": "completed",
+    "task": "Build and verify an exact CSV-to-JSON USD allocator using the installed main-agent workflow.",
+    "independent_session": false,
+    "test_count": 7,
+    "test_status": "passed",
+    "units": [
+      "build",
+      "verify"
+    ],
+    "blueprint_validated": true,
+    "usage": null,
+    "model_override_applied": false,
+    "effort_override_applied": false,
+    "calibration_status": "provisional",
+    "measured_savings": null,
+    "evidence_files": [
+      "2026-10-01-blueprint.json",
+      "2026-10-01-profile.json",
+      "2026-10-01-session.json",
+      "2026-10-01-usage-report.json",
+      "2026-10-01-cloudzero-attribution.json"
+    ]
+  },
+  "guard_regressions": {
+    "source": "labeled deterministic fixtures in tests/model_right_sizer/test_codex_runtime.py",
+    "live_warning_delivery_verified": false
+  },
+  "cloudzero": {
+    "export": "local_only",
+    "live_connection": false
+  },
+  "absolute_parity_certified": false,
+  "next_evidence": [
+    "Authenticated fresh CLI completion with usage events",
+    "Real warning delivery in a continuation",
+    "Measured native calibration and independent research sweeps",
+    "Desktop/cloud/IDE execution matrix",
+    "Verified CloudZero account/API ingestion contract"
+  ]
+}

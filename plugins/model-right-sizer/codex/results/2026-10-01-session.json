@@ -1,0 +1,369 @@
+{
+  "version": "0.1.0",
+  "session_id": "2026-10-01-main-agent-dogfood",
+  "created_at": "2026-10-01T00:51:42.421180+00:00",
+  "blueprint": {
+    "schema_version": "1.2",
+    "mode": "live_blueprint",
+    "intent": "Dogfood the installed native skill by building and verifying an exact CSV allocation CLI in the authenticated main Codex session.",
+    "price_sheet": {
+      "source": "fallback_snapshot",
+      "models": [
+        {
+          "id": "gpt-6-astra",
+          "name": "gpt-6-astra",
+          "in_per_1m": 0,
+          "out_per_1m": 0
+        },
+        {
+          "id": "gpt-6-sol",
+          "name": "gpt-6-sol",
+          "in_per_1m": 0,
+          "out_per_1m": 0
+        }
+      ]
+    },
+    "blueprint_rows": [
+      {
+        "id": "build",
+        "name": "Implement exact CSV allocation CLI",
+        "description": "Implement exact CSV allocation CLI",
+        "query_shaped": false,
+        "query_layer_note": null,
+        "loop_class": "agentic",
+        "signals": {
+          "effectiveness": {
+            "score": 60,
+            "reason": "Money precision and invalid input must be correct."
+          },
+          "efficiency": {
+            "score": 45,
+            "reason": "One bounded local development task."
+          },
+          "difficulty": {
+            "score": 40,
+            "reason": "Known CSV and Decimal APIs."
+          }
+        },
+        "pick": {
+          "primary": {
+            "model": "gpt-6-astra",
+            "effort": "medium",
+            "confidence": 70
+          },
+          "runner_up": {
+            "model": "gpt-6-sol",
+            "effort": "medium",
+            "confidence": 30
+          },
+          "what_flips_it": "A measured smaller-model run clears the quality/latency gate.",
+          "why_not_tier_above": "Bounded CLI with clear APIs.",
+          "why_not_tier_below": "No measured agentic down-pin yet."
+        },
+        "default_model": "gpt-6-astra",
+        "keep_or_override": "keep",
+        "budget": {
+          "token_ceiling": 52000,
+          "real_work_signals": {
+            "tool_call_volume": {
+              "value": 0.25,
+              "reason": "Few direct edits and test runs."
+            },
+            "content_volume": {
+              "value": 0.35,
+              "reason": "Small CLI and focused tests."
+            },
+            "cross_reference_load": {
+              "value": 0.1,
+              "reason": "Match CSV and money contracts."
+            },
+            "validation_loop_iterations": {
+              "value": 0.2,
+              "reason": "One validation loop expected."
+            },
+            "context_ingestion_volume": {
+              "value": 0.05,
+              "reason": "Fresh small repository."
+            },
+            "investigative_uncertainty": {
+              "value": 0,
+              "reason": "Task targets are specified."
+            }
+          },
+          "thinking_budget": null,
+          "warning_threshold_pct": 0.7
+        },
+        "handoff_schema_ref": "none",
+        "rationale": "Keep ambient main model; effort recommendation unapplied. Native additive budget is provisional and UNVALIDATED."
+      },
+      {
+        "id": "verify",
+        "name": "Verify precision, invalid rows and command exit codes",
+        "description": "Verify precision, invalid rows and command exit codes",
+        "query_shaped": false,
+        "query_layer_note": null,
+        "loop_class": "agentic",
+        "signals": {
+          "effectiveness": {
+            "score": 60,
+            "reason": "Money precision and invalid input must be correct."
+          },
+          "efficiency": {
+            "score": 45,
+            "reason": "One bounded local development task."
+          },
+          "difficulty": {
+            "score": 40,
+            "reason": "Known CSV and Decimal APIs."
+          }
+        },
+        "pick": {
+          "primary": {
+            "model": "gpt-6-astra",
+            "effort": "medium",
+            "confidence": 70
+          },
+          "runner_up": {
+            "model": "gpt-6-sol",
+            "effort": "medium",
+            "confidence": 30
+          },
+          "what_flips_it": "A measured smaller-model run clears the quality/latency gate.",
+          "why_not_tier_above": "Bounded CLI with clear APIs.",
+          "why_not_tier_below": "No measured agentic down-pin yet."
+        },
+        "default_model": "gpt-6-astra",
+        "keep_or_override": "keep",
+        "budget": {
+          "token_ceiling": 58000,
+          "real_work_signals": {
+            "tool_call_volume": {
+              "value": 0.25,
+              "reason": "Few direct edits and test runs."
+            },
+            "content_volume": {
+              "value": 0.2,
+              "reason": "Small CLI and focused tests."
+            },
+            "cross_reference_load": {
+              "value": 0.35,
+              "reason": "Match CSV and money contracts."
+            },
+            "validation_loop_iterations": {
+              "value": 0.3,
+              "reason": "One validation loop expected."
+            },
+            "context_ingestion_volume": {
+              "value": 0.1,
+              "reason": "Fresh small repository."
+            },
+            "investigative_uncertainty": {
+              "value": 0,
+              "reason": "Task targets are specified."
+            }
+          },
+          "thinking_budget": null,
+          "warning_threshold_pct": 0.7
+        },
+        "handoff_schema_ref": "none",
+        "rationale": "Keep ambient main model; effort recommendation unapplied. Native additive budget is provisional and UNVALIDATED."
+      }
+    ],
+    "work_routing_map": [
+      {
+        "id": "build",
+        "build_unit": "Implement exact CSV allocation CLI",
+        "derived_from_stage_id": "build",
+        "pick": {
+          "primary": {
+            "model": "gpt-6-astra",
+            "effort": "medium",
+            "confidence": 70
+          },
+          "runner_up": {
+            "model": "gpt-6-sol",
+            "effort": "medium",
+            "confidence": 30
+          },
+          "what_flips_it": "A measured smaller-model run clears the quality/latency gate.",
+          "why_not_tier_above": "Bounded CLI with clear APIs.",
+          "why_not_tier_below": "No measured agentic down-pin yet."
+        },
+        "budget": {
+          "token_ceiling": 52000,
+          "real_work_signals": {
+            "tool_call_volume": {
+              "value": 0.25,
+              "reason": "Few direct edits and test runs."
+            },
+            "content_volume": {
+              "value": 0.35,
+              "reason": "Small CLI and focused tests."
+            },
+            "cross_reference_load": {
+              "value": 0.1,
+              "reason": "Match CSV and money contracts."
+            },
+            "validation_loop_iterations": {
+              "value": 0.2,
+              "reason": "One validation loop expected."
+            },
+            "context_ingestion_volume": {
+              "value": 0.05,
+              "reason": "Fresh small repository."
+            },
+            "investigative_uncertainty": {
+              "value": 0,
+              "reason": "Task targets are specified."
+            }
+          },
+          "thinking_budget": null,
+          "warning_threshold_pct": 0.7
+        },
+        "handoff_schema_ref": "none",
+        "rationale": "Keep ambient main model; effort recommendation unapplied. Native additive budget is provisional and UNVALIDATED.",
+        "status": "done",
+        "status_updated_at": "2026-10-01T00:52:13.872284+00:00",
+        "status_note": "Main agent implemented the exact-money CLI and tests."
+      },
+      {
+        "id": "verify",
+        "build_unit": "Verify precision, invalid rows and command exit codes",
+        "derived_from_stage_id": "verify",
+        "pick": {
+          "primary": {
+            "model": "gpt-6-astra",
+            "effort": "medium",
+            "confidence": 70
+          },
+          "runner_up": {
+            "model": "gpt-6-sol",
+            "effort": "medium",
+            "confidence": 30
+          },
+          "what_flips_it": "A measured smaller-model run clears the quality/latency gate.",
+          "why_not_tier_above": "Bounded CLI with clear APIs.",
+          "why_not_tier_below": "No measured agentic down-pin yet."
+        },
+        "budget": {
+          "token_ceiling": 58000,
+          "real_work_signals": {
+            "tool_call_volume": {
+              "value": 0.25,
+              "reason": "Few direct edits and test runs."
+            },
+            "content_volume": {
+              "value": 0.2,
+              "reason": "Small CLI and focused tests."
+            },
+            "cross_reference_load": {
+              "value": 0.35,
+              "reason": "Match CSV and money contracts."
+            },
+            "validation_loop_iterations": {
+              "value": 0.3,
+              "reason": "One validation loop expected."
+            },
+            "context_ingestion_volume": {
+              "value": 0.1,
+              "reason": "Fresh small repository."
+            },
+            "investigative_uncertainty": {
+              "value": 0,
+              "reason": "Task targets are specified."
+            }
+          },
+          "thinking_budget": null,
+          "warning_threshold_pct": 0.7
+        },
+        "handoff_schema_ref": "none",
+        "rationale": "Keep ambient main model; effort recommendation unapplied. Native additive budget is provisional and UNVALIDATED.",
+        "status": "done",
+        "status_updated_at": "2026-10-01T00:56:41.227034+00:00",
+        "status_note": "Seven real unittest and subprocess CLI tests passed."
+      }
+    ],
+    "message_schemas": [],
+    "uncertainty_ledger": {
+      "assumptions": [
+        "Zero price fields are schema placeholders, not verified prices; no cost estimate is permitted.",
+        "Catalog confirms available IDs, not actual selection in this main session.",
+        "Main-session token usage is unknown.",
+        "Codex floor/span fixture is provisional, not transferred Claude calibration.",
+        "Shared additive formula is UNVALIDATED.",
+        "Model and effort recommendations were not applied as in-session overrides."
+      ],
+      "price_sheet_freshness": "unverified",
+      "would_measure": [
+        "Per-unit token usage",
+        "Native overhead floors",
+        "Smaller-model quality and latency"
+      ],
+      "calibration": {
+        "ledger_found": false,
+        "adjusted_row_ids": [],
+        "notes": "No measured Codex ledger."
+      }
+    }
+  },
+  "observations": {
+    "build": {
+      "usage": null,
+      "source": "no_usage_event",
+      "scope": "unknown",
+      "observed_at": "2026-10-01T00:57:46.888098+00:00",
+      "guard": "usage_unknown"
+    },
+    "verify": {
+      "usage": null,
+      "source": "no_usage_event",
+      "scope": "unknown",
+      "observed_at": "2026-10-01T00:57:46.997203+00:00",
+      "guard": "usage_unknown"
+    }
+  },
+  "events": [
+    {
+      "type": "transition",
+      "unit_id": "build",
+      "at": "2026-10-01T00:51:42.421306+00:00",
+      "status": "in_progress",
+      "note": "Authenticated main session started implementation."
+    },
+    {
+      "type": "transition",
+      "unit_id": "build",
+      "at": "2026-10-01T00:52:13.872284+00:00",
+      "status": "done",
+      "note": "Main agent implemented the exact-money CLI and tests."
+    },
+    {
+      "type": "transition",
+      "unit_id": "verify",
+      "at": "2026-10-01T00:52:13.971799+00:00",
+      "status": "in_progress",
+      "note": "Running the real unittest suite and CLI checks."
+    },
+    {
+      "type": "transition",
+      "unit_id": "verify",
+      "at": "2026-10-01T00:56:41.227034+00:00",
+      "status": "done",
+      "note": "Seven real unittest and subprocess CLI tests passed."
+    },
+    {
+      "type": "usage",
+      "unit_id": "build",
+      "at": "2026-10-01T00:57:46.888098+00:00",
+      "total_tokens": null,
+      "guard": "usage_unknown"
+    },
+    {
+      "type": "usage",
+      "unit_id": "verify",
+      "at": "2026-10-01T00:57:46.997203+00:00",
+      "total_tokens": null,
+      "guard": "usage_unknown"
+    }
+  ]
+}

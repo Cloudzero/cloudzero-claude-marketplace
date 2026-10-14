@@ -1,0 +1,6 @@
+interface:
+  display_name: "CloudZero Research Report"
+  short_description: "Native right-sizing in your main Codex agent"
+  default_prompt: "Use $model-right-sizer-research-report in this main session."
+policy:
+  allow_implicit_invocation: true

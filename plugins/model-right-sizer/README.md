@@ -4,6 +4,11 @@
 
 Part of [CloudZero](../../README.md), the CloudZero plugin marketplace for Claude Code.
 
+**Codex:** a native main-agent integration now lives in [codex/](codex/README.md).
+It installs the main skill and all eleven companions into `.agents/skills`, with
+no separately installed economist agent. See its [parity evidence](codex/PARITY.md)
+for verified behavior and remaining live-execution/calibration gaps.
+
 A **model-selection economist** agent definition for [Claude Code](https://docs.claude.com/claude-code) (and any similar Claude-Agent-SDK-based agent runtime that reads a persona from a markdown file with YAML frontmatter).
 
 It doesn't decide *what* to build — it decides *what intelligence budget* to build it with. Given a task or a pipeline of stages, it scores each stage on **effectiveness need** vs **efficiency pressure** vs **difficulty**, and returns a probability-weighted model + effort + token-budget recommendation instead of a single "just use the biggest model" verdict. It runs as a bookend around a unit of work: a **blueprint** pass before the work starts, emitted as a single JSON object conforming to [`schemas/blueprint.schema.json`](schemas/blueprint.schema.json) rather than prose or a markdown table, and a **usage report** pass after it closes.

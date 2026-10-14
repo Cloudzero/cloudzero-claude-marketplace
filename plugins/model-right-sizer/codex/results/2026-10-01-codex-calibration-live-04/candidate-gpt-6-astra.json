@@ -1,0 +1,47 @@
+{
+  "runtime": "codex",
+  "formula": "codex-six-signal-weighted-v1",
+  "profile_version": "codex-calibration-live-04",
+  "harness_sha256": "fa1e2e23695c1a69dbc19651e5f492fc0b8450d63b45dd129362151864246849",
+  "evidence": "/workspace/codex-calibration-live-04/dataset.json",
+  "models": {
+    "gpt-6-astra": {
+      "efforts": {
+        "medium": {
+          "dispatch_floor": 14563,
+          "work_span": 181309.21854579743,
+          "signal_weights": {
+            "tool_call_volume": 0.5947197482043624,
+            "content_volume": 0.2913225057357311,
+            "cross_reference_load": 0.05374793936532285,
+            "validation_loop_iterations": 0.0,
+            "context_ingestion_volume": 7.037563516345483e-05,
+            "investigative_uncertainty": 0.060139431059420184
+          },
+          "uncertainty_multiplier": 1.4326189637385949,
+          "status": "measured",
+          "evidence": "/workspace/codex-calibration-live-04/dataset.json",
+          "training_tasks": 12,
+          "held_out_tasks": 4,
+          "floor_probes": 3
+        }
+      }
+    }
+  },
+  "promotion_status": "validated",
+  "metrics": {
+    "gpt-6-astra/medium": {
+      "held_out_coverage": 1.0,
+      "held_out_within_budget": 1.0,
+      "held_out_ratios": [
+        0.7593250661699833,
+        0.7586934131149149,
+        0.5178194111846739,
+        0.6915794774240475
+      ],
+      "promotion_gate_passed": true,
+      "feature_rank": 6
+    }
+  },
+  "caveat": "Measured on this harness and held-out tasks; broader repositories require drift checks."
+}

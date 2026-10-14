@@ -1,0 +1,45 @@
+{
+  "model": "gpt-6.1-sol",
+  "effort": "medium",
+  "pairs": 3,
+  "ceiling_rule": "floor(0.9 * measured matched baseline tokens)",
+  "warning_threshold": 0.7,
+  "measurement_kind": "real_codex_execution",
+  "results": [
+    {
+      "pair": 0,
+      "passed": true,
+      "poll_returned_measured_usage": false,
+      "baseline_tokens": 402349,
+      "guarded_tokens": 300467,
+      "ceiling": 362114,
+      "baseline_optional_files": 20,
+      "guarded_optional_files": 15,
+      "guard_status": "warned_and_heeded"
+    },
+    {
+      "pair": 1,
+      "passed": true,
+      "poll_returned_measured_usage": false,
+      "baseline_tokens": 402290,
+      "guarded_tokens": 299591,
+      "ceiling": 362061,
+      "baseline_optional_files": 20,
+      "guarded_optional_files": 14,
+      "guard_status": "warned_and_heeded"
+    },
+    {
+      "pair": 2,
+      "passed": true,
+      "poll_returned_measured_usage": false,
+      "baseline_tokens": 419974,
+      "guarded_tokens": 302352,
+      "ceiling": 377976,
+      "baseline_optional_files": 20,
+      "guarded_optional_files": 14,
+      "guard_status": "warned_and_heeded"
+    }
+  ],
+  "course_correction_verified": true,
+  "billing_polling_verified": false
+}

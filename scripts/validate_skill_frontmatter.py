@@ -81,7 +81,8 @@ def main() -> int:
         fail(f"{PLUGINS_DIR} does not exist")
         return 1
 
-    skill_files = sorted(PLUGINS_DIR.glob("*/skills/*/SKILL.md"))
+    skill_files = sorted([*PLUGINS_DIR.glob("*/skills/*/SKILL.md"),
+                          *PLUGINS_DIR.glob("*/codex/skills/*/SKILL.md")])
     if not skill_files:
         print(f"OK: no skill files under {PLUGINS_DIR}/*/skills/ — nothing to validate")
         return 0

@@ -1,0 +1,197 @@
+{
+  "thread_id": "01a0f58f-a6dd-7002-8136-0f3badaaa50d",
+  "actual_model": "gpt-6-astra",
+  "requested_model": "gpt-6-astra",
+  "effort": "medium",
+  "usage": {
+    "input_tokens": 16624,
+    "cached_input_tokens": 12416,
+    "output_tokens": 1006,
+    "reasoning_output_tokens": 45,
+    "total_tokens": 17630
+  },
+  "usage_source": "codex_app_server",
+  "wall_clock_seconds": 35.2538665560005,
+  "final_message": "{\"ratings\":[{\"task_id\":\"slug\",\"signals\":{\"tool_call_volume\":0.1,\"content_volume\":0.03,\"cross_reference_load\":0,\"validation_loop_iterations\":0.05,\"context_ingestion_volume\":0.01,\"investigative_uncertainty\":0.01}},{\"task_id\":\"nested_merge\",\"signals\":{\"tool_call_volume\":0.2,\"content_volume\":0.08,\"cross_reference_load\":0,\"validation_loop_iterations\":0.2,\"context_ingestion_volume\":0.02,\"investigative_uncertainty\":0.05}},{\"task_id\":\"csv_exact\",\"signals\":{\"tool_call_volume\":0.35,\"content_volume\":0.25,\"cross_reference_load\":0,\"validation_loop_iterations\":0.4,\"context_ingestion_volume\":0.02,\"investigative_uncertainty\":0.12}},{\"task_id\":\"cross_files\",\"signals\":{\"tool_call_volume\":0.3,\"content_volume\":0.08,\"cross_reference_load\":0.65,\"validation_loop_iterations\":0.15,\"context_ingestion_volume\":0.03,\"investigative_uncertainty\":0.08}},{\"task_id\":\"search_bug\",\"signals\":{\"tool_call_volume\":0.35,\"content_volume\":0.06,\"cross_reference_load\":0.1,\"validation_loop_iterations\":0.2,\"context_ingestion_volume\":0.12,\"investigative_uncertainty\":0.5}},{\"task_id\":\"review_context\",\"signals\":{\"tool_call_volume\":0.3,\"content_volume\":0.08,\"cross_reference_load\":0,\"validation_loop_iterations\":0.2,\"context_ingestion_volume\":0.85,\"investigative_uncertainty\":0.7}},{\"task_id\":\"validation_fix\",\"signals\":{\"tool_call_volume\":0.4,\"content_volume\":0.18,\"cross_reference_load\":0,\"validation_loop_iterations\":0.5,\"context_ingestion_volume\":0.02,\"investigative_uncertainty\":0.12}},{\"task_id\":\"migration\",\"signals\":{\"tool_call_volume\":0.25,\"content_volume\":0.3,\"cross_reference_load\":0,\"validation_loop_iterations\":0.2,\"context_ingestion_volume\":0.02,\"investigative_uncertainty\":0.08}},{\"task_id\":\"holdout_toposort\",\"signals\":{\"tool_call_volume\":0.4,\"content_volume\":0.25,\"cross_reference_load\":0,\"validation_loop_iterations\":0.4,\"context_ingestion_volume\":0.02,\"investigative_uncertainty\":0.15}},{\"task_id\":\"holdout_intervals\",\"signals\":{\"tool_call_volume\":0.3,\"content_volume\":0.18,\"cross_reference_load\":0,\"validation_loop_iterations\":0.3,\"context_ingestion_volume\":0.02,\"investigative_uncertainty\":0.05}},{\"task_id\":\"holdout_review\",\"signals\":{\"tool_call_volume\":0.2,\"content_volume\":0.06,\"cross_reference_load\":0,\"validation_loop_iterations\":0.1,\"context_ingestion_volume\":0.02,\"investigative_uncertainty\":0.15}},{\"task_id\":\"holdout_search\",\"signals\":{\"tool_call_volume\":0.35,\"content_volume\":0.04,\"cross_reference_load\":0.1,\"validation_loop_iterations\":0.2,\"context_ingestion_volume\":0.06,\"investigative_uncertainty\":0.4}},{\"task_id\":\"fresh_dedupe\",\"signals\":{\"tool_call_volume\":0.3,\"content_volume\":0.16,\"cross_reference_load\":0,\"validation_loop_iterations\":0.25,\"context_ingestion_volume\":0.02,\"investigative_uncertainty\":0.04}},{\"task_id\":\"fresh_jsonl\",\"signals\":{\"tool_call_volume\":0.3,\"content_volume\":0.16,\"cross_reference_load\":0,\"validation_loop_iterations\":0.25,\"context_ingestion_volume\":0.02,\"investigative_uncertainty\":0.04}},{\"task_id\":\"fresh_config\",\"signals\":{\"tool_call_volume\":0.4,\"content_volume\":0.22,\"cross_reference_load\":0.85,\"validation_loop_iterations\":0.35,\"context_ingestion_volume\":0.04,\"investigative_uncertainty\":0.1}},{\"task_id\":\"fresh_repair\",\"signals\":{\"tool_call_volume\":0.35,\"content_volume\":0.14,\"cross_reference_load\":0,\"validation_loop_iterations\":0.35,\"context_ingestion_volume\":0.02,\"investigative_uncertainty\":0.1}}]}",
+  "tool_commands": 0,
+  "rerouted": false,
+  "guard": null,
+  "ratings": [
+    {
+      "task_id": "slug",
+      "signals": {
+        "tool_call_volume": 0.1,
+        "content_volume": 0.03,
+        "cross_reference_load": 0,
+        "validation_loop_iterations": 0.05,
+        "context_ingestion_volume": 0.01,
+        "investigative_uncertainty": 0.01
+      }
+    },
+    {
+      "task_id": "nested_merge",
+      "signals": {
+        "tool_call_volume": 0.2,
+        "content_volume": 0.08,
+        "cross_reference_load": 0,
+        "validation_loop_iterations": 0.2,
+        "context_ingestion_volume": 0.02,
+        "investigative_uncertainty": 0.05
+      }
+    },
+    {
+      "task_id": "csv_exact",
+      "signals": {
+        "tool_call_volume": 0.35,
+        "content_volume": 0.25,
+        "cross_reference_load": 0,
+        "validation_loop_iterations": 0.4,
+        "context_ingestion_volume": 0.02,
+        "investigative_uncertainty": 0.12
+      }
+    },
+    {
+      "task_id": "cross_files",
+      "signals": {
+        "tool_call_volume": 0.3,
+        "content_volume": 0.08,
+        "cross_reference_load": 0.65,
+        "validation_loop_iterations": 0.15,
+        "context_ingestion_volume": 0.03,
+        "investigative_uncertainty": 0.08
+      }
+    },
+    {
+      "task_id": "search_bug",
+      "signals": {
+        "tool_call_volume": 0.35,
+        "content_volume": 0.06,
+        "cross_reference_load": 0.1,
+        "validation_loop_iterations": 0.2,
+        "context_ingestion_volume": 0.12,
+        "investigative_uncertainty": 0.5
+      }
+    },
+    {
+      "task_id": "review_context",
+      "signals": {
+        "tool_call_volume": 0.3,
+        "content_volume": 0.08,
+        "cross_reference_load": 0,
+        "validation_loop_iterations": 0.2,
+        "context_ingestion_volume": 0.85,
+        "investigative_uncertainty": 0.7
+      }
+    },
+    {
+      "task_id": "validation_fix",
+      "signals": {
+        "tool_call_volume": 0.4,
+        "content_volume": 0.18,
+        "cross_reference_load": 0,
+        "validation_loop_iterations": 0.5,
+        "context_ingestion_volume": 0.02,
+        "investigative_uncertainty": 0.12
+      }
+    },
+    {
+      "task_id": "migration",
+      "signals": {
+        "tool_call_volume": 0.25,
+        "content_volume": 0.3,
+        "cross_reference_load": 0,
+        "validation_loop_iterations": 0.2,
+        "context_ingestion_volume": 0.02,
+        "investigative_uncertainty": 0.08
+      }
+    },
+    {
+      "task_id": "holdout_toposort",
+      "signals": {
+        "tool_call_volume": 0.4,
+        "content_volume": 0.25,
+        "cross_reference_load": 0,
+        "validation_loop_iterations": 0.4,
+        "context_ingestion_volume": 0.02,
+        "investigative_uncertainty": 0.15
+      }
+    },
+    {
+      "task_id": "holdout_intervals",
+      "signals": {
+        "tool_call_volume": 0.3,
+        "content_volume": 0.18,
+        "cross_reference_load": 0,
+        "validation_loop_iterations": 0.3,
+        "context_ingestion_volume": 0.02,
+        "investigative_uncertainty": 0.05
+      }
+    },
+    {
+      "task_id": "holdout_review",
+      "signals": {
+        "tool_call_volume": 0.2,
+        "content_volume": 0.06,
+        "cross_reference_load": 0,
+        "validation_loop_iterations": 0.1,
+        "context_ingestion_volume": 0.02,
+        "investigative_uncertainty": 0.15
+      }
+    },
+    {
+      "task_id": "holdout_search",
+      "signals": {
+        "tool_call_volume": 0.35,
+        "content_volume": 0.04,
+        "cross_reference_load": 0.1,
+        "validation_loop_iterations": 0.2,
+        "context_ingestion_volume": 0.06,
+        "investigative_uncertainty": 0.4
+      }
+    },
+    {
+      "task_id": "fresh_dedupe",
+      "signals": {
+        "tool_call_volume": 0.3,
+        "content_volume": 0.16,
+        "cross_reference_load": 0,
+        "validation_loop_iterations": 0.25,
+        "context_ingestion_volume": 0.02,
+        "investigative_uncertainty": 0.04
+      }
+    },
+    {
+      "task_id": "fresh_jsonl",
+      "signals": {
+        "tool_call_volume": 0.3,
+        "content_volume": 0.16,
+        "cross_reference_load": 0,
+        "validation_loop_iterations": 0.25,
+        "context_ingestion_volume": 0.02,
+        "investigative_uncertainty": 0.04
+      }
+    },
+    {
+      "task_id": "fresh_config",
+      "signals": {
+        "tool_call_volume": 0.4,
+        "content_volume": 0.22,
+        "cross_reference_load": 0.85,
+        "validation_loop_iterations": 0.35,
+        "context_ingestion_volume": 0.04,
+        "investigative_uncertainty": 0.1
+      }
+    },
+    {
+      "task_id": "fresh_repair",
+      "signals": {
+        "tool_call_volume": 0.35,
+        "content_volume": 0.14,
+        "cross_reference_load": 0,
+        "validation_loop_iterations": 0.35,
+        "context_ingestion_volume": 0.02,
+        "investigative_uncertainty": 0.1
+      }
+    }
+  ]
+}

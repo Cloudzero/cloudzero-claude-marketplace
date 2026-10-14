@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Native Codex Model Right Sizer main-agent skill and eleven companions, portable
+  repository installer, deterministic execution/usage ledger, native experimental
+  renderers, model/skill discovery, and local CloudZero attribution export.
+- Shared standalone blueprint and handoff validators; additive provider-native
+  effort vocabulary; Codex validation in CI and explicit dogfood/parity evidence.
+
+- Codex-specific measured medium-effort weights for GPT-6.1-Sol and GPT-6-Astra,
+  with reproducible native fitting and four fresh held-out task shapes. Luna's
+  candidate failed promotion and remains excluded from defaults.
+- Three successful matched live budget-guard experiments, periodic polling,
+  acknowledged steering, measured unit baselines and polling timeout recovery.
+  Billing totals were unavailable; native telemetry drove verified correction.
+- Scoped model spread from 126 recorded authenticated experiment calls.
+
+Complete cross-surface parity and a live CloudZero account connection remain
+unverified. Historical account-wide model spread is unavailable.
+
 ### Planned
 
 - Additional specialized skills for Reserved Instance analysis
