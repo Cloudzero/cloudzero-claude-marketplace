@@ -78,7 +78,12 @@ real run, not a dry run.
    [`../../schemas/blueprint.example.json`](../../schemas/blueprint.example.json)
    for a worked instance. Do not ask for, and do not accept, a markdown-table
    or prose rendering instead — if the agent returns one, ask it to re-emit
-   as the JSON object.
+   as the JSON object. Pass A step 8 applies to a dry run too: the agent
+   reads the machine-wide `model-right-sizer-learned` skill and its ledger
+   rows matching each stage's shape, and states what the evidence changed,
+   including "nothing" and including "no ledger yet". A dry run is
+   *read-only against the ledger* — it never appends, because nothing
+   actually ran to measure.
 
 4. **Validate against the schema itself, emit the JSON, and STOP.** Before
    printing anything, run the agent's raw JSON response through
@@ -149,3 +154,6 @@ real run, not a dry run.
   sibling that installs the standing before/after mandate. Its "before" hook
   now runs *this* skill directly, so this is no longer only an on-demand
   preview — it's also the live front-bookend mechanism.
+- [`model-right-sizer-calibrate`](../model-right-sizer-calibrate/SKILL.md) —
+  owns the ledger this dry run reads. `summary` is the fastest way to see what
+  evidence a map is being drawn against.

@@ -1,0 +1,52 @@
+{
+  "_note": "Scoring criteria for the model-right-sizer-eval audit harness. PUBLISHED, therefore visible to any agent with repo access \u2014 the harness sandboxes the agent away from the repo for exactly this reason.",
+  "points_per_task": 3,
+  "criteria": {
+    "tier": "1 pt - recommended tier BAND matches expect_tier. Band, not exact model id: the agent fetches a live lineup at spawn, so pinning an id scores the price sheet instead of the reasoning.",
+    "dial": "1 pt - effort band matches expect_effort AND an explicit numeric token/thinking budget is stated.",
+    "boundary": "1 pt - the reasoning this boundary exists to test is present, per expect_boundary. Partial reasoning scores 0. This is the discriminating criterion."
+  },
+  "saturation_gate": "If the round-1 CONTROL arm scores >70% (>16.8/24 on an 8-task set), the experiment is invalid: first principles already answer these tasks, so memory has nothing to add. Stop and change the CLASS of question - see the eval skill.",
+  "boundaries": {
+    "OVERTHINK": {
+      "expect_tier": "cheapest",
+      "expect_effort": "none-or-low",
+      "expect_boundary": "Names the over-thinking tax (effort floored because difficulty is floored) AND/OR the batch discount for a non-interactive high-volume pass. Picking mid tier or above scores 0 on tier."
+    },
+    "COST_OF_ERROR": {
+      "expect_tier": "top",
+      "expect_effort": "high-or-above",
+      "expect_boundary": "Prices the cost of error explicitly \u2014 irreversibility / blast radius outweighs the token saving. Must NOT argue for a cheap tier on the grounds that it 'only runs once'; that inversion scores 0."
+    },
+    "SCHEMA_SEAM": {
+      "expect_tier": "any-named",
+      "expect_effort": "any-with-budget",
+      "expect_boundary": "Specifies a handoff schema with NAMED FIELDS and an explicit EXCLUSION list (no full transcript / raw rows / chain-of-thought). Notes that a fan-out multiplies a bloated payload. Tier-only answer scores 0 here."
+    },
+    "AGENTIC_DOWNPIN": {
+      "expect_tier": "no-live-downpin",
+      "expect_effort": "any-with-budget",
+      "expect_boundary": "Scores loop-class as agentic and marks any down-pin `measurement-required` / provisional rather than live, reasoning in WALL-CLOCK (more turns can erase or invert the per-token saving), not tokens alone."
+    },
+    "CACHING": {
+      "expect_tier": "not-rejected-on-volume",
+      "expect_effort": "any-with-budget",
+      "expect_boundary": "Explicitly folds prompt caching into the effective input price \u2014 the shared prefix collapses cost, so a stronger tier may be affordable. Rejecting the stronger tier on raw input volume alone scores 0."
+    },
+    "MAINLOOP": {
+      "expect_tier": "cheapest-for-subtasks",
+      "expect_effort": "none-or-low",
+      "expect_boundary": "Recommends PER-SUB-AGENT overrides and explicitly declines to switch the orchestrator's own model mid-session, citing prompt-cache invalidation. Distinguishes 'spawn sub-agent on X' from 'set session to X'."
+    },
+    "QUERY_LAYER": {
+      "expect_tier": "query-layer-over-model",
+      "expect_effort": "any-with-budget",
+      "expect_boundary": "Frames the choice as model-vs-deterministic-query-layer rather than which tier, and prefers the query layer \u2014 on reliability (no hallucination risk on the arithmetic/joins) as well as cost. Assigning only a model tier scores 0."
+    },
+    "NO_CERTAINTY": {
+      "expect_tier": "mid-or-top",
+      "expect_effort": "medium-or-high",
+      "expect_boundary": "Returns a probability-weighted pick: primary WITH a confidence %, a NAMED runner-up WITH its %, and a CONCRETE flip condition (a threshold, not 'if it gets harder'). A single confident verdict scores 0 even if the tier is defensible."
+    }
+  }
+}
