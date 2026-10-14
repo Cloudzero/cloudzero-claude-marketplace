@@ -39,14 +39,18 @@ def test_composition_metrics_on_empty_input_returns_none_rates_not_zero():
 def test_composition_metrics_on_the_worked_blueprint_example():
     result = m.composition_metrics([BLUEPRINT_EXAMPLE])
     assert result["n_blueprints"] == 1
-    assert result["n_rows"] == 2
-    assert result["model_counts"] == {"claude-sonnet-5": 1, "deterministic_query_layer": 1}
-    assert result["effort_counts"] == {"low": 1, "none": 1}
-    assert result["deterministic_query_layer_pick_rate"] == pytest.approx(0.5)
-    assert result["query_shaped_rate"] == pytest.approx(0.5)
+    assert result["n_rows"] == 3
+    assert result["model_counts"] == {
+        "claude-sonnet-5": 1,
+        "deterministic_query_layer": 1,
+        "local:qwen3-4b-instruct-2507-4bit": 1,
+    }
+    assert result["effort_counts"] == {"low": 1, "none": 2}
+    assert result["deterministic_query_layer_pick_rate"] == pytest.approx(1 / 3)
+    assert result["query_shaped_rate"] == pytest.approx(1 / 3)
     assert result["what_flips_it_present_rate"] == pytest.approx(1.0)
-    assert result["mean_confidence"] == pytest.approx((72 + 90) / 2)
-    assert result["mean_token_ceiling"] == pytest.approx((55836 + 0) / 2)
+    assert result["mean_confidence"] == pytest.approx((72 + 90 + 65) / 3)
+    assert result["mean_token_ceiling"] == pytest.approx((55836 + 0 + 400000) / 3)
 
 
 def test_composition_metrics_detects_lever_mentions_in_rationale_text():
