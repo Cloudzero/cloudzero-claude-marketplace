@@ -25,6 +25,7 @@ This directory is a self-contained **Claude Code plugin** within the CloudZero m
 - [`schemas/blueprint.schema.json`](schemas/blueprint.schema.json) (+ [`blueprint.example.json`](schemas/blueprint.example.json)) — the strict JSON Schema the agent's Pass A (the right-sizing blueprint) must conform to, and a worked instance. Defined once here; the agent and the `model-right-sizer-dryrun` skill both point at it instead of restating the shape. Enforced, not just documented: [`../../scripts/validate_blueprint.py`](../../scripts/validate_blueprint.py) validates the worked example in CI and is the same validator `model-right-sizer-dryrun` runs against its own output before handing a blueprint to an orchestrator.
 - [`skills/model-right-sizer-install/SKILL.md`](skills/model-right-sizer-install/SKILL.md) — a companion skill that stamps a narrow, organization-agnostic mandate onto a *target* repo's `CLAUDE.md`, `AGENTS.md`, or both (whichever the repo actually has): run `model-right-sizer-dryrun` before every substantive task and hand its JSON blueprint to the orchestrator, then consult `model-right-sizer` directly for a usage report after. It also installs this plugin itself if the agent/skill aren't already discoverable there. Beyond that, it's just the mandate — no broader development process — so it can be adopted independently of whatever flow (if any) the target repo already runs.
 - [`skills/model-right-sizer-dryrun/SKILL.md`](skills/model-right-sizer-dryrun/SKILL.md) — a companion skill that previews the agent's JSON blueprint for a free-text intent, without building anything.
+- [`skills/model-right-sizer-eval-audit/SKILL.md`](skills/model-right-sizer-eval-audit/SKILL.md) — a companion skill that mutation-tests `eval/`'s own effectiveness: programmatically corrupts the citation ledger and boundary-probes the formula functions, runs the real checker against every mutant, and scores the kill/pass rate — the concrete metric to iterate on. Ships with a committed round-over-round trend (`eval_audit_history.jsonl`) and a pytest regression test that locks the current 100% effectiveness in as a standing CI gate.
 - [`skills/model-right-sizer-layer-ablation/SKILL.md`](skills/model-right-sizer-layer-ablation/SKILL.md) — a companion skill that empirically ablates each of the four research-grounded citation layers (alone and in every combination) against a fixed benchmark suite, measuring both blueprint composition and whether real effort stayed within the blueprint's predicted budget. Read-mostly: writes only to a scratch directory, never to `agents/model-right-sizer.md`. See [`eval/ablation/DESIGN.md`](eval/ablation/DESIGN.md) for the experimental design.
 - [`skills/model-right-sizer-prompt-tuning/SKILL.md`](skills/model-right-sizer-prompt-tuning/SKILL.md) — a companion skill that, starting from all four layers already present, coordinate-ascent searches four small wording knobs (how much margin `token_ceiling` carries, how hard the effort dial leans down under difficulty-uncertainty, and two calibration-feedback knobs) for the wording that maximizes real-execution `accuracy_rate`. The ordinal, finite-difference analog of gradient descent for prose, named as such rather than as literal gradient descent — see [`eval/tuning/DESIGN.md`](eval/tuning/DESIGN.md). Read-mostly, same as the ablation skill: proposes the winning wording as a diff for a human to review, never applies it itself.
 - [`skills/model-right-sizer-holdout-tuning/SKILL.md`](skills/model-right-sizer-holdout-tuning/SKILL.md) — the real-actuals sibling of `model-right-sizer-prompt-tuning`: tunes the same `knobs.py` wording registry, but against a real, already-measured build's actuals (`eval/tuning/overfitting_guard.py`'s `HOLDOUT_TASKS`) instead of the synthetic benchmark, via 3 independent blind dry-run draws averaged per candidate. Cheaper per iteration since the ground truth doesn't move — only the blind estimate re-runs.
@@ -50,7 +51,7 @@ Install it from the CloudZero marketplace — add the marketplace once, then ins
 /plugin install model-right-sizer@cloudzero
 ```
 
-That installs the agent (`agents/model-right-sizer.md`) and all eleven companion skills listed above together. Adding the marketplace also makes the [`cost-analyst`](../cost-analyst/) plugin available (`/plugin install cost-analyst@cloudzero`). To try it before installing, or to iterate on a local checkout, load it directly for a session instead:
+That installs the agent (`agents/model-right-sizer.md`) and all twelve companion skills listed above together. Adding the marketplace also makes the [`cost-analyst`](../cost-analyst/) plugin available (`/plugin install cost-analyst@cloudzero`). To try it before installing, or to iterate on a local checkout, load it directly for a session instead:
 
 ```
 claude --plugin-dir /path/to/cloudzero-claude-marketplace/plugins/model-right-sizer
@@ -82,7 +83,7 @@ See the **"Extending this agent for your own organization"** section at the bott
 ## Prerequisites
 
 None. This plugin is an agent definition, JSON Schemas for its blueprint
-and agent-schema-prescription outputs, and eleven companion skills — no
+and agent-schema-prescription outputs, and twelve companion skills — no
 runtime dependencies, no code that calls an LLM or CloudZero API directly.
 `model-right-sizer-audit` does orchestrate the `gh` CLI and `git` against a
 target repo (see its own Prerequisites), but that's an external tool it
@@ -90,10 +91,12 @@ shells out to, not a dependency this plugin bundles or requires an API key
 for.
 It's read by whatever agent runtime loads it (Claude Code, or a compatible
 Claude-Agent-SDK-based runtime), which supplies its own model access. No API
-keys are required by the plugin itself. `eval/` is the one directory with
-executable Python, and it's standard-library-only (`math`, `json`, `pathlib`)
-— it exists to verify the agent's research grounding in CI, not as something
-the agent imports or calls at runtime.
+keys are required by the plugin itself. `eval/` and
+`skills/model-right-sizer-eval-audit/scripts/` are the two places with
+executable Python, and both are standard-library-only (`math`, `json`,
+`pathlib`, `ast`, `argparse`) — `eval/` verifies the agent's research
+grounding, and the skill's script mutation-tests how well `eval/` does that;
+neither is something the agent imports or calls at runtime.
 
 ## Configuration
 
@@ -145,6 +148,13 @@ against the target. Full blast radius per skill:
   instructions if plugin install isn't available) — the only action it
   takes outside those marker-delimited blocks.
 - `model-right-sizer-dryrun` writes nothing; it only returns the JSON blueprint (unless the user explicitly asks it to save one to a file).
+- `model-right-sizer-eval-audit`'s script writes only one thing — an appended
+  line to `eval_audit_history.jsonl` when run with `--history` — and reads
+  `eval/citation_ledger.json`, `eval/token_economics.py`, and
+  `eval/reasoning_budget.py` to mutate in-memory copies and probe the real
+  functions; it never edits those files itself. Any real fix a run's report
+  surfaces (a guard to add, a sample to diversify) is applied by the invoking
+  session as a normal, reviewed code edit, not by the script.
 - `model-right-sizer-layer-ablation` writes only to a scratch working directory named at the start of a run (rendered agent variants, blueprint JSON, a final report) — it never edits `agents/model-right-sizer.md` or any other file inside this plugin or its consuming repo. Its "accuracy" phase does dispatch real build sub-agents against the fixed benchmark suite in `eval/ablation/benchmark_tasks.json`, which is real (if small/bounded) work — the skill states the scale (call/build counts) before running that phase, never silently. A run's dated *summary* (the aggregated metrics + a written-up report, not the raw per-cell blueprints) may be checked into `eval/ablation/results/` as a worked example, as a maintainer's own choice per run — see [`eval/ablation/results/2026-08-21-pilot-run.md`](eval/ablation/results/2026-08-21-pilot-run.md) for the first one.
 - `model-right-sizer-prompt-tuning` writes only to a scratch working directory, same as the ablation skill — it never edits `agents/model-right-sizer.md`; the winning wording it finds is reported as a proposed diff for a human to review and apply separately. EVERY candidate this skill evaluates dispatches real build sub-agents (there is no blueprint-only version of "did the real build stay within budget") against a subset of `eval/ablation/benchmark_tasks.json` — the skill states the per-candidate/per-pass/full-search build counts before running, never silently, and asks for a `MAX_PASSES` scope if one hasn't already been given.
 - `model-right-sizer-holdout-tuning` dispatches 3 blind dry-run sub-agents per candidate (blueprint-only, no real build) against a real held-out task from `overfitting_guard.HOLDOUT_TASKS` — cheaper than the prompt-tuning skill's real builds, but every draw must have calibration-ledger access explicitly withheld to stay genuinely blind. Never edits `agents/model-right-sizer.md`; a winning knob change is a proposed diff, same as its sibling.
